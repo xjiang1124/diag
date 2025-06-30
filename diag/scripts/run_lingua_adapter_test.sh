@@ -34,7 +34,7 @@ bif_signal_test() {
         fpgautil w32 $matera_P12V_addr $(( $p12v & $Mask ))
         sleep 0.2
         fpgautil w32 $matera_P3V3_addr $(( $p3v3 & $Mask ))
-        sleep 0.2
+        sleep 5
 
         p3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
         p12v=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P12V_addr | awk '{print $4}')
@@ -109,6 +109,7 @@ fi
 
 #Power cycle the slot to start in a fresh state
 turn_on_slot.sh off $slot
+sleep 5
 turn_on_slot.sh on $slot
 
 ##########################################################
@@ -181,6 +182,7 @@ then
 fi
 
 turn_on_slot.sh off $slot
+sleep 5
 turn_on_slot.sh on $slot
 
 

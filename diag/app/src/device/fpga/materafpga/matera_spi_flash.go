@@ -1007,17 +1007,16 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
         return
     }
     file_size := fileInfo.Size()
-
     // check if flash has enough size
     if (start_addr + uint32(file_size) > flash_size) {
-        fmt.Errorf(" Error: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", file_size, start_addr, flash_size)
+        err = fmt.Errorf(" Error: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", file_size, start_addr, flash_size)
         fmt.Printf("%s", err)
         return
     }
 
     // check if offset 64 kB aligned
     if start_addr % FLASH_SECTOR_SIZE != 0 {
-        fmt.Errorf(" ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        err = fmt.Errorf(" ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
         fmt.Printf("%s", err)
         return
     }
@@ -1114,7 +1113,7 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
     file_data := []byte{}
 
     if start_addr % FLASH_SECTOR_SIZE != 0 {
-        fmt.Errorf(" ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        err = fmt.Errorf(" ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
         fmt.Printf("%s", err)
         return
     }
@@ -1135,7 +1134,7 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
     file_size := fileInfo.Size()
 
     if (start_addr + uint32(file_size) > flash_size) {
-        fmt.Errorf(" ERROR: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", len(file_data), start_addr, flash_size)
+        err = fmt.Errorf(" ERROR: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", len(file_data), start_addr, flash_size)
         fmt.Printf("%s", err)
         f.Close()
         return
@@ -1211,7 +1210,7 @@ func Spi_salina_flash_GenerateFile(spiNumber uint32, qspiNumber uint32, start_ad
 
     // check if offset 64 kB aligned
     if start_addr % FLASH_SECTOR_SIZE != 0 {
-        fmt.Errorf("ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        err = fmt.Errorf("ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
         cli.Printf("e", "%s", err)
         return
     }

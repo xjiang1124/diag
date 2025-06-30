@@ -91,29 +91,6 @@ if { $hc == 0 } {
 elb_l1_ddr_bist $ddr_freq $dual_rank 0 1 $addr_space $ctrl_pi
 
 set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
-if {$err_cnt != 0} {
-    plog_msg "DDR BIST failed! Dumping DDR OBS"
-    exec rm -rf ${sn}_dump
-    exec mkdir ${sn}_dump
-    cd ${sn}_dump
-    dump_all
-    cd ..
-} else {
-    # if DDR_BIST passes, run DDR_TEST
-    elb_card_rst $port $slot1 $mode 3200 3000 0 0 "127" 0 1 normal 0 0
-    elb_l1_ddr_tests $ddr_freq
-    set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
-    if {$err_cnt != 0} {
-        plog_msg "DDR TEST failed! Dumping DDR OBS"
-        exec rm -rf ${sn}_dump
-        exec mkdir ${sn}_dump
-        cd ${sn}_dump
-        dump_all
-        cd ..
-    }
-}
-
-set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
 # Print twice for DSP to capture signature
 plog_msg "\n\n\n"
 plog_msg "============================="

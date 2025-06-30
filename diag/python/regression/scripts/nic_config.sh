@@ -222,6 +222,11 @@ then
     type="MTFUJI"
     asic_type="ELBA"
     echo "Elba CPLD"
+elif [[ $cpld_id == "0x84" ]]
+then
+    type="DESCHUTES"
+    asic_type="GIGLIO"
+    echo "Giglio CPLD"
 else
     type="UNKNOW"
     asic_type="UNKNOW"

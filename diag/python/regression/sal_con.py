@@ -248,7 +248,7 @@ def enter_n1_linux(slot, session, *args, **kwargs):
 
     con_ctrl = nic_con()
 
-    login_delay = kwargs.get('login_delay', 90)
+    login_delay = kwargs.get('login_delay', 120)
     if con_ctrl.uart_session_start_login(session, slot, sleep=login_delay) != 0:
         print("Couldnt get N1 login prompt")
         return -1

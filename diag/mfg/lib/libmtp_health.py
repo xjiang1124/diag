@@ -226,7 +226,7 @@ class mtp_health_ctrl():
             self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
             return None
 
-        cmd = MFG_DIAG_CMDS.MTP_LOGIN_VERIFY_FMT
+        cmd = MFG_DIAG_CMDS().MTP_LOGIN_VERIFY_FMT
         sig_list = [userid]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
             self.cli_log_err("Connect to mtp mgmt failed", level = 0)
@@ -280,7 +280,7 @@ class mtp_health_ctrl():
 
         self._mgmt_prompt = self._prompt_list[idx]
 
-        cmd = MFG_DIAG_CMDS.MTP_LOGIN_VERIFY_FMT
+        cmd = MFG_DIAG_CMDS().MTP_LOGIN_VERIFY_FMT
         sig_list = [userid]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
             self.cli_log_err("Connect to mtp mgmt failed", level=0)
@@ -363,7 +363,7 @@ class mtp_health_ctrl():
         # store serial number
         for psu in range(self._psu_num):
             psu = str(psu+1)
-            cmd = MFG_DIAG_CMDS.MTP_PSU_DISP_FMT.format(psu)
+            cmd = MFG_DIAG_CMDS().MTP_PSU_DISP_FMT.format(psu)
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
                 self.cli_log_err("{:d}th: Executing command {:s} failed".format(cycle_cnt, cmd))
                 rc = False
@@ -376,7 +376,7 @@ class mtp_health_ctrl():
                 continue
 
         # PSU test
-        cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT
+        cmd = MFG_DIAG_CMDS().MTP_PSU_TEST_FMT
         pass_sig_list = []
 
         # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
@@ -429,7 +429,7 @@ class mtp_health_ctrl():
     def mtp_fan_init(self, cycle_cnt=1):
         rc = True
         # Fan present test
-        cmd = MFG_DIAG_CMDS.MTP_FAN_PRSNT_FMT
+        cmd = MFG_DIAG_CMDS().MTP_FAN_PRSNT_FMT
         pass_sig_list = [MFG_DIAG_SIG.MTP_PRSNT_SIG]
         rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if rc:
@@ -439,7 +439,7 @@ class mtp_health_ctrl():
             return rc
 
         # Fan speed test
-        cmd = MFG_DIAG_CMDS.MTP_FAN_TEST_FMT
+        cmd = MFG_DIAG_CMDS().MTP_FAN_TEST_FMT
         pass_sig_list = [MFG_DIAG_SIG.MTP_FAN_OK_SIG]
         rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if rc:
@@ -449,7 +449,7 @@ class mtp_health_ctrl():
             return rc
 
         # Fan status dump
-        cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+        cmd = MFG_DIAG_CMDS().MTP_FAN_STATUS_FMT
         if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
             rc = False
 

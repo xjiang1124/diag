@@ -319,10 +319,12 @@ def ocp_rmii_linkup(mtp_mgmt_ctrl, slot):
     ret = mtp_mgmt_ctrl.mtp_ocp_rmii_linkup(slot)
     return ret
 
-@parallelize.parallel_nic_using_ssh
 def ocp_connect(mtp_mgmt_ctrl, slot):
-    ret = mtp_mgmt_ctrl.mtp_ocp_connect(slot)
-    return ret
+    failed_slots = list()
+    for s in slot:
+        if not mtp_mgmt_ctrl.mtp_ocp_connect(s):
+            failed_slots.append(s)
+    return failed_slots
 
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
@@ -555,6 +557,10 @@ def main():
                     rlist = ncsi_test_fpga_program(mtp_mgmt_ctrl, nic_list)
                 elif test == "PROD_FPGA_PROG":
                     rlist = ncsi_prod_fpga_program(mtp_mgmt_ctrl, nic_list)
+                elif test == "SALINA_BOOT0_ERASE":
+                    rlist = salina_erase_boot0(mtp_mgmt_ctrl, nic_list)
+                elif test == "SALINA_BOOT0_PROG":
+                    rlist = salina_program_boot0(mtp_mgmt_ctrl, nic_list)
 
                 elif test == "NIC_DIAG_INIT":
                     rlist = mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, skip_test_list=args.skip_test, vmargin=vmarg, **test_kwargs)
@@ -725,10 +731,6 @@ def main():
                     rlist = salina_snake_qspi_program(mtp_mgmt_ctrl, nic_list)
                 elif test == "SALINA_QSPI_ERASE":
                     rlist = salina_erase_qspi(mtp_mgmt_ctrl, nic_list)
-                elif test == "SALINA_BOOT0_ERASE":
-                    rlist = salina_erase_boot0(mtp_mgmt_ctrl, nic_list)
-                elif test == "SALINA_BOOT0_PROG":
-                    rlist = salina_program_boot0(mtp_mgmt_ctrl, nic_list)
                 elif test == "SALINA_SET_PCIEAWD_ENV":
                     rlist = mtp_mgmt_ctrl.mtp_set_piceawd_env_salina(nic_list)
                 elif test == "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE":
@@ -942,8 +944,8 @@ def main():
                     vdd_ddr_check_list = get_slots_of_type([NIC_Type.ORTANO2, NIC_Type.POMONTEDELL])
                     run_test(vdd_ddr_check_list, "VDD_DDR_VERIFY")
                     run_test(pass_nic_list, "CPLD_INIT")
-                    if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
-                        run_test(pass_nic_list, "NIC_BOOT_INIT") # load diagfw version   ######## Not Read for Salina yet
+                    nic_boot_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
+                    run_test(nic_boot_init_list, "NIC_BOOT_INIT")
                     all_except_cto = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CTO_MODEL_TYPE_LIST)
                     run_test(all_except_cto, "CPLD_VERIFY")
                     run_test(all_except_cto, "QSPI_VERIFY")
@@ -959,13 +961,24 @@ def main():
                     mtp_mgmt_ctrl.cli_log_inf("NIC Diag Setup complete\n", level = 0)
 
                 if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
-                    run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)   # NIC_DIAG_INIT not ready yet
+                    run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
                 else:
                     run_test(pass_nic_list, "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED")
+                    # Program DL IMAGE Since NIC Diag init and EMMC stress not work on P2C IMAGE
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
                     run_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "CLEAR_PRE_UBOOT_SECTION")
+                    nic_diag_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
+                    run_test(nic_diag_init_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
             else:
                 if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
-                    run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)  # NIC_DIAG_INIT not ready yet
+                    run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)
+                else:
+                    # Program DL IMAGE Since NIC Diag init and EMMC stress not work on P2C IMAGE
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
+                    nic_diag_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
+                    run_test(nic_diag_init_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
 
             test_section_list = []
 
@@ -985,9 +998,9 @@ def main():
 
             ### SALINA TEST ORDER
             if get_slots_of_type(SALINA_NIC_TYPE_LIST, except_type=[NIC_Type.LINGUA]):
-                test_section_list = ["P2C_IMG_PROG", "STRESS", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
+                test_section_list = ["STRESS", "P2C_IMG_PROG", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
             if get_slots_of_type(NIC_Type.LINGUA):
-                test_section_list = ["OCP_PRE_CHECK", "P2C_IMG_PROG", "STRESS", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
+                test_section_list = ["OCP_PRE_CHECK", "STRESS", "P2C_IMG_PROG", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
 
             if args.skip_test:
                 test_section_list = libmfg_utils.list_subtract(test_section_list, args.skip_test)
@@ -1241,13 +1254,13 @@ def main():
 
                     erase_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     prog_boot0_list = erase_boot0_list[:]
-                    run_regression_test(erase_boot0_list, "SALINA_BOOT0_ERASE")
+                    run_test(erase_boot0_list, "SALINA_BOOT0_ERASE")
 
                     jtag_mbist_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_regression_test(jtag_mbist_list, "SALINA_JTAG_MBIST", vmarg=vmarg)
 
                     # prog_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-                    run_regression_test(prog_boot0_list, "SALINA_BOOT0_PROG")
+                    run_test(prog_boot0_list, "SALINA_BOOT0_PROG")
 
                     l1_setup_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_test(l1_setup_list, "L1_SETUP")
@@ -1484,10 +1497,10 @@ def main():
                 mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
     except Exception as e:
-        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         # err_msg = str(e)
         err_msg = traceback.format_exc()
         mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         if MTP_HEALTH_MONITOR and 'thread_health' in locals():
             mtp_mgmt_ctrl.get_mtp_health_monitor().set_event_status()
             thread_health.join()

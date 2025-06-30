@@ -106,6 +106,10 @@ class nic_ctrl():
             self._pn_format = pn_regex
 
     def nic_set_err_msg(self, err_msg):
+        if "$" in err_msg:
+            err_msg = err_msg.replace("$", "DOLLOR")
+        if "#" in err_msg:
+            err_msg = err_msg.replace("#", "HASH")
         if not self._err_msg:
             self._err_msg = ""
         self._err_msg += "\n" + err_msg
@@ -411,14 +415,14 @@ class nic_ctrl():
         self._refresh_required = val
 
     def mbist_nic_power_on(self):
-        cmd = MFG_DIAG_CMDS.SALINA_MBIST_POWER_ON_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().SALINA_MBIST_POWER_ON_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
         libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
         return True
 
     def nic_power_off(self):
-        cmd = MFG_DIAG_CMDS.NIC_POWER_OFF_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_POWER_OFF_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
         libmfg_utils.count_down(MTP_Const.NIC_POWER_OFF_DELAY)
@@ -431,7 +435,7 @@ class nic_ctrl():
         uart_selection, 0(detault) means switch uart to A35 when boot, 1 means switch uart to N1
         proto_mode, 0 mean put salina into proto_mode(A1 and A35 won't boot), non-zero means normal mode
         '''
-        cmd = MFG_DIAG_CMDS.NIC_POWER_ON_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_POWER_ON_FMT.format(self._slot+1)
         if self._nic_type in SALINA_NIC_TYPE_LIST:
             cmd += " " + uart_selection + " " + proto_mode
         if not self.mtp_exec_cmd(cmd):
@@ -439,7 +443,7 @@ class nic_ctrl():
         # For Matera + Malfa, if Such error happend, workaround is sleep 10 seconds then re-send the turn on command again
         if "Error: Read failed".lower() in self.nic_get_cmd_buf().lower() and "Empty slot".lower() in self.nic_get_cmd_buf().lower():
             libmfg_utils.count_down(10)
-            cmd = MFG_DIAG_CMDS.NIC_POWER_ON_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().NIC_POWER_ON_FMT.format(self._slot+1)
             if self._nic_type in SALINA_NIC_TYPE_LIST:
                 cmd += " " + uart_selection + " " + proto_mode
             if not self.mtp_exec_cmd(cmd):
@@ -470,7 +474,7 @@ class nic_ctrl():
             pass
         else:
             for _ in range(maxRetry):
-                self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
+                self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_DIAG_STOP_PICOCOM_FMT)
                 idx = libmfg_utils.mfg_expect(self._nic_handle, linux_prompts, timeout=time_out)
                 console_login_screen += self._nic_handle.before
                 if idx < 0:
@@ -482,7 +486,7 @@ class nic_ctrl():
                 console_login_screen += self._nic_handle.before
                 if idx < 0:
                     continue
-                cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
+                cmd = MFG_DIAG_CMDS().NIC_CON_ATTACH_FMT.format(self._slot+1)
                 self._nic_handle.sendline(cmd)
                 idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready", "buffer cleared"], timeout=time_out)
                 console_login_screen += self._nic_handle.before
@@ -665,14 +669,14 @@ class nic_ctrl():
         return rc
 
     def nic_console_attach(self, uart_selecttor=None):
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_DIAG_STOP_PICOCOM_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
         # Check if there is still got picocom process running
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_CHECK_PICOCOM_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_DIAG_CHECK_PICOCOM_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
-        cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_CON_ATTACH_FMT.format(self._slot+1)
         if uart_selecttor is not None:
             cmd += ' ' + str(uart_selecttor)
         self._nic_handle.sendline(cmd)
@@ -727,7 +731,7 @@ class nic_ctrl():
             return True
 
     def nic_console_attach_fast(self):
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_DIAG_STOP_PICOCOM_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=3)
 
         con_ts = libmfg_utils.timestamp_snapshot()
@@ -735,7 +739,7 @@ class nic_ctrl():
         self._nic_handle.sendline(ts_record_cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=4)
 
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1))
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_CON_ATTACH_FMT.format(self._slot+1))
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready", "buffer cleared"], timeout=2)
         if idx < 0:
             return False
@@ -828,7 +832,7 @@ class nic_ctrl():
     def nic_stop_test(self):
         cmd_buf = self.nic_get_cmd_buf()    #save failure buffer
         self.nic_send_ctrl_c()
-        self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self.mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT)
         self._cmd_buf = cmd_buf             #reset the cmd_buf to failure buffer
 
     def nic_salina_jtag_mbist(self, vmarg="normal"):
@@ -844,7 +848,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_MTP_SALINA_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg)
+        cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             return False
         if MFG_DIAG_SIG.MATERA_NIC_SALINA_JTAG_MBIST_SIG in self.nic_get_cmd_buf():
@@ -864,7 +868,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_NIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
+        cmd = MFG_DIAG_CMDS().MATERA_NIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
         cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, snake_type, str(self._sn), str(self._slot + 1))
         print(cmd)
         if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
@@ -889,7 +893,7 @@ class nic_ctrl():
 
         test_name = "max_pwr"
 
-        cmd = MFG_DIAG_CMDS.MATERA_AINIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
+        cmd = MFG_DIAG_CMDS().MATERA_AINIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
         cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
         print(cmd)
         if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
@@ -914,7 +918,7 @@ class nic_ctrl():
 
         test_name = "pcie_prbs"
 
-        cmd = MFG_DIAG_CMDS.MATERA_NIC_PCIE_PRBS_FMT.format(str(self._slot + 1), vmarg, self._nic_type, slot_asic_dir_path)
+        cmd = MFG_DIAG_CMDS().MATERA_NIC_PCIE_PRBS_FMT.format(str(self._slot + 1), vmarg, self._nic_type, slot_asic_dir_path)
         cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
         print(cmd)
         if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
@@ -933,7 +937,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_SET_PCIEAWD_ENV_FMT.format(str(self._slot + 1))
+        cmd = MFG_DIAG_CMDS().MATERA_SET_PCIEAWD_ENV_FMT.format(str(self._slot + 1))
         print(cmd)
         if not self.mtp_exec_cmd(cmd, timeout=timeout):
             return False
@@ -948,7 +952,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_ERASE_PCIEAWD_ENV_FMT.format(str(self._slot + 1))
+        cmd = MFG_DIAG_CMDS().MATERA_ERASE_PCIEAWD_ENV_FMT.format(str(self._slot + 1))
         print(cmd)
         if not self.mtp_exec_cmd(cmd, timeout=timeout):
             return False
@@ -963,7 +967,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_I2C_QSFP_FMT.format(str(self._slot + 1), vmarg)
+        cmd = MFG_DIAG_CMDS().MATERA_I2C_QSFP_FMT.format(str(self._slot + 1), vmarg)
         if not self.mtp_exec_cmd(cmd, timeout=timeout):
             return False
 
@@ -980,7 +984,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_I2C_RTC_FMT.format(str(self._slot + 1), vmarg)
+        cmd = MFG_DIAG_CMDS().MATERA_I2C_RTC_FMT.format(str(self._slot + 1), vmarg)
         if not self.mtp_exec_cmd(cmd, timeout=timeout):
             return False
 
@@ -997,7 +1001,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_MTP_SALINA_NIC_VRM_FIX_FMT.format(str(self._slot + 1))
+        cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_VRM_FIX_FMT.format(str(self._slot + 1))
         if not self.mtp_exec_cmd(cmd, timeout=timeout):
             return False
 
@@ -1010,7 +1014,7 @@ class nic_ctrl():
         '''
             dump i2c value
         '''
-        cmd = MFG_DIAG_CMDS.NIC_I2C_DUMP_POST_FMT.format(self._slot + 3)
+        cmd = MFG_DIAG_CMDS().NIC_I2C_DUMP_POST_FMT.format(self._slot + 3)
         if not self.mtp_exec_cmd(cmd, timeout=timeout):
             return False
 
@@ -1019,7 +1023,7 @@ class nic_ctrl():
     @nic_console_test()
     def nic_mgmt_config(self):
         # config the mgmt port
-        cmd = MFG_DIAG_CMDS.NIC_SET_MGMT_IP_FMT.format(self._slot+101)
+        cmd = MFG_DIAG_CMDS().NIC_SET_MGMT_IP_FMT.format(self._slot+101)
         self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
@@ -1033,7 +1037,7 @@ class nic_ctrl():
     @nic_console_test()
     def nic_set_extdiag_boot(self):
         # set default to extdiag boot
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_EXTDIAG_BOOT_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_EXTDIAG_BOOT_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1049,8 +1053,8 @@ class nic_ctrl():
             return False
 
         # show and compare startup image
-        expect_startup_img = MFG_DIAG_CMDS.NIC_SET_EXTDIAG_BOOT_FMT.replace("fwupdate -s", "").strip()
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        expect_startup_img = MFG_DIAG_CMDS().NIC_SET_EXTDIAG_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1076,7 +1080,7 @@ class nic_ctrl():
     @nic_console_test()
     def nic_erase_board_config(self):
         # earse board config
-        self._nic_handle.sendline(MFG_DIAG_CMDS.ERASE_BOARD_CONFIG_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().ERASE_BOARD_CONFIG_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1086,7 +1090,7 @@ class nic_ctrl():
     @nic_console_test()
     def nic_cpld_update_request(self):
         # get diag boot
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_RUNNING_IMG_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_BOOT_SHOW_RUNNING_IMG_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1120,7 +1124,7 @@ class nic_ctrl():
     def nic_set_board_config_cert(self, cert_img, directory="/data/"):
         img_name = os.path.basename(cert_img)
         # set ibm board config
-        self._nic_handle.sendline(MFG_DIAG_CMDS.SET_IBM_BOARD_CONFIG_FMT.format(directory, img_name))
+        self._nic_handle.sendline(MFG_DIAG_CMDS().SET_IBM_BOARD_CONFIG_FMT.format(directory, img_name))
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1133,7 +1137,7 @@ class nic_ctrl():
             return False
 
         # show cert info
-        self._nic_handle.sendline(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().GET_BOARD_CONFIG_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1146,7 +1150,7 @@ class nic_ctrl():
             return False
 
         # show fwupdate -l info
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_IMG_DISP1_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1157,7 +1161,7 @@ class nic_ctrl():
     @nic_console_test()
     def nic_secboot_verify(self):
         # send bash command elba-chk-secboot-rdy.sh and it's leading commands
-        nic_secboot_verify_cmd_list = [MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT, MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT, MFG_DIAG_CMDS.NIC_CHK_SECBOOT_FMT]
+        nic_secboot_verify_cmd_list = [MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT, MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT, MFG_DIAG_CMDS().NIC_CHK_SECBOOT_FMT]
         for nic_cmd in nic_secboot_verify_cmd_list:
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
@@ -1176,7 +1180,7 @@ class nic_ctrl():
     @nic_console_test()
     def nic_cfg_verify(self):
         # dump cfg0
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("4","0"))
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_CFG_DUMP_FMT.format("4","0"))
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue dump cfg0 command")
@@ -1184,7 +1188,7 @@ class nic_ctrl():
             return False
 
         # dump cfg1
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("5","1"))
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_CFG_DUMP_FMT.format("5","1"))
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue dump cfg1 command")
@@ -1192,7 +1196,7 @@ class nic_ctrl():
             return False
 
         # md5sum cfg0
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("0"))
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_CFG_CHECKSUM_FMT.format("0"))
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue md5sum cfg0 command")
@@ -1200,7 +1204,7 @@ class nic_ctrl():
             return False
 
         # md5sum cfg1
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("1"))
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_CFG_CHECKSUM_FMT.format("1"))
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue md5sum cfg1 command")
@@ -1212,7 +1216,7 @@ class nic_ctrl():
     @nic_console_test()
     def nic_set_diag_boot(self):
         # set default to diag boot
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_DIAG_BOOT_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_DIAG_BOOT_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1228,8 +1232,8 @@ class nic_ctrl():
             return False
 
         # show and compare startup image
-        expect_startup_img = MFG_DIAG_CMDS.NIC_SET_DIAG_BOOT_FMT.replace("fwupdate -s", "").strip()
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        expect_startup_img = MFG_DIAG_CMDS().NIC_SET_DIAG_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1243,7 +1247,7 @@ class nic_ctrl():
     @nic_console_test()
     def nic_set_mainfw_boot(self):
         # set default to mainfw boot
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_SW_BOOT_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1259,8 +1263,8 @@ class nic_ctrl():
             return False
 
         # show and compare startup image
-        expect_startup_img = MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT.replace("fwupdate -s", "").strip()
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        expect_startup_img = MFG_DIAG_CMDS().NIC_SET_SW_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1274,7 +1278,7 @@ class nic_ctrl():
     @nic_console_test()
     def nic_set_goldfw_boot(self):
         # set default to goldfw boot
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_GOLD_BOOT_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1290,8 +1294,8 @@ class nic_ctrl():
             return False
 
         # show and compare startup image
-        expect_startup_img = MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT.replace("fwupdate -s", "").strip()
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        expect_startup_img = MFG_DIAG_CMDS().NIC_SET_GOLD_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1305,7 +1309,7 @@ class nic_ctrl():
     @nic_console_test()
     def nic_set_extos_boot(self):
         # set default to extosa boot
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_EXTOSA_BOOT_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_EXTOSA_BOOT_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1321,8 +1325,8 @@ class nic_ctrl():
             return False
 
         # show and compare startup image
-        expect_startup_img = MFG_DIAG_CMDS.NIC_SET_EXTOSA_BOOT_FMT.replace("fwupdate -s", "").strip()
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        expect_startup_img = MFG_DIAG_CMDS().NIC_SET_EXTOSA_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1339,8 +1343,8 @@ class nic_ctrl():
         # 2. kill all processes
         # 3. sync
         # 4. umount
-        emmc_fsck_cmd = MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT
-        emmc_mount_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
+        emmc_fsck_cmd = MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT
+        emmc_mount_cmd = MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT
         nic_shutdown_cmd_list = [emmc_fsck_cmd,
                                  emmc_mount_cmd,
                                  "clear_nic_config.sh factory-default"]
@@ -1365,7 +1369,7 @@ class nic_ctrl():
                 return False
 
         # poweroff
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_OS_SHUTDOWN_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.before)
@@ -1379,8 +1383,8 @@ class nic_ctrl():
         # 2. kill all processes
         # 3. sync
         # 4. umount
-        emmc_fsck_cmd = MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT
-        emmc_mount_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
+        emmc_fsck_cmd = MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT
+        emmc_mount_cmd = MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT
         nic_shutdown_cmd_list = [emmc_fsck_cmd]
 
         # Rahul: also only for msft remove the mount command as well
@@ -1388,19 +1392,19 @@ class nic_ctrl():
             nic_shutdown_cmd_list.append(emmc_mount_cmd)
 
         nic_shutdown_cmd_list += [
-                                 MFG_DIAG_CMDS.NIC_IMG_DISP_FMT,
-                                 MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT,
-                                 MFG_DIAG_CMDS.NIC_DIAG_CLEANUP_FMT,
-                                 MFG_DIAG_CMDS.NIC_EMMC_LS_FMT,
-                                 MFG_DIAG_CMDS.NIC_KILL_PROCESS_FMT,
-                                 MFG_DIAG_CMDS.NIC_SYNC_FS_FMT,
-                                 MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT
+                                 MFG_DIAG_CMDS().NIC_IMG_DISP_FMT,
+                                 MFG_DIAG_CMDS().NIC_IMG_DISP1_FMT,
+                                 MFG_DIAG_CMDS().NIC_DIAG_CLEANUP_FMT,
+                                 MFG_DIAG_CMDS().NIC_EMMC_LS_FMT,
+                                 MFG_DIAG_CMDS().NIC_KILL_PROCESS_FMT,
+                                 MFG_DIAG_CMDS().NIC_SYNC_FS_FMT,
+                                 MFG_DIAG_CMDS().NIC_SW_UMOUNT_FMT
                                  ]
 
         if self._nic_type in [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT]:
             nic_shutdown_cmd_list.pop()
-            nic_shutdown_cmd_list.append(MFG_DIAG_CMDS.NIC_SYNC_FS_FMT)
-            nic_shutdown_cmd_list.append(MFG_DIAG_CMDS.NIC_SYNC_FS_FMT)
+            nic_shutdown_cmd_list.append(MFG_DIAG_CMDS().NIC_SYNC_FS_FMT)
+            nic_shutdown_cmd_list.append(MFG_DIAG_CMDS().NIC_SYNC_FS_FMT)
             
         for nic_cmd in nic_shutdown_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -1409,19 +1413,19 @@ class nic_ctrl():
                 return False
 
         # Rahul: use penvisorctl command if it msft since msft using use penvisor container and just poweroff if non msft
-        # so force isRelC to True so that following call MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_PEN_FMT
+        # so force isRelC to True so that following call MFG_DIAG_CMDS().NIC_OS_SHUTDOWN_PEN_FMT
         if  self._nic_type in [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT]:
             isRelC = True
 
         # poweroff ... Cloud build do not support this command & different command for Rel C
         if isRelC == True:
-            self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_PEN_FMT)
+            self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_OS_SHUTDOWN_PEN_FMT)
             idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False           
         elif cloud == False:
-            self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)
+            self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_OS_SHUTDOWN_FMT)
             idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
@@ -1434,7 +1438,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
             return False
-        nic_test_uboot_env = MFG_DIAG_CMDS.MTP_PARA_UBOOT_ENV_FMT.format(str(slot+1))
+        nic_test_uboot_env = MFG_DIAG_CMDS().MTP_PARA_UBOOT_ENV_FMT.format(str(slot+1))
         if not self.mtp_exec_cmd(nic_test_uboot_env):
             self.nic_set_err_msg("nic_test.py -setup_uboot_env failed")
             return False
@@ -1442,8 +1446,8 @@ class nic_ctrl():
 
     @nic_console_test()
     def nic_sw_mode_switch(self):
-        mode_switch_cmd_list = [MFG_DIAG_CMDS.NIC_SW_MODE_SWITCH_FMT,
-                                MFG_DIAG_CMDS.NIC_SW_MODE_SWITCH_FMT,
+        mode_switch_cmd_list = [MFG_DIAG_CMDS().NIC_SW_MODE_SWITCH_FMT,
+                                MFG_DIAG_CMDS().NIC_SW_MODE_SWITCH_FMT,
                                 "sync"]
         for nic_cmd in mode_switch_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -1470,7 +1474,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_DEVICE_CHK_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SW_DEVICE_CHK_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -1503,7 +1507,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_SYSTEM_CHK_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SW_SYSTEM_CHK_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -1570,44 +1574,44 @@ class nic_ctrl():
             self.nic_set_err_msg("Unable to get expected prompt")
             return False
 
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_I2C_SET_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_I2C_SET_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_I2C_SET_FMT))
+            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS().NIC_I2C_SET_FMT))
             return False
 
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT))
+            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT))
             return False
 
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT))
+            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT))
             return False
 
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_WRITE_CPLD_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT))
+            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS().NIC_WRITE_CPLD_FMT))
             return False
 
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT)
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_READ_CPLD_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT))
+            self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS().NIC_READ_CPLD_FMT))
             return False
         
         # cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -1624,9 +1628,9 @@ class nic_ctrl():
     @nic_console_test()
     def nic_read_firmware_image(self, smode=False):
         if smode:
-            cmd = MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT
+            cmd = MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT
         else:
-            cmd = MFG_DIAG_CMDS.NIC_BOOT_SHOW_RUNNING_IMG_FMT
+            cmd = MFG_DIAG_CMDS().NIC_BOOT_SHOW_RUNNING_IMG_FMT
         self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
@@ -1646,7 +1650,7 @@ class nic_ctrl():
 
     @nic_console_test()
     def nic_read_kernel_version(self):
-        cmd = MFG_DIAG_CMDS.NIC_IMG_VER_DISP_FMT
+        cmd = MFG_DIAG_CMDS().NIC_IMG_VER_DISP_FMT
         self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
@@ -1688,7 +1692,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_NIC_MEM_TEST_MTP_FMT.format(str(self._slot + 1), slot_asic_dir_path, str(seconds2run), str(vmarg), str(mem_copy_thread))
+        cmd = MFG_DIAG_CMDS().MATERA_NIC_MEM_TEST_MTP_FMT.format(str(self._slot + 1), slot_asic_dir_path, str(seconds2run), str(vmarg), str(mem_copy_thread))
         nic_test_v2_sub_cmd = "mem_test"
         cmd += " | tee {:s}/nic_test_v2_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, nic_test_v2_sub_cmd, str(self._sn), str(self._slot + 1))
         if not self.mtp_exec_cmd(cmd, timeout=int(seconds2run)+1800):
@@ -1708,7 +1712,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_NIC_EMMC_TEST_MTP_FMT.format(str(self._slot + 1), str(seconds2run), str(iterations))
+        cmd = MFG_DIAG_CMDS().MATERA_NIC_EMMC_TEST_MTP_FMT.format(str(self._slot + 1), str(seconds2run), str(iterations))
         nic_test_v2_sub_cmd = "emmc_test"
         cmd += " | tee {:s}/nic_test_v2_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, nic_test_v2_sub_cmd, str(self._sn), str(self._slot + 1))
         if not self.mtp_exec_cmd(cmd, timeout=int(seconds2run) * int(iterations) + 300):
@@ -1730,7 +1734,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_NIC_EDMA_MTP_FMT.format(str(self._slot + 1), slot_asic_dir_path, str(seconds2run), str(vmarg))
+        cmd = MFG_DIAG_CMDS().MATERA_NIC_EDMA_MTP_FMT.format(str(self._slot + 1), slot_asic_dir_path, str(seconds2run), str(vmarg))
         nic_test_v2_sub_cmd = "edma_test"
         cmd += " | tee {:s}/nic_test_v2_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, nic_test_v2_sub_cmd, str(self._sn), str(self._slot + 1))
         if not self.mtp_exec_cmd(cmd, timeout=int(seconds2run)+1800):
@@ -1750,7 +1754,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.SALINA_ESEC_QSPI_ERASE_FMT.format(str(self._slot + 1))
+        cmd = MFG_DIAG_CMDS().SALINA_ESEC_QSPI_ERASE_FMT.format(str(self._slot + 1))
         if not self.mtp_exec_cmd(cmd):
             return False
 
@@ -1805,10 +1809,10 @@ class nic_ctrl():
 
         if enable:
             sig = MFG_DIAG_SIG.NIC_UBOOT_PCIE_ENA_SIG
-            cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_ENABLE_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().MTP_NIC_PCIE_LINK_POLL_ENABLE_FMT.format(self._slot+1)
         else:
             sig = MFG_DIAG_SIG.NIC_UBOOT_PCIE_DIS_SIG
-            cmd = MFG_DIAG_CMDS.MTP_NIC_PCIE_LINK_POLL_DISABLE_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().MTP_NIC_PCIE_LINK_POLL_DISABLE_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, MTP_Const.NIC_CON_CMD_DELAY):
             return False
 
@@ -1827,9 +1831,9 @@ class nic_ctrl():
             return False
 
         if fpo:
-            cmd = MFG_DIAG_CMDS.NIC_FPO_MGMT_INIT_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().NIC_FPO_MGMT_INIT_FMT.format(self._slot+1)
         else:
-            cmd = MFG_DIAG_CMDS.NIC_MGMT_INIT_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().NIC_MGMT_INIT_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
@@ -1849,7 +1853,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_CON_MTEST_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_CON_MTEST_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             return False
         if MFG_DIAG_SIG.NIC_CON_MTEST_PASS_SIG in self.nic_get_cmd_buf():
@@ -1858,7 +1862,7 @@ class nic_ctrl():
             return False
 
     def nic_check_jtag(self, mtp_type):
-        cmd = MFG_DIAG_CMDS.NIC_JTAG_TEST_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_JTAG_TEST_FMT.format(self._slot+1)
 
         fail_sig_list = ["JTAG Read failed!"]
 
@@ -1892,7 +1896,7 @@ class nic_ctrl():
         return True
 
     def nic_power_check(self):
-        cmd = MFG_DIAG_CMDS.NIC_POWER_CHECK_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_POWER_CHECK_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_status(NIC_Status.NIC_STA_PWR_FAIL)
             return False
@@ -1902,7 +1906,7 @@ class nic_ctrl():
         else:
             self.nic_set_status(NIC_Status.NIC_STA_PWR_FAIL)
             # dump power rail status
-            cmd = MFG_DIAG_CMDS.NIC_POWER_RAIL_DISP_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().NIC_POWER_RAIL_DISP_FMT.format(self._slot+1)
             self.mtp_exec_cmd(cmd)
             return False
 
@@ -1924,7 +1928,7 @@ class nic_ctrl():
         """
         nic_cmd_list = list()
         nic_cmd_list.append("rm eeprom")
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FRU_DUMP_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FRU_DUMP_FMT)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
@@ -1955,7 +1959,7 @@ class nic_ctrl():
             self.nic_set_err_msg("{:s} failed".format(cmd))
             self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
-        cmd = MFG_DIAG_CMDS.MTP_NIC_FRU_DUMP_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().MTP_NIC_FRU_DUMP_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
             self.nic_set_err_msg("{:s} failed".format(cmd))
             self.nic_set_err_msg(self.nic_get_cmd_buf())
@@ -1998,7 +2002,7 @@ class nic_ctrl():
             return False
 
         # PROGRAM
-        cmd = MFG_DIAG_CMDS.MTP_OCP_ADAP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
+        cmd = MFG_DIAG_CMDS().MTP_OCP_ADAP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
             self.nic_set_err_msg("OCP Adapter FRU checksum failed")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -2134,7 +2138,7 @@ class nic_ctrl():
         img_name = os.path.basename(cpld_img)
         if self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
             nic_cmd_list = list()
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, partition))
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FPGA_DUMP_FMT.format("", img_name, partition))
             if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.NIC_FPGA_PROG_DELAY):
                 return False
 
@@ -2185,7 +2189,7 @@ class nic_ctrl():
 
     @nic_console_test()
     def nic_console_set_sw_profile(self, profile):
-        nic_cmd = MFG_DIAG_CMDS.NIC_SW_PROFILE_CMD_FMT.format(profile)
+        nic_cmd = MFG_DIAG_CMDS().NIC_SW_PROFILE_CMD_FMT.format(profile)
         self._nic_handle.sendline(nic_cmd)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
@@ -2215,7 +2219,7 @@ class nic_ctrl():
           Verify Fea CPLD
         """
 
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "verify", partition, cpld_fea_img)
+        cmd = MFG_DIAG_CMDS().MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "verify", partition, cpld_fea_img)
         if not self.mtp_exec_cmd(cmd):
             return False
         if 'Verification passed'.lower() in self.nic_get_cmd_buf().lower():
@@ -2252,13 +2256,13 @@ class nic_ctrl():
                 program_sequence.append((part, img))
 
             for part, img in program_sequence:
-                cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", part, img)
+                cmd = MFG_DIAG_CMDS().MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", part, img)
                 if not self.mtp_exec_cmd(cmd):
                     return False
                 if 'Verification failed'.lower() in self.nic_get_cmd_buf().lower() or 'error' in self.nic_get_cmd_buf().lower():
                     return False
                 # verify
-                cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "verify", part, img)
+                cmd = MFG_DIAG_CMDS().MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "verify", part, img)
                 if not self.mtp_exec_cmd(cmd):
                     return False
                 if 'Verification failed'.lower() in self.nic_get_cmd_buf().lower() or 'error' in self.nic_get_cmd_buf().lower():
@@ -2272,14 +2276,14 @@ class nic_ctrl():
             nic_cmd_list = list()
             # Elba-based:
             if self._nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and self._nic_type not in FPGA_TYPE_LIST:
-                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
+                nic_cmd_list.append(MFG_DIAG_CMDS().NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
                 timeout = MTP_Const.OS_CMD_DELAY
             elif self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
-                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format("", img_name, partition))
+                nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FPGA_PROG_FMT.format("", img_name, partition))
                 timeout = MTP_Const.NIC_FPGA_PROG_DELAY
             # Capri-based:
             else:
-                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name))
+                nic_cmd_list.append(MFG_DIAG_CMDS().NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name))
                 timeout = MTP_Const.OS_CMD_DELAY
 
             if self._nic_type == NIC_Type.NAPLES25OCP:
@@ -2293,7 +2297,7 @@ class nic_ctrl():
 
     def set_nic_diagfw_boot(self):
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_SET_DIAG_BOOT_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_SET_DIAG_BOOT_FMT)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.NIC_FW_SET_DELAY):
             return False
 
@@ -2301,10 +2305,10 @@ class nic_ctrl():
 
     def nic_refresh_cpld(self, dontwait=False):
         # Capri-based:
-        nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+        nic_cpld_ref_cmd = MFG_DIAG_CMDS().NIC_CPLD_REF_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         # Elba-based:
         if self._nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and self._nic_type not in FPGA_TYPE_LIST:
-            nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+            nic_cpld_ref_cmd = MFG_DIAG_CMDS().NIC_CPLD_REF_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         if not self.nic_exec_rst_cmd(nic_cpld_ref_cmd, timeout=MTP_Const.OS_CMD_DELAY, dontwait=dontwait):
             return False
 
@@ -2389,7 +2393,7 @@ class nic_ctrl():
         if not self.nic_exec_cmds(nic_cmd_list, timeout=60):
             return False
 
-        nic_cmd = MFG_DIAG_CMDS.NIC_SETTING_PARTITION_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_SETTING_PARTITION_FMT
         cmd_buf = self.nic_get_info(nic_cmd)
         nic_cmd = "dmesg | grep mmc"
         dmesg_cmd_buf = self.nic_get_info(nic_cmd).lower()
@@ -2412,13 +2416,13 @@ class nic_ctrl():
         H/W reset function [RST_N_FUNCTION]: 0x01
         """
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_EMMC_HWRESET_SET_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_EMMC_HWRESET_SET_FMT)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=10):
             return False
         return True
 
     def nic_emmc_hwreset_verify(self):
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_HWRESET_CHECK_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_HWRESET_CHECK_FMT
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             return False
@@ -2463,13 +2467,13 @@ class nic_ctrl():
                         NOTE!  Setting manual (MANUAL_EN) is one-time programmable (unreversible) change.
         """
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_EMMC_BKOPS_EN_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_EMMC_BKOPS_EN_FMT)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=10):
             return False
         return True
 
     def nic_emmc_bkops_verify(self):
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_BKOPS_CHECK_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_BKOPS_CHECK_FMT
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             return False
@@ -2483,7 +2487,7 @@ class nic_ctrl():
 
     def nic_fwupdate_init_emmc(self, mount=True):
 
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_INIT_FMT
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             return False
@@ -2492,7 +2496,7 @@ class nic_ctrl():
 
         if mount:
             nic_cmd_list = list()
-            nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
+            nic_cmd = MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT
             nic_cmd_list.append(nic_cmd)
             if not self.nic_exec_cmds(nic_cmd_list):
                 self.nic_set_err_msg("Command {:s} failed".format(nic_cmd))
@@ -2501,7 +2505,7 @@ class nic_ctrl():
         return True
 
     def nic_read_emmc_id(self):
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_READ_ID_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_READ_ID_FMT
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             self.nic_set_err_msg("Command {:s} failed".format(nic_cmd))
@@ -2528,7 +2532,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_QSPI_DUMP_FMT.format(self._slot+1, mode)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_QSPI_DUMP_FMT.format(self._slot+1, mode)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
@@ -2536,7 +2540,7 @@ class nic_ctrl():
         return True
 
     def nic_dump_cpld(self, partition, file_path="/home/diag/cplddump"):
-        cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, file_path, partition)
+        cmd = MFG_DIAG_CMDS().NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, file_path, partition)
         nic_cmd_list = list()
         nic_cmd_list.append(cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
@@ -2545,7 +2549,7 @@ class nic_ctrl():
         return True
 
     def nic_compare_cpld_file(self, cpld_image, dump_cpld_image, partition):
-        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_COMPARE_FMT.format(os.path.basename(cpld_image), os.path.basename(dump_cpld_image))
+        nic_cmd = MFG_DIAG_CMDS().NIC_CPLD_DUMP_COMPARE_FMT.format(os.path.basename(cpld_image), os.path.basename(dump_cpld_image))
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
@@ -2570,7 +2574,7 @@ class nic_ctrl():
             return False
 
         if self._nic_type not in SALINA_NIC_TYPE_LIST:
-            cmd = MFG_DIAG_CMDS.NIC_ESEC_CPLD_CHECK_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().NIC_ESEC_CPLD_CHECK_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 return False
@@ -2578,7 +2582,7 @@ class nic_ctrl():
             # save result buffer
             cmd_buf = self.nic_get_cmd_buf()
 
-            cmd = MFG_DIAG_CMDS.NIC_ESEC_ERR_CHECK_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().NIC_ESEC_ERR_CHECK_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 return False
@@ -2588,7 +2592,7 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 return False
         else:
-            cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_CPLD_CHECK_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().NIC_ESEC_SALINA_CPLD_CHECK_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 return False
@@ -2604,7 +2608,7 @@ class nic_ctrl():
         return True
 
     def nic_salina_clear_j2c(self):
-        cmd = MFG_DIAG_CMDS.MATERA_MTP_CLEAR_J2C_IF_LOCK.format(str(self._slot+1))
+        cmd = MFG_DIAG_CMDS().MATERA_MTP_CLEAR_J2C_IF_LOCK.format(str(self._slot+1))
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
@@ -2617,7 +2621,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_HW_UNLOCK_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_HW_UNLOCK_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
@@ -2634,7 +2638,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_DUMP_FMT.format(self._sn, self._slot+1, self._nic_type)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_DUMP_FMT.format(self._sn, self._slot+1, self._nic_type)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
@@ -2648,7 +2652,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_PRE_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_PRE_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
@@ -2668,7 +2672,7 @@ class nic_ctrl():
             return False
 
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST or self._nic_type in SALINA_NIC_TYPE_LIST:
-            cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_ELBA_FMT.format(self._slot+1,
+            cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_ELBA_FMT.format(self._slot+1,
                                                          self._sn,
                                                          self._pn,
                                                          self._mac.replace('-',':'),
@@ -2676,7 +2680,7 @@ class nic_ctrl():
                                                          mtpid)
         else:
             # program secure key with (slot, sn, pn, mac, type, mtpid)
-            cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_FMT.format(self._slot+1,
+            cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_FMT.format(self._slot+1,
                                                          self._sn,
                                                          self._pn,
                                                          self._mac.replace('-',':'),
@@ -2699,7 +2703,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_POST_FMT
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_POST_FMT
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
@@ -2715,7 +2719,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_DICE_SALINA_FMT.format(self._slot+1, self._sn)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_DICE_SALINA_FMT.format(self._slot+1, self._sn)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
@@ -2735,7 +2739,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_DICE_IMG_SALINA_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_DICE_IMG_SALINA_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
@@ -2755,7 +2759,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_CPLD_CHECK_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_SALINA_CPLD_CHECK_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
@@ -2780,7 +2784,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_HMAC_FUSE_PROG_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_SALINA_HMAC_FUSE_PROG_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
@@ -2810,8 +2814,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
-
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_HMAC_FUSE_CHK_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_SALINA_HMAC_FUSE_CHK_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
@@ -2852,7 +2855,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return -1
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_HMAC_FUSE_CHK_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_SALINA_HMAC_FUSE_CHK_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return -1
 
@@ -2884,7 +2887,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_UDS_CERT_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_SALINA_UDS_CERT_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
@@ -2904,7 +2907,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_VAL_UDS_CERT_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_SALINA_VAL_UDS_CERT_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
@@ -2927,13 +2930,13 @@ class nic_ctrl():
         if self._nic_type not in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST:
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_EFUSE_PROG_ELBA_FMT.format(self._slot+1,
+        cmd = MFG_DIAG_CMDS().NIC_EFUSE_PROG_ELBA_FMT.format(self._slot+1,
                                                      self._sn,
                                                      self._pn,
                                                      self._mac.replace('-',':'),
                                                      self._nic_type)
         # if not GLB_CFG_MFG_TEST_MODE:
-        #     cmd = MFG_DIAG_CMDS.NIC_EFUSE_PROG_ELBA_MODEL_FMT.format(self._slot+1,
+        #     cmd = MFG_DIAG_CMDS().NIC_EFUSE_PROG_ELBA_MODEL_FMT.format(self._slot+1,
         #                                                              self._sn,
         #                                                              self._pn,
         #                                                              self._mac.replace('-',':'),
@@ -2991,7 +2994,7 @@ class nic_ctrl():
             if not self.mtp_exec_cmd(cmd):
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 return False
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_QSPI_PROG_SH_CMD_FMT.format(str(self._slot + 1))
+            cmd = MFG_DIAG_CMDS().MTP_MATERA_QSPI_PROG_SH_CMD_FMT.format(str(self._slot + 1))
         else:
             cmd = "chmod +x {:s}".format(prog_cmd)
             if not self.mtp_exec_cmd(cmd):
@@ -3014,7 +3017,7 @@ class nic_ctrl():
         img_name = os.path.basename(qspi_img)
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
+        nic_cmd = MFG_DIAG_CMDS().NIC_QSPI_PROG_FMT.format(img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
@@ -3032,7 +3035,7 @@ class nic_ctrl():
 
 
     def salina_nic_erase_qspi(self):
-        cmd = MFG_DIAG_CMDS.NIC_ERASE_QSPI_FMT.format(str(self._slot + 1))
+        cmd = MFG_DIAG_CMDS().NIC_ERASE_QSPI_FMT.format(str(self._slot + 1))
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ERASE_QSPI_IMG_DELAY):
             return False
 
@@ -3047,7 +3050,7 @@ class nic_ctrl():
         return True
 
     def salina_nic_dump_boot(self):
-        cmd = MFG_DIAG_CMDS.NIC_DUMP_BOOT_FMT.format(str(self._slot + 1), MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, str(self._sn))
+        cmd = MFG_DIAG_CMDS().NIC_DUMP_BOOT_FMT.format(str(self._slot + 1), MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, str(self._sn))
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ERASE_QSPI_IMG_DELAY):
             return False
 
@@ -3063,7 +3066,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_PROG_BOOT0_IMG_DELAY):
             return False
 
-        cmd = MFG_DIAG_CMDS.SALINA_NIC_ERASE_BOOT0_FMT.format(str(self._slot + 1))
+        cmd = MFG_DIAG_CMDS().SALINA_NIC_ERASE_BOOT0_FMT.format(str(self._slot + 1))
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ERASE_BOOT0_IMG_DELAY):
             return False
 
@@ -3077,7 +3080,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_PROG_BOOT0_IMG_DELAY):
             return False
 
-        cmd = MFG_DIAG_CMDS.SALINA_NIC_PROGRAM_BOOT0_FMT.format(str(self._slot + 1))
+        cmd = MFG_DIAG_CMDS().SALINA_NIC_PROGRAM_BOOT0_FMT.format(str(self._slot + 1))
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_PROG_BOOT0_IMG_DELAY):
             return False
 
@@ -3109,9 +3112,9 @@ class nic_ctrl():
         img_name = os.path.basename(gold_img)
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_GOLDFW_PROG_FMT.format(img_name, img_name)
+        nic_cmd = MFG_DIAG_CMDS().NIC_GOLDFW_PROG_FMT.format(img_name, img_name)
         if self._nic_type == NIC_Type.NAPLES100:
-            nic_cmd = MFG_DIAG_CMDS.NIC_GOLDFW_PROG_FMT_NAPLES100.format(img_name)
+            nic_cmd = MFG_DIAG_CMDS().NIC_GOLDFW_PROG_FMT_NAPLES100.format(img_name)
         gold_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=gold_fail_sig):
@@ -3131,7 +3134,7 @@ class nic_ctrl():
         img_name = os.path.basename(boot_img)
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, uboot_pat, img_name)
+        nic_cmd = MFG_DIAG_CMDS().NIC_UBOOT_PROG_FMT.format(installer_path, uboot_pat, img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
 
@@ -3146,7 +3149,7 @@ class nic_ctrl():
             img_name = os.path.basename(ubootg_img)
 
             nic_cmd_list = list()
-            nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, "golduboot", img_name)
+            nic_cmd = MFG_DIAG_CMDS().NIC_UBOOT_PROG_FMT.format(installer_path, "golduboot", img_name)
             qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
             nic_cmd_list.append(nic_cmd)
 
@@ -3160,7 +3163,7 @@ class nic_ctrl():
 
     def nic_erase_main_fw_partition(self):
         # check mainfwa & mainfwb block info existing any content
-        cmd = MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT
+        cmd = MFG_DIAG_CMDS().NIC_IMG_DISP1_FMT
         fw_info_buf = self.nic_get_info(cmd)
         if not fw_info_buf:
             self.nic_set_err_msg("Unable to execute list fw info")
@@ -3176,7 +3179,7 @@ class nic_ctrl():
             return False
 
         # get qspi partition
-        cmd = MFG_DIAG_CMDS.NIC_GET_QSPI_PARTITION_FMT
+        cmd = MFG_DIAG_CMDS().NIC_GET_QSPI_PARTITION_FMT
         qspi_part_buf = self.nic_get_info(cmd)
         if not qspi_part_buf:
             self.nic_set_err_msg("Unable to get qspi partition")
@@ -3187,7 +3190,7 @@ class nic_ctrl():
         for match in matchs:
             fw_num = int(match[0])
             fw_name = match[1]
-            nic_erase_qspi_cmd_list.append(MFG_DIAG_CMDS.NIC_ERASE_QSPI_PARTITION_FMT.format(fw_num))
+            nic_erase_qspi_cmd_list.append(MFG_DIAG_CMDS().NIC_ERASE_QSPI_PARTITION_FMT.format(fw_num))
 
         # erase qspi partition
         for erase_cmd in nic_erase_qspi_cmd_list:
@@ -3201,7 +3204,7 @@ class nic_ctrl():
                 return False
 
         # get emmc partition
-        cmd = MFG_DIAG_CMDS.NIC_GET_EMMC_PARTITION_FMT
+        cmd = MFG_DIAG_CMDS().NIC_GET_EMMC_PARTITION_FMT
         emmc_part_buf = self.nic_get_info(cmd)
         if not emmc_part_buf:
             self.nic_set_err_msg("Unable to get emmc partition")
@@ -3212,7 +3215,7 @@ class nic_ctrl():
         for match in matchs:
             fw_num = int(match[0])
             fw_name = match[1]
-            nic_erase_emmc_cmd_list.append(MFG_DIAG_CMDS.NIC_ERASE_EMMC_PARTITION_FMT.format(fw_num))
+            nic_erase_emmc_cmd_list.append(MFG_DIAG_CMDS().NIC_ERASE_EMMC_PARTITION_FMT.format(fw_num))
 
         # erase emmc partition
         for erase_cmd in nic_erase_emmc_cmd_list:
@@ -3230,7 +3233,7 @@ class nic_ctrl():
                 return False
 
         # verify mainfwa & mainfwb block info contant clear
-        cmd = MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT
+        cmd = MFG_DIAG_CMDS().NIC_IMG_DISP1_FMT
         fw_info_buf = self.nic_get_info(cmd)
         if not fw_info_buf:
             self.nic_set_err_msg("Unable to execute list fw info")
@@ -3253,7 +3256,7 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         if emmc_check and self._nic_type in PSLC_MODE_TYPE_LIST:
-            nic_cmd = MFG_DIAG_CMDS.NIC_CHECK_EMMC_FMT
+            nic_cmd = MFG_DIAG_CMDS().NIC_CHECK_EMMC_FMT
             emmc_check_sig = MFG_DIAG_SIG.NIC_EMMC_CHECK_OK_SIG
             emmc_check_buf = self.nic_get_info(nic_cmd)
             if emmc_check_buf:
@@ -3269,18 +3272,18 @@ class nic_ctrl():
                 return False  
 
         if init:
-            nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
+            nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_INIT_FMT
             nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT
         nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT
         nic_cmd_list.append(nic_cmd)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_PARTITION_DISP_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_PARTITION_DISP_FMT)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
         # check if mount is ok
-        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_DISP_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_MOUNT_DISP_FMT
         mount_sig = MFG_DIAG_SIG.NIC_MOUNT_OK_SIG
         mount_buf = self.nic_get_info(nic_cmd)
         if mount_buf:
@@ -3295,7 +3298,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        nic_cmd = MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_IMG_DISP1_FMT
         nic_cmd_buf = self.nic_get_info(nic_cmd)
         if not nic_cmd_buf:
             return False
@@ -3311,14 +3314,14 @@ class nic_ctrl():
             
     def nic_emmc_set_perf_mode(self):
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PERF_MODE
+        nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_PERF_MODE
         nic_cmd_list.append(nic_cmd)
         nic_cmd_list.append("sync")
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
         # check if successful
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PERF_MODE_CHECK
+        nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_PERF_MODE_CHECK
         nic_cmd_list.append(nic_cmd)
         perf_sig = MFG_DIAG_SIG.NIC_EMMC_PERF_MODE_OK_SIG
         perf_buf = self.nic_get_info(nic_cmd)
@@ -3334,7 +3337,7 @@ class nic_ctrl():
             return False
 
     def nic_emmc_check_perf_mode(self):
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PERF_MODE_CHECK
+        nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_PERF_MODE_CHECK
         perf_sig = MFG_DIAG_SIG.NIC_EMMC_PERF_MODE_OK_SIG
         perf_buf = self.nic_get_info(nic_cmd)
         if perf_buf:
@@ -3354,17 +3357,17 @@ class nic_ctrl():
         img_name = os.path.basename(emmc_img)
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_INIT_FMT
         nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT.format(img_name, img_name)
+        nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_PROG_FMT.format(img_name, img_name)
         # if self._nic_type == NIC_Type.NAPLES100:
-        #     nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT_NAPLES100.format(img_name) # 90-0001-0001 does not have fwupdate binary packaged
+        #     nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_PROG_FMT_NAPLES100.format(img_name) # 90-0001-0001 does not have fwupdate binary packaged
         nic_cmd_list.append(nic_cmd)
         if self._nic_type not in FPGA_TYPE_LIST:
-            nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_B_PROG_FMT.format(img_name, img_name)
+            nic_cmd = MFG_DIAG_CMDS().NIC_EMMC_B_PROG_FMT.format(img_name, img_name)
             nic_cmd_list.append(nic_cmd)
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
-            nic_cmd = MFG_DIAG_CMDS.NIC_BOOT0_PROG_FMT.format(img_name, img_name)
+            nic_cmd = MFG_DIAG_CMDS().NIC_BOOT0_PROG_FMT.format(img_name, img_name)
             nic_cmd_list.append(nic_cmd)
         emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
@@ -3379,12 +3382,12 @@ class nic_ctrl():
 
         img_name = os.path.basename(emmc_img)
 
-        cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
+        cmd = MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT
         if not self.nic_exec_cmd_from_console(cmd):
             self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_SALINA_FMT.format(img_name)
+        cmd = MFG_DIAG_CMDS().NIC_EMMC_PROG_SALINA_FMT.format(img_name)
         if not self.nic_exec_cmd_from_console(cmd):
             self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
             return False
@@ -3422,7 +3425,7 @@ class nic_ctrl():
                 return False
 
             nic_cmd_list = list()
-            nic_cmd = MFG_DIAG_CMDS.NIC_UNTAR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+os.path.basename(nic_diag_image), MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH)
+            nic_cmd = MFG_DIAG_CMDS().NIC_UNTAR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+os.path.basename(nic_diag_image), MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH)
             nic_cmd_list.append(nic_cmd)
             if not self.nic_exec_cmds(nic_cmd_list, timeout=300):
                 return False
@@ -3433,13 +3436,13 @@ class nic_ctrl():
                     return False
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
+        nic_cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
         nic_cmd_list.append(nic_cmd)
         nic_cmd = "sync"
         nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.MFG_DIR_LINK_FMT.format("/data/diag/", MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH+"/diag")
+        nic_cmd = MFG_DIAG_CMDS().MFG_DIR_LINK_FMT.format("/data/diag/", MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH+"/diag")
         nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.MFG_DIR_LINK_FMT.format("/data/start_diag.arm64.sh", MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH+"/start_diag.arm64.sh")
+        nic_cmd = MFG_DIAG_CMDS().MFG_DIR_LINK_FMT.format("/data/start_diag.arm64.sh", MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH+"/start_diag.arm64.sh")
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
@@ -3480,7 +3483,7 @@ class nic_ctrl():
             dst_log_dir = MTP_DIAG_Logfile.ONBOARD_NIC_LOG_DIR + "AAPL-NIC-{:02d}/".format(self._slot+1)
         else:
             dst_log_dir = MTP_DIAG_Logfile.ONBOARD_NIC_LOG_DIR + "NIC-{:02d}/".format(self._slot+1)
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(dst_log_dir)
+        cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(dst_log_dir)
         if not self.mtp_exec_cmd(cmd):
             return False
 
@@ -3503,7 +3506,7 @@ class nic_ctrl():
             return False
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_FINI_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_DIAG_FINI_FMT
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
@@ -3513,7 +3516,7 @@ class nic_ctrl():
 
     def nic_diag_clean(self):
   
-        cmd = MFG_DIAG_CMDS.NIC_SYS_CLEAN_FMT.format(MTP_DIAG_Path.ONBOARD_MTP_MTP_DIAG_PATH)
+        cmd = MFG_DIAG_CMDS().NIC_SYS_CLEAN_FMT.format(MTP_DIAG_Path.ONBOARD_MTP_MTP_DIAG_PATH)
         mtp_cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.OS_CMD_DELAY)
         if not mtp_cmd_buf:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
@@ -3542,12 +3545,12 @@ class nic_ctrl():
             
             if not hal_stopped:
                 nic_cmd_list = list()
-                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
+                nic_cmd = MFG_DIAG_CMDS().NIC_DIAG_STOP_HAL_FMT
                 nic_cmd_list.append(nic_cmd)
                 if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
                     return False
 
-                nic_cmd = MFG_DIAG_CMDS.NIC_HAL_RUNNING_FMT
+                nic_cmd = MFG_DIAG_CMDS().NIC_HAL_RUNNING_FMT
                 cmd_buf = self.nic_get_info(nic_cmd)
                 if not cmd_buf:
                     self.nic_set_err_msg("Buffer empty")
@@ -3560,12 +3563,12 @@ class nic_ctrl():
 
             if not sysmgr_stopped:
                 nic_cmd_list = list()
-                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_SYSMGR_FMT
+                nic_cmd = MFG_DIAG_CMDS().NIC_DIAG_STOP_SYSMGR_FMT
                 nic_cmd_list.append(nic_cmd)
                 if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
                     return False
 
-                nic_cmd = MFG_DIAG_CMDS.NIC_SYSMGR_RUNNING_FMT
+                nic_cmd = MFG_DIAG_CMDS().NIC_SYSMGR_RUNNING_FMT
                 cmd_buf = self.nic_get_info(nic_cmd)
                 if not cmd_buf:
                     self.nic_set_err_msg("Buffer empty")
@@ -3578,12 +3581,12 @@ class nic_ctrl():
 
             if not sysmond_stopped:
                 nic_cmd_list = list()
-                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_SYSMOND_FMT
+                nic_cmd = MFG_DIAG_CMDS().NIC_DIAG_STOP_SYSMOND_FMT
                 nic_cmd_list.append(nic_cmd)
                 if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
                     return False
 
-                nic_cmd = MFG_DIAG_CMDS.NIC_SYSMOND_RUNNING_FMT
+                nic_cmd = MFG_DIAG_CMDS().NIC_SYSMOND_RUNNING_FMT
                 cmd_buf = self.nic_get_info(nic_cmd)
                 if not cmd_buf:
                     self.nic_set_err_msg("Buffer empty")
@@ -3604,21 +3607,21 @@ class nic_ctrl():
         nic_cmd_list = list()
 
         time_str = str(libmfg_utils.timestamp_snapshot())
-        nic_cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(time_str)
+        nic_cmd = MFG_DIAG_CMDS().NIC_DATE_SET_FMT.format(time_str)
         nic_cmd_list.append(nic_cmd)
         if not dis_hal:
             if not aapl:
                 self.nic_kill_hal()
-                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT
+                nic_cmd = MFG_DIAG_CMDS().NIC_DIAG_STOP_HAL_FMT
                 nic_cmd_list.append(nic_cmd)
                 # prevent cpldapp lock getting stuck which depends on hal
                 nic_cmd = "rm /var/lock/cpldapp_lock"
                 nic_cmd_list.append(nic_cmd)
                 nic_cmd = "rm /dev/shm/cpld_lock"
                 nic_cmd_list.append(nic_cmd)
-                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_CONFIG_FMT
+                nic_cmd = MFG_DIAG_CMDS().NIC_DIAG_CONFIG_FMT
                 nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_INIT_FMT.format(self._slot+1)
+        nic_cmd = MFG_DIAG_CMDS().NIC_DIAG_INIT_FMT.format(self._slot+1)
         nic_cmd_list.append(nic_cmd)
         nic_cmd = "source /etc/profile"
         nic_cmd_list.append(nic_cmd)
@@ -3628,13 +3631,13 @@ class nic_ctrl():
             return False
 
         # Start NIC DSP
-        cmd = MFG_DIAG_CMDS.NIC_DSP_START_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_DSP_START_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
             self.nic_set_err_msg("Unable to start diagmgr")
             return False
 
         # get asic lib version
-        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_ASIC_VERSION_FMT.format(self._asic_type)
+        nic_cmd = MFG_DIAG_CMDS().NIC_DIAG_ASIC_VERSION_FMT.format(self._asic_type)
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get nic asic version")
@@ -3649,10 +3652,10 @@ class nic_ctrl():
         if self._nic_type in GIGLIO_NIC_TYPE_LIST:
             self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/giglio/ -d3"])
         else:
-            self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/elba/ -d3"])
+            self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/{:s}/ -d3".format(self._asic_type)])
 
         # get emmc nic utils version
-        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_UTIL_VERSION_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_DIAG_UTIL_VERSION_FMT
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get nic utils version")
@@ -3665,7 +3668,7 @@ class nic_ctrl():
             return False
 
         # get nic diag version
-        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_VERSION_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_DIAG_VERSION_FMT
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get nic diag version")
@@ -3678,7 +3681,7 @@ class nic_ctrl():
             return False
 
         # check if hal is running
-        nic_cmd = MFG_DIAG_CMDS.NIC_HAL_RUNNING_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_HAL_RUNNING_FMT
         cmd_buf = self.nic_get_info(nic_cmd)
         if not cmd_buf:
             self.nic_set_err_msg("Unable to check hal")
@@ -3718,15 +3721,15 @@ class nic_ctrl():
             cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
             if not self.mtp_exec_cmd(cmd):
                 return False
-            cmd = MFG_DIAG_CMDS.SALINA_NIC_VMARG_SET_FMT.format((self._slot+1), target_percentage)
+            cmd = MFG_DIAG_CMDS().SALINA_NIC_VMARG_SET_FMT.format((self._slot+1), target_percentage)
             if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
                 return False
-            if MFG_DIAG_SIG.SALINA_NIC_VMARG_SET in self.nic_get_cmd_buf() and re.findall(r'Slot.?\d+.*PASSED', self.nic_get_cmd_buf()):
+            if MFG_DIAG_SIG.SALINA_NIC_VMARG_SET in self.nic_get_cmd_buf():
                 return True
             else:
                 return False
         else:
-            nic_cmd = MFG_DIAG_CMDS.NIC_VMARG_SET_FMT.format(vmarg_param, str(percentage))
+            nic_cmd = MFG_DIAG_CMDS().NIC_VMARG_SET_FMT.format(vmarg_param, str(percentage))
             nic_cmd_list.append(nic_cmd)
 
             if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
@@ -3734,17 +3737,64 @@ class nic_ctrl():
 
             return True
 
+    def salina_nic_set_ddr_vmarg(self, vmarg_param='normal'):
+        """
+        Salina DDR vmargin only can be set by a35 uboot env variable, supported vmarg percentage range if from -2 to 3 
+
+        Args:
+            vmarg_param: specify the vmarg patameter by string or int, default to normal
+            if string, one of 'high', 'low' and 'normal', or like '-2', '3', '0', caseinsensitive
+            if int, -2, 3, 0
+
+        Returns:
+            _type_: boolean, True or False
+        """
+
+        if self._nic_type not in SALINA_DPU_NIC_TYPE_LIST:
+            return False
+
+        vmarg_str2_number = {
+            'high'      : 3,
+            'low'       : -2,
+            'normal'    :  0
+        }
+
+        if isinstance(vmarg_param, str):
+            vmarg_param = vmarg_param.lower()
+            if vmarg_param in vmarg_str2_number:
+                target_percentage = vmarg_str2_number[vmarg_param]
+            else:
+                try:
+                    target_percentage = int(vmarg_param)
+                except ValueError:
+                    return False
+        elif isinstance(vmarg_param, int):
+            target_percentage = vmarg_param
+        else:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        cmd = MFG_DIAG_CMDS().SALINA_NIC_DDR_VMARG_SET_FMT.format((self._slot+1), target_percentage)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+            return False
+        if "ddr_vmarg="+str(target_percentage) in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
     def nic_display_voltage(self):
-        nic_cmd = [MFG_DIAG_CMDS.NIC_DISP_VOLT_FMT]
+        nic_cmd = [MFG_DIAG_CMDS().NIC_DISP_VOLT_FMT]
         if not self.nic_exec_cmds(nic_cmd):
             return False
         return True
 
     def nic_set_sw_boot(self):
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_SET_SW_BOOT_FMT
         nic_cmd_list.append(nic_cmd)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         if not self.nic_exec_cmds(nic_cmd_list):
             return False
 
@@ -3753,9 +3803,9 @@ class nic_ctrl():
 
     def nic_set_gold_boot(self):
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_SET_GOLD_BOOT_FMT
         nic_cmd_list.append(nic_cmd)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         if not self.nic_exec_cmds(nic_cmd_list):
             return False
 
@@ -4494,7 +4544,7 @@ class nic_ctrl():
                 if not self.mtp_exec_cmd(cmd):
                     self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
                     return False
-                cmd = MFG_DIAG_CMDS.MATERA_MTP_PROG_DPU_DRU_FMT.format(str(self._slot+1))
+                cmd = MFG_DIAG_CMDS().MATERA_MTP_PROG_DPU_DRU_FMT.format(str(self._slot+1))
                 if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
                     self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
                     return False
@@ -4573,7 +4623,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
             return False
-        cmd = MFG_DIAG_CMDS.NIC_OCP_RMII_CHECK_FMT.format(str(self._slot+1))
+        cmd = MFG_DIAG_CMDS().NIC_OCP_RMII_CHECK_FMT.format(str(self._slot+1))
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_OCP_RMII_DELAY):
             self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
             return False
@@ -4587,7 +4637,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
             return False
-        cmd = MFG_DIAG_CMDS.NIC_OCP_CON_CHECK_FMT.format(str(self._slot+1))
+        cmd = MFG_DIAG_CMDS().NIC_OCP_CON_CHECK_FMT.format(str(self._slot+1))
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_OCP_CON_DELAY):
             self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
             return False
@@ -4765,11 +4815,11 @@ class nic_ctrl():
         if self._mtp_type == MTP_TYPE.MATERA:
             cmd = ""
         else:
-            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd):
                 return None
-            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1) + " ;"
-        cmd += MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
+            cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(self._slot+1) + " ;"
+        cmd += MFG_DIAG_CMDS().MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return None
         match = re.findall(pll_sta_reg_exp % reg_addr, self.nic_get_cmd_buf())
@@ -4779,7 +4829,7 @@ class nic_ctrl():
             reg26_data = int(match[0], 16)
 
         reg_addr = 0x28
-        cmd = MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
+        cmd = MFG_DIAG_CMDS().MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return None
         match = re.findall(pll_sta_reg_exp % reg_addr, self.nic_get_cmd_buf())
@@ -4791,9 +4841,9 @@ class nic_ctrl():
         return [reg26_data, reg28_data]
 
     def nic_read_cpld(self, reg_addr, read_data):
-        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
+        nic_cmd = MFG_DIAG_CMDS().NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
-            nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
+            nic_cmd = MFG_DIAG_CMDS().NIC_CPLD_READ_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
             return False
@@ -4807,9 +4857,9 @@ class nic_ctrl():
         return True
 
     def nic_write_cpld(self, reg_addr, write_data):
-        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
+        nic_cmd = MFG_DIAG_CMDS().NIC_CPLD_WRITE_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
-            nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
+            nic_cmd = MFG_DIAG_CMDS().NIC_CPLD_WRITE_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
             return False
@@ -4818,13 +4868,13 @@ class nic_ctrl():
     @nic_console_test()
     def nic_console_read_cpld(self, reg_addr, read_data):
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format("./", reg_addr))
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_CPLD_READ_ELBA_FMT.format("./", reg_addr))
         else:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format("./", reg_addr))
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_CPLD_READ_FMT.format("./", reg_addr))
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -5193,7 +5243,7 @@ class nic_ctrl():
 
     def nic_naples25swm_mgmt_port_test(self, slot):
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
-        cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+        cmd = MFG_DIAG_CMDS().MTP_NIC_PING_FMT.format(ipaddr)
         if not self.mtp_exec_cmd(cmd):
             return False
         match = re.findall(r"0% packet loss", self.nic_get_cmd_buf())
@@ -5207,11 +5257,11 @@ class nic_ctrl():
     # Used for SWM and OCP MTP ADAPTER TO READ the ADAPTER CPLD
     #
     def nic_read_mtp_adapt_cpld(self, reg_addr, read_data):
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_RD_ALOM_CPLD_FMT.format(reg_addr, self._slot+1)
+        cmd = MFG_DIAG_CMDS().MTP_RD_ALOM_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
         match = re.findall(r"data=(0x[0-9a-fA-F]+)", self.nic_get_cmd_buf())
@@ -5225,11 +5275,11 @@ class nic_ctrl():
     # Used for SWM and OCP MTP ADAPTER TO READ the ADAPTER CPLD
     #
     def nic_write_mtp_adapt_cpld(self, reg_addr, write_data):
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_WR_ALOM_CPLD_FMT.format(reg_addr, write_data, self._slot+1)
+        cmd = MFG_DIAG_CMDS().MTP_WR_ALOM_CPLD_FMT.format(reg_addr, write_data, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
         match = re.findall(r"failed", self.nic_get_cmd_buf())
@@ -5239,11 +5289,11 @@ class nic_ctrl():
 
     def nic_read_cpld_via_smbus(self, reg_addr, read_data):
         if self._mtp_type in (MTP_TYPE.CAPRI, MTP_TYPE.ELBA, MTP_TYPE.TURBO_ELBA):
-            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd):
                 return False
 
-        cmd = MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
+        cmd = MFG_DIAG_CMDS().MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
 
@@ -5256,11 +5306,11 @@ class nic_ctrl():
 
     def nic_write_cpld_via_smbus(self, reg_addr, write_data):
         if self._mtp_type in (MTP_TYPE.CAPRI, MTP_TYPE.ELBA, MTP_TYPE.TURBO_ELBA):
-            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd):
                 return False
 
-        cmd = MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, self._slot+1)
+        cmd = MFG_DIAG_CMDS().MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
         match = re.findall(r"failed", self.nic_get_cmd_buf())
@@ -5530,7 +5580,7 @@ class nic_ctrl():
         return True
 
     def nic_fix_vrm(self):
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT)
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().ORTANO2_VRM_FIX_FMT)
         if "Ortano2 VRM fix done" not in cmd_buf:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -5539,7 +5589,7 @@ class nic_ctrl():
         return True
 
     def nic_fix_vrm_oc(self):
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_OC_FMT)
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().ORTANO2_VRM_FIX_OC_FMT)
         if "FIX O2 VRM OC DONE" not in cmd_buf:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -5549,17 +5599,17 @@ class nic_ctrl():
 
     def nic_erase_board_config_ssh(self):
 
-        before_erase = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+        before_erase = self.nic_get_info(MFG_DIAG_CMDS().GET_BOARD_CONFIG_FMT)
         if not before_erase:
             self.nic_set_err_msg("Unable to get board config")
             return False
 
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ERASE_BOARD_CONFIG_FMT)
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().ERASE_BOARD_CONFIG_FMT)
         if not cmd_buf:
             self.nic_set_err_msg("Unable to erase board config")
             return False
 
-        after_release = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+        after_release = self.nic_get_info(MFG_DIAG_CMDS().GET_BOARD_CONFIG_FMT)
         if not after_release:
             return False
 
@@ -5600,11 +5650,11 @@ class nic_ctrl():
           21    966666666  1262000000  3000000000
 
         """
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().GET_BOARD_CONFIG_FMT)
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get board config")
             return False
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.SET_BOARD_CONFIG_FMT.format(preset_config))
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().SET_BOARD_CONFIG_FMT.format(preset_config))
         if not cmd_buf:
             self.nic_set_err_msg("Unable to set board config")
             return False
@@ -5615,7 +5665,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().GET_BOARD_CONFIG_FMT)
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get updated board config")
             return False
@@ -5647,7 +5697,7 @@ class nic_ctrl():
             self.nic_set_err_msg("Please Specify Board ID with String Format")
             return False
 
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ASSIGN_BOARD_ID_FMT.format(boardId))
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().ASSIGN_BOARD_ID_FMT.format(boardId))
         if not cmd_buf:
             self.nic_set_err_msg("Assign Board ID Command 'board_config -B' Failed")
             return False
@@ -5658,7 +5708,7 @@ class nic_ctrl():
             return False
 
         # Read Board ID back and compare
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().GET_BOARD_CONFIG_FMT)
         if not cmd_buf:
             self.nic_set_err_msg("Read Board ID Command 'board_config -r' Failed")
             return False
@@ -5722,10 +5772,12 @@ class nic_ctrl():
             return False
 
         opts = '-B {:s}'.format(boardId)
-        cmd = MFG_DIAG_CMDS.ZEPHYR_BOARD_CONFIG_WRITE_FMT.format(opts)
+        cmd = MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_WRITE_FMT.format(opts)
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr Write Board ID Command '{:s}' Failed".format(cmd))
-            return False
+            time.sleep(27)
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr Write Board ID Command '{:s}' Failed Even With Retry".format(cmd))
+                return False
         cmd_buf = self.nic_get_cmd_buf()
         cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
         cmd_buf = re.sub(r'\r', '', cmd_buf)
@@ -5738,10 +5790,12 @@ class nic_ctrl():
 
         if pciSubsystemId:
             opts = '-S {:s}'.format(pciSubsystemId)
-            cmd = MFG_DIAG_CMDS.ZEPHYR_BOARD_CONFIG_WRITE_FMT.format(opts)
+            cmd = MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_WRITE_FMT.format(opts)
             if not self.nic_exec_cmd_from_zephyr_console(cmd):
-                self.nic_set_err_msg("Zephyr Write Board ID Command '{:s}' Failed".format(cmd))
-                return False
+                time.sleep(27)
+                if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                    self.nic_set_err_msg("Zephyr Write PCI Subsystem ID Command '{:s}' Failed Even With Retry".format(cmd))
+                    return False
             cmd_buf = self.nic_get_cmd_buf()
             cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
             cmd_buf = re.sub(r'\r', '', cmd_buf)
@@ -5757,11 +5811,14 @@ class nic_ctrl():
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
             self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
             return False
+        time.sleep(60)
 
         # Dump Board ID back and compare
-        if not self.nic_exec_cmd_from_zephyr_console(MFG_DIAG_CMDS.ZEPHYR_BOARD_CONFIG_DUMP_FMT):
-            self.nic_set_err_msg("Zephyr Borad Config Dump Command '{:s}' Failed".format(MFG_DIAG_CMDS.ZEPHYR_BOARD_CONFIG_DUMP_FMT))
-            return False
+        if not self.nic_exec_cmd_from_zephyr_console(MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_DUMP_FMT):
+            time.sleep(27)
+            if not self.nic_exec_cmd_from_zephyr_console(MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_DUMP_FMT):
+                self.nic_set_err_msg("Zephyr Borad Config Dump Command '{:s}' Failed Even with Retry".format(MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_DUMP_FMT))
+                return False
         cmd_buf = self.nic_get_cmd_buf()
         if boardId.lower() not in cmd_buf.lower():
             self.nic_set_err_msg("Zephr Read Back and Compare Board ID Failed")
@@ -5771,8 +5828,10 @@ class nic_ctrl():
         # show fru dump
         cmd = "show frudump parse"
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
-            return False
+            time.sleep(27)
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr command '{:s}' Failed Even with Retry".format(cmd))
+                return False
         return True
 
     def zephyr_debug_update_firmware(self, bootfw='mainfwa'):
@@ -5795,10 +5854,12 @@ class nic_ctrl():
         }
 
         # set fwselection
-        cmd = MFG_DIAG_CMDS.ZEPHYR_FW_SELECT_FMT.format(bootfw)
+        cmd = MFG_DIAG_CMDS().ZEPHYR_FW_SELECT_FMT.format(bootfw)
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed".format(cmd))
-            return False
+            time.sleep(27)
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed Even with Retry".format(cmd))
+                return False
         cmd_buf = self.nic_get_cmd_buf()
         cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
         cmd_buf = re.sub(r'\r', '', cmd_buf)
@@ -5817,11 +5878,14 @@ class nic_ctrl():
             self.nic_set_err_msg("Zephr did not boot to specified selection")
             self.nic_set_err_msg(cmd_buf)
             return False
+        time.sleep(60)
         # show version
-        cmd = MFG_DIAG_CMDS.ZEPHYR_SHOW_VERSION_FMT
+        cmd = MFG_DIAG_CMDS().ZEPHYR_SHOW_VERSION_FMT
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr show version Command '{:s}' Failed".format(cmd))
-            return False
+            time.sleep(27)
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr show version Command '{:s}' Failed Even with Retry".format(cmd))
+                return False
         cmd_buf = self.nic_get_cmd_buf()
         cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
         cmd_buf = re.sub(r'\r', '', cmd_buf)
@@ -5840,13 +5904,13 @@ class nic_ctrl():
             return False
 
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_CHECK_HAL_FMT)
         if not self.nic_check_emmc_mounted():
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_ACC_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MVL_ACC_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -5871,17 +5935,17 @@ class nic_ctrl():
             return False
 
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_CHECK_HAL_FMT)
         if not self.nic_check_emmc_mounted():
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         if loopback:
             external_loopback = "1"
         else:
             external_loopback = "0"
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_STUB_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MVL_STUB_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -5904,23 +5968,23 @@ class nic_ctrl():
     def nic_mvl_link_test(self, ports=1):
         nic_cmd_list = list()
         if not self.nic_check_emmc_mounted():
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_BRINGUP_MGMT_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_BRINGUP_MGMT_FMT)
         nic_cmd_list.append("sleep 5") # wait for hal to come up before killing it
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_CHECK_HAL_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         if self._nic_type in CAPRI_NIC_TYPE_LIST:
             if ports == 1:
                 sig = MFG_DIAG_SIG.NIC_MVL_LINK1_SIG
-                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_CAPRI_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/", "1"))
+                nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MVL_LINK_CAPRI_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/", "1"))
             elif ports == 2:
                 sig = MFG_DIAG_SIG.NIC_MVL_LINK2_SIG
-                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_CAPRI_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/", "2"))
+                nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MVL_LINK_CAPRI_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/", "2"))
         else:
             sig = MFG_DIAG_SIG.NIC_MVL_LINK_SIG
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MVL_LINK_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -5945,11 +6009,11 @@ class nic_ctrl():
             return False
 
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_CHECK_HAL_FMT)
         if not self.nic_check_emmc_mounted():
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
 
         for nic_cmd in nic_cmd_list:
@@ -5960,7 +6024,7 @@ class nic_ctrl():
                 return False
 
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PHY_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FPGA_PHY_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
@@ -5984,11 +6048,11 @@ class nic_ctrl():
             return False
 
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_CHECK_HAL_FMT)
         if not self.nic_check_emmc_mounted():
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
 
         for nic_cmd in nic_cmd_list:
@@ -5999,7 +6063,7 @@ class nic_ctrl():
                 return False
 
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PHY_LINK_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FPGA_PHY_LINK_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
@@ -6020,11 +6084,11 @@ class nic_ctrl():
     @nic_console_test()
     def nic_edma_test(self):
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_DIAG_CHECK_HAL_FMT)
         if not self.nic_check_emmc_mounted():
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         nic_cmd_list.append("tar xf edma_test.tar.gz")
 
@@ -6036,7 +6100,7 @@ class nic_ctrl():
                 return False
 
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_EDMA_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_EDMA_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
@@ -6056,7 +6120,7 @@ class nic_ctrl():
 
     def nic_check_emmc_mounted(self):
         # check if emmc is mounted. For use with console already attached.
-        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_DISP_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_MOUNT_DISP_FMT
         mount_sig = MFG_DIAG_SIG.NIC_MOUNT_OK_SIG
         self._nic_handle.sendline(nic_cmd)
         idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
@@ -6139,7 +6203,7 @@ class nic_ctrl():
         return ret
 
     def read_nic_temp(self, skip_reboot=False):
-        if not self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT):
+        if not self.mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT):
             return False
         if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
             return False
@@ -6183,7 +6247,7 @@ class nic_ctrl():
         return True
 
     def sal_check_j2c(self):
-        if not self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT):
+        if not self.mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT):
             return False
 
         cmd = "tclsh /home/diag/diag/scripts/asic/sal_check_j2c.tcl -slot {:d} -ite 1".format(self._slot+1)
@@ -6215,13 +6279,13 @@ class nic_ctrl():
     @nic_console_test()
     def nic_console_read_sgmii(self, port, reg_addr, read_data):
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_SGMII_READ_ELBA_FMT.format("./", port, reg_addr))
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_SGMII_READ_ELBA_FMT.format("./", port, reg_addr))
         else:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_SGMII_READ_FMT.format("./", port, reg_addr))
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_SGMII_READ_FMT.format("./", port, reg_addr))
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -6246,13 +6310,13 @@ class nic_ctrl():
     @nic_console_test()
     def nic_console_write_sgmii(self, port, reg_addr, write_data):
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_FSCK_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_SGMII_WRITE_ELBA_FMT.format("./", port, reg_addr, write_data))
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_SGMII_WRITE_ELBA_FMT.format("./", port, reg_addr, write_data))
         else:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_SGMII_WRITE_FMT.format("./", port, reg_addr, write_data))
+            nic_cmd_list.append(MFG_DIAG_CMDS().NIC_SGMII_WRITE_FMT.format("./", port, reg_addr, write_data))
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -6356,7 +6420,7 @@ class nic_ctrl():
         ipaddr = libmfg_utils.get_nic_ip_addr(to_slot)
 
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr))
+        nic_cmd_list.append(MFG_DIAG_CMDS().MTP_NIC_PING_FMT.format(ipaddr))
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -6786,9 +6850,9 @@ class nic_ctrl():
             return False
         
         if self._nic_type in ELBA_NIC_TYPE_LIST:
-            cmd = MFG_DIAG_CMDS.NIC_L1_ESEC_PROG_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().NIC_L1_ESEC_PROG_FMT.format(self._slot+1)
         elif self._nic_type in GIGLIO_NIC_TYPE_LIST:
-            cmd = MFG_DIAG_CMDS.NIC_L1_ESEC_GIGLIO_PROG_FMT.format(self._slot+1)
+            cmd = MFG_DIAG_CMDS().NIC_L1_ESEC_GIGLIO_PROG_FMT.format(self._slot+1)
 
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_L1_ESEC_PROG_DELAY):
             return False
@@ -6810,7 +6874,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS.MATERA_L1_PRE_SETUP_FMT.format(str(self._slot+1))
+        cmd = MFG_DIAG_CMDS().MATERA_L1_PRE_SETUP_FMT.format(str(self._slot+1))
         if not self.mtp_exec_cmd(cmd):
             return False
 
@@ -6827,7 +6891,7 @@ class nic_ctrl():
         nic_cmd_list = list()
 
         for i2c_bus in bus_list:
-            nic_cmd = MFG_DIAG_CMDS.NIC_I2C_DETECT_FMT.format(i2c_bus)
+            nic_cmd = MFG_DIAG_CMDS().NIC_I2C_DETECT_FMT.format(i2c_bus)
             nic_cmd_list.append(nic_cmd)
 
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.NIC_I2C_DETECT_DELAY):

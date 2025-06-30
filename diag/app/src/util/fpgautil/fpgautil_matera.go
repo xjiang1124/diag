@@ -280,7 +280,7 @@ func matera_fpga_cli() {
                         "fpgautil i2c bus mux scan\n" +
                         "fpgautil i2c debug enable/disable\n" 
 
-        if os.Args[3][0] == 'h' || os.Args[3][0] == 'H' {
+        if os.Args[2][0] == 'h' || os.Args[2][0] == 'H' {
             fmt.Printf("\n %s \n", helpI2C)
             return
         }
@@ -835,6 +835,15 @@ func matera_fpga_cli() {
                 rdLength, _ := strconv.ParseUint(os.Args[6], 0, 32)
                 fmt.Printf(" READ COMMAND Addr=%d   rdLength=%d\n", addr,rdLength );
                 fmt.Printf("\n")
+
+                err = materafpga.Spi_flash_disable_4byte_addr_mode_w_spiBus_enable(flashID, qspiNumber, false)
+                if err != nil {
+                    return
+                }
+                err = materafpga.Spi_flash_set_extended_addr_register_w_spiBus_enable(flashID, qspiNumber, uint32(addr), false) 
+                if err != nil {
+                    return
+                }
                 rd_data, _ := materafpga.Spi_salina_flash_Read_N_Bytes(flashID, qspiNumber, uint32(addr), uint32(rdLength), 1) 
                 for x:=0;x<int(rdLength);x++ {
                     if (x%16) == 0 {
@@ -1212,6 +1221,10 @@ func matera_fpga_cli() {
             fmt.Printf(" %s \n", errhelpMatera)
             os.Exit(-1)
         }
+    } else if os.Args[1] == "cpldi2cready" {
+        slot, _ := strconv.ParseUint(os.Args[2], 0, 32)
+        loopcount, _ := strconv.ParseUint(os.Args[3], 0, 32)
+        matera.TestPowercycleCPLDready(uint32(slot), int(loopcount))
     } else {
         fmt.Printf("\n Incorrect Arg or Command used.  See the help Below!!\n")
         fmt.Printf(" %s \n", errhelpMatera)

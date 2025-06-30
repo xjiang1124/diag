@@ -121,20 +121,22 @@ class nic_test_debug:
         common.session_cmd(session, cmd)
 
         if args.card_type == "POLLARA" or args.card_type == "LINGUA":
-            if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+            if self.nic_test_v2.sal_boot_to_vmarg(session, args):
                 print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
-                ret = -1
-                return ret
+                return -1
         else:
             if args.snake_type == "esam_pktgen_llc_sor" or \
                args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
                args.snake_type == "esam_pktgen_ddr_burst":
                 print("ARM not booted")
             else:
-                if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
+                if self.sal_boot_to_vmarg(session, args):
                     print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                     ret = -1
                     return ret
+        # Check WDT
+        cmd = "i2cget -y {} 0x4f 0x1".format(int(args.slot)+2)
+        common.session_cmd(session, cmd)
         common.session_stop(session)
 
         for ite in range(args.ite):
@@ -171,7 +173,7 @@ class nic_test_debug:
                 common.session_cmd(session, cmd, 360, False, "vmarg set")
 
             # boot Linux for Leni
-            if args.card_type != "POLLARA" and ite != 0:
+            if args.card_type != "POLLARA" and args.card_type != "LINGUA" and ite != 0:
                 uart_session = common.session_start()
                 self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
                 ret, help_output = sal_con.exp_cmd(uart_session, "help", pass_sig_list=["uart:~\$"], timeout=1)
@@ -234,17 +236,19 @@ class nic_test_debug:
                 cmd += " " + str(new_vmarg)
                 cmd += " " + str(args.int_lpbk)
                 cmd += " " + str(args.mtp_clk)
+                cmd += " " + str(args.txfir_ow)
             elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
                 cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
                 cmd += " " + str(args.slot)
                 cmd += " " + str(args.snake_type)
                 cmd += " " + str(args.dura)
                 cmd += " " + str(args.card_type)
-                cmd += " " + str(args.vmarg)
+                cmd += " " + str("none")
                 cmd += " " + str(args.int_lpbk)
                 cmd += " " + str(args.ite)
                 cmd += " " + str(args.mtp_clk)
                 cmd += " " + str(args.lpmode)
+                cmd += " " + str(args.txfir_ow)
             else:
                 print(args.card_type, "not supported!")
                 common.session_stop(session)
@@ -265,7 +269,7 @@ class nic_test_debug:
                     print("===== FAILED: slot {} A35 console is not responsive".format(args.slot))
                     return -1
                 self.nic_con.uart_session_stop(uart_session)
-                if args.card_type != "POLLARA" or args.card_type != "LINGUA":
+                if args.card_type != "POLLARA" and args.card_type != "LINGUA":
                     uart_session = common.session_start()
                     self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
                     if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
@@ -437,6 +441,24 @@ class nic_test_debug:
             print("QSPI erase/write/read test PASSED")
         return ret
 
+    def pcie_elam(self, args):
+        tcl_ending = "tclsh]"
+
+        session = common.session_start()
+        common.session_cmd(session, "cd "+args.nic_path) 
+
+        for port in range(4):
+            for idx in range(2):
+                cmd = "./MTP -s {} -y -p".format(args.slot)
+                common.session_cmd(session, cmd, ending=tcl_ending) 
+
+                common.session_cmd(session, "source "+args.nic_path+"/sal_px_elam.tcl", ending=tcl_ending)
+                common.session_cmd(session, "collect_elam_256 {} {}".format(port, idx), ending=tcl_ending)
+
+                common.session_cmd(session, "exit") 
+
+        return 0
+
 if __name__ == "__main__":
 
     test = nic_test_debug()
@@ -471,6 +493,7 @@ if __name__ == "__main__":
     parser_nic_stress_reset.add_argument("-ite", "--ite", help="Iteration of start and stop snake", type=int, default=1)
     parser_nic_stress_reset.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_stress_reset.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
+    parser_nic_stress_reset.add_argument("-txfir_ow", "--txfir_ow", help="Awave TXFIR overwrite", type=str, default='0')
     parser_nic_stress_reset.add_argument("-arm_freq", "--arm_freq", help="Change ARM frequency (Pollara only)", type=str, default="default")
     parser_nic_stress_reset.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
     parser_nic_stress_reset.set_defaults(func=test.nic_stress_reset)
@@ -498,6 +521,14 @@ if __name__ == "__main__":
     parser_srv_prbs.add_argument("-num_ite", "--num_ite", help="Number of iteration", type=int, default=1)
 
     parser_srv_prbs.set_defaults(func=test.srv_prbs)
+
+    # Collect elam data
+    parser_pcie_elam = subparsers.add_parser('pcie_elam', help='Run PRBS on server, between NIC and CPU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_pcie_elam.add_argument("-slot", "--slot", help="NIC slot", type=str, default="384")
+    parser_pcie_elam.add_argument("-nic_path", "--nic_path", help="nic folder path", type=str, default='/home/diag/xin')
+
+    parser_pcie_elam.set_defaults(func=test.pcie_elam)
 
     # QSPI erase/write/read test
     parser_qspi_erase_write_read = subparsers.add_parser('qspi_erase_write_read', help='QSPI erase/write/read test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)

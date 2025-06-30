@@ -467,6 +467,7 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_SALINA_HMAC_FUSE_PROG_FMT = "./esec_ctrl.py -hmac_fuse_prog -slot {:d} -hmac_file /home/diag/diag/scripts/asic/hmac_value.hex"
     NIC_ESEC_SALINA_HMAC_FUSE_CHK_FMT = "./esec_ctrl.py -hmac_fuse_prog -slot {:d} -hmac_file check_only"
     NIC_I2C_SET_FMT = "i2cset -f -y 0 0x4c 0x19 0x7d"
+    NIC_I2C_GET_SPIMODE_FMT = "i2cget  -y {:s} 0x{:s} 0x{:s}"
     NIC_WRITE_CPLD_FMT  = "/data/nic_util/xo3dcpld -w 0x12 0x44"
     NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"
     NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}"
@@ -477,6 +478,7 @@ class MFG_DIAG_CMDS:
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s} {:s}"
     SALINA_NIC_VMARG_SET_FMT = "./nic_test_v2.py salina vmarg -slot {} -vmarg {} --new_memory_layout"
+    SALINA_NIC_DDR_VMARG_SET_FMT = "./nic_test_v2.py salina pcieawd_env -slot {} -all_params ddr_vmarg:{}"
     NIC_DISP_VOLT_FMT = "devmgr -status"
     MTP_MATERA_SWI_CHECK_FMT = "/home/diag/diag/scripts/check_python.sh"
     NIC_OCP_RMII_CHECK_FMT = "tclsh sal_lingua_rmii_test.tcl {:s}"
@@ -698,6 +700,17 @@ class MFG_DIAG_CMDS:
     NIC_I2C_DETECT_FMT = "i2cdetect -y -r {:d}"
     MTP_DEVICE_MARGIN_SET_FMT = "devmgr_v2 margin -d {:s} -p {:d}"
     MTP_STOP_REDIS_FMT = "systemctl stop redis-server"
+
+    def __init__(self, cmdMapStr=None, cmdMapType='dpn'):
+        self.cmdMapStr = cmdMapStr
+        self.cmdMapType = cmdMapType
+        if self.cmdMapStr is not None:
+            if self.cmdMapType.lower() == 'dpn':
+                from libdefs_dpn_based_mfg_diag_cmd import  dpnMfgDiagCmd
+                if self.cmdMapStr in dpnMfgDiagCmd:
+                    for k, v in dpnMfgDiagCmd[self.cmdMapStr].__dict__.items():
+                        if not callable(v) and not k.startswith("__"):
+                            setattr(self, k, v)
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"

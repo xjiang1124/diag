@@ -1076,7 +1076,7 @@ class nic_con:
 
         try:
             if asic_type == "SALINA":
-                self.uart_session_cmd(session, "mac_debug stmac0 mes")
+                #self.uart_session_cmd(session, "mac_debug stmac0 mes")
                 self.uart_session_cmd(session, """cat /tmp/fru.json | grep '"mac-address"'""")
                 output = session.before
                 print(output)
@@ -1087,9 +1087,13 @@ class nic_con:
                 mac2 = hex(int(mac2, 16) + 8)[2:]
                 eth0_mac = mac1 + str(mac2)
                 print(eth0_mac)
-                self.uart_session_cmd(session, "ifconfig eth0 hw ether {}".format(eth0_mac))
-                self.uart_session_cmd(session, "ifconfig eth0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
-                print('eth0 enabled')
+                #self.uart_session_cmd(session, "ifconfig eth0 hw ether {}".format(eth0_mac))
+                #self.uart_session_cmd(session, "ifconfig eth0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
+                self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
+                time.sleep(1)
+                self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
+                #print('eth0 enabled')
+                print('oob_mnic0 enabled')
             else:
                 session.sendline("ifconfig -a")
                 session.expect("\#")

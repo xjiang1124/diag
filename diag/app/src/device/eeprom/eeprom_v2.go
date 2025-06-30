@@ -83,6 +83,7 @@ const (
     PN_GIN_D5_MSFT   string = "68-0087"
     PN_GIN_D5_SSDK   string = "68-0076"
     PN_GIN_D5_CISCO  string = "68-0094"
+    PN_DESCHUTES     string = "73-21612-01"
     PN_MALFA         string = "102-P10600-00"
     PN_POLLARA       string = "102-P11100"
     PN_LENI          string = "102-P10800"
@@ -105,10 +106,11 @@ const (
     PROD_NAME_GIG_MSFT      string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_GIG_SSDK      string = "Giglio 2x200G QSFP56"
     PROD_NAME_GIG_SSDK_CISCO string = "Giglio 2x200G QSFP56 SUP C"
+    PROD_NAME_DESCHUTES     string = "DSS-DESCHUTES"
     PROD_NAME_MALFA         string = "Salina 2x400G QSFP112"
     PROD_NAME_POLLARA       string = "POLLARA 1x400G QSFP112"
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
-    PROD_NAME_LINGUA        string = "LINGUA 1x400G QSFP112"
+    PROD_NAME_LINGUA        string = "POLLARA, single QSFP112, OCP 3.0"
     PROD_NAME_OCP_ADPT      string = "OCP ADAPTOR"
 
     // SKU 
@@ -132,6 +134,7 @@ const (
     SKU_GIN_D5_SSDK_B   string = "DSC2A-2Q200-32S32F64P-S4B"
     SKU_GIN_D5_SSDK_C   string = "DSC2A-2Q200-32S32F64P-S4C"
     SKU_GIN_D5_SSDK_CISCO  string = "DSC2A-2Q200-32S32F64P-S4-C"
+    SKU_DESCHUTES       string = "DSS-DESCHUTES"
     SKU_MALFA           string = "DSC3-2Q400-128S64E256P"
     SKU_POLLARA         string = "POLLARA-1Q400P"
     SKU_POLLARA_ORACLE  string = "POLLARA-1Q400P-O"
@@ -157,6 +160,7 @@ const (
     FRU_ID_GIN_D5_MSFT   string = "01/19/24"
     FRU_ID_GIN_D5_SSDK   string = "02/26/24"
     FRU_ID_GIN_D5_SSDK_CISCO   string = "07/11/24"
+    FRU_ID_DESCHUTES     string = "07/11/24"
     FRU_ID_MALFA         string = "06/25/24"
     FRU_ID_POLLARA       string = "07/18/24"
     FRU_ID_LENI          string = "07/18/24"
@@ -808,6 +812,27 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    PN_DESCHUTES: updateInfo {
+        GinestraSSDKTbl,
+        PROD_NAME_DESCHUTES,
+        SKU_DESCHUTES,
+        FRU_ID_DESCHUTES,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
     PN_MALFA: updateInfo {
         PenStandardV2Tbl,
         PROD_NAME_MALFA,
@@ -1240,6 +1265,7 @@ var CardTypes = []card{
     card{"LINGUA",                  PN_LINGUA},
     card{"LINGUA_SKU",              SKU_LINGUA},
     card{"OCP_ADPT",                PN_OCP_ADPT},
+    card{"DESCHUTES",               PN_DESCHUTES},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},

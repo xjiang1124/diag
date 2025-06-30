@@ -927,7 +927,7 @@ class mtp_ctrl():
 
         sig_list = [userid]
 
-        cmd = MFG_DIAG_CMDS.MTP_LOGIN_VERIFY_FMT
+        cmd = MFG_DIAG_CMDS().MTP_LOGIN_VERIFY_FMT
         handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect(handle, sig_list, 5)
         if idx < 0:
@@ -1070,7 +1070,7 @@ class mtp_ctrl():
 
         self._mgmt_prompt = self._prompt_list[idx]
 
-        cmd = MFG_DIAG_CMDS.MTP_LOGIN_VERIFY_FMT
+        cmd = MFG_DIAG_CMDS().MTP_LOGIN_VERIFY_FMT
         sig_list = [userid]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
             self.cli_log_err("Connect to mtp mgmt failed", level=0)
@@ -1187,7 +1187,7 @@ class mtp_ctrl():
     def mtp_get_mac(self):
         # MTP MAC info
         rs = ""
-        cmd = MFG_DIAG_CMDS.MTP_MAC_FMT
+        cmd = MFG_DIAG_CMDS().MTP_MAC_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute cmd to get MTP MAC info", level=0)
             return "[FAIL]: Failed to execute cmd to get MTP MAC info"
@@ -1217,7 +1217,7 @@ class mtp_ctrl():
         return memorysize
 
     def mtp_set_sn_rev_mac_command(self, sn, maj, mac):
-        cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_SN_MAJ_MAC_FMT.format(sn, maj, mac)
+        cmd = MFG_DIAG_CMDS().MTP_FRU_PROG_SN_MAJ_MAC_FMT.format(sn, maj, mac)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Unable to set MTP SN, REV and MAC")
             return False
@@ -1282,8 +1282,8 @@ class mtp_ctrl():
 
     def mtp_mgmt_set_date(self, stage=None):
         timestamp_str = str(libmfg_utils.timestamp_snapshot())
-        cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(timestamp_str)
-        cmd1 = MFG_DIAG_CMDS.MTP_HWCLOCK_WRITE_FMT
+        cmd = MFG_DIAG_CMDS().NIC_DATE_SET_FMT.format(timestamp_str)
+        cmd1 = MFG_DIAG_CMDS().MTP_HWCLOCK_WRITE_FMT
         if stage == FF_Stage.FF_FST:
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Unable to set MTP date")
@@ -1315,7 +1315,7 @@ class mtp_ctrl():
     def mtp_sys_info_init(self):
 
         # MTP_TYPE
-        cmd = MFG_DIAG_CMDS.MTP_TYPE_FMT
+        cmd = MFG_DIAG_CMDS().MTP_TYPE_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to send command for getting MTP type", level = 0)
             return False
@@ -1329,7 +1329,7 @@ class mtp_ctrl():
         if self._mtp_type == "MATERA":
             # MTP FPGA version
             reg_addr = '0x00'
-            cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
+            cmd = MFG_DIAG_CMDS().MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("FPGA Command Failed to get MTP FPGA version info", level=0)
                 return False
@@ -1343,7 +1343,7 @@ class mtp_ctrl():
                 return False
             # MTP FPGA datecode
             reg_addr = '0x04'
-            cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
+            cmd = MFG_DIAG_CMDS().MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("FPGA Command Failed to get MTP FPGA datecode info", level=0)
                 return False
@@ -1355,7 +1355,7 @@ class mtp_ctrl():
                 return False
             # MTP FPGA timestamp
             reg_addr = '0x08'
-            cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
+            cmd = MFG_DIAG_CMDS().MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("FPGA Command Failed to get MTP FPGA timestamp info", level=0)
                 return False
@@ -1369,7 +1369,7 @@ class mtp_ctrl():
         else:
             # MTP IO cpld version
             reg_addr = 0x0
-            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(reg_addr)
+            cmd = MFG_DIAG_CMDS().MTP_CPLD_READ_FMT.format(reg_addr)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to get MTP IO-CPLD image version info", level=0)
                 return False
@@ -1382,7 +1382,7 @@ class mtp_ctrl():
 
             # MTP JTAG cpld version
             reg_addr = 0x19
-            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(reg_addr)
+            cmd = MFG_DIAG_CMDS().MTP_CPLD_READ_FMT.format(reg_addr)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to get MTP JTAG-CPLD image version info", level=0)
                 return False
@@ -1394,7 +1394,7 @@ class mtp_ctrl():
                 return False
 
         # MTP_REV
-        cmd = MFG_DIAG_CMDS.MTP_REV_FMT
+        cmd = MFG_DIAG_CMDS().MTP_REV_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to send command for getting MTP revision", level=0)
             return False
@@ -1406,7 +1406,7 @@ class mtp_ctrl():
             return False
 
         # MTP OS version
-        cmd = MFG_DIAG_CMDS.MTP_IMG_VER_DISP_FMT
+        cmd = MFG_DIAG_CMDS().MTP_IMG_VER_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to get os image version", level=0)
             return False
@@ -1428,7 +1428,7 @@ class mtp_ctrl():
         return True
 
     def mtp_init_diag_img_version(self):
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_VERSION_FMT
+        cmd = MFG_DIAG_CMDS().MTP_DIAG_VERSION_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to get diag image version", level=0)
             return False
@@ -1439,7 +1439,7 @@ class mtp_ctrl():
         return True
 
     def mtp_init_diag_asiclib_version(self):
-        cmd = MFG_DIAG_CMDS.MTP_ASIC_VERSION_FMT
+        cmd = MFG_DIAG_CMDS().MTP_ASIC_VERSION_FMT
         if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
             self.cli_log_err("Failed to get asic util version", level=0)
             return False
@@ -1557,7 +1557,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
             return False
 
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH)
+        cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
             return False
@@ -1657,7 +1657,7 @@ class mtp_ctrl():
 
     def mtp_misc_init(self):
         # vrm test
-        cmd = MFG_DIAG_CMDS.MTP_VRM_TEST_FMT
+        cmd = MFG_DIAG_CMDS().MTP_VRM_TEST_FMT
         pass_sig_list = [MFG_DIAG_SIG.MTP_VRM_OK_SIG]
         rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if rc:
@@ -1672,7 +1672,7 @@ class mtp_ctrl():
         # store serial number
         for psu in range(self._psu_num):
             psu = str(psu+1)
-            cmd = MFG_DIAG_CMDS.MTP_PSU_DISP_FMT.format(psu) if self._mtp_type != MTP_TYPE.MATERA else MFG_DIAG_CMDS.MTP_MATERA_PSU_DISP_FMT.format(psu)
+            cmd = MFG_DIAG_CMDS().MTP_PSU_DISP_FMT.format(psu) if self._mtp_type != MTP_TYPE.MATERA else MFG_DIAG_CMDS().MTP_MATERA_PSU_DISP_FMT.format(psu)
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
                 self.cli_log_err("Executing command {:s} failed".format(cmd))
                 rc = False
@@ -1690,7 +1690,7 @@ class mtp_ctrl():
         if self._mtp_type == MTP_TYPE.MATERA:
             if not MFG_BYPASS_PSU_CHECK:
                 # get and parse psu status data
-                cmd = MFG_DIAG_CMDS.MTP_MATERA_DEVMGR_STATUS_FMT
+                cmd = MFG_DIAG_CMDS().MTP_MATERA_DEVMGR_STATUS_FMT
                 if not self.mtp_mgmt_exec_cmd(cmd):
                     self.cli_log_err("MTP command {:s} failed".format(cmd))
                     return False
@@ -1738,7 +1738,7 @@ class mtp_ctrl():
                             self.cli_log_err("{:s} {:s} check failed, not zero".format(psu_d[0][1], i))
                             return False
         else:
-            cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT
+            cmd = MFG_DIAG_CMDS().MTP_PSU_TEST_FMT
             pass_sig_list = []
 
             # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
@@ -1827,7 +1827,7 @@ class mtp_ctrl():
         rc = True
         if self._mtp_type != MTP_TYPE.MATERA:
             # Fan present test
-            cmd = MFG_DIAG_CMDS.MTP_FAN_PRSNT_FMT
+            cmd = MFG_DIAG_CMDS().MTP_FAN_PRSNT_FMT
             if self.get_mtp_factory_location() == Factory.LAB:
                 pass_sig_list = [MFG_DIAG_SIG.MTP_FAN0_PRSNT_SIG, MFG_DIAG_SIG.MTP_FAN1_PRSNT_SIG, MFG_DIAG_SIG.MTP_FAN2_PRSNT_SIG]
             else:
@@ -1840,7 +1840,7 @@ class mtp_ctrl():
                 return rc
 
             # Fan speed test
-            cmd = MFG_DIAG_CMDS.MTP_FAN_TEST_FMT
+            cmd = MFG_DIAG_CMDS().MTP_FAN_TEST_FMT
             pass_sig_list = [MFG_DIAG_SIG.MTP_FAN_OK_SIG]
             rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
             if rc:
@@ -1851,7 +1851,7 @@ class mtp_ctrl():
 
             # Fan speed set
             self.cli_log_inf("Set FAN PWM to {:d}%".format(fan_pwm))
-            cmd = MFG_DIAG_CMDS.MTP_FAN_SET_SPD_FMT.format(fan_pwm)
+            cmd = MFG_DIAG_CMDS().MTP_FAN_SET_SPD_FMT.format(fan_pwm)
             rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
             if not rc:
                 self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_pwm))
@@ -1864,7 +1864,7 @@ class mtp_ctrl():
             fan1_spd_chk_ret = False
             fan2_spd_chk_ret = False
             fan3_spd_chk_ret = False
-            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            cmd = MFG_DIAG_CMDS().MTP_FAN_STATUS_FMT
             while fan_read_ite <= 6:
                 self.cli_log_inf("Wait for {:d}th {:d} seconds, before check fan speed".format(fan_read_ite, fan_read_interval))
                 libmfg_utils.count_down(fan_read_interval)
@@ -1923,7 +1923,7 @@ class mtp_ctrl():
                     self.cli_log_inf("FAN{:d} Speed at PWM {:d} verify PASS".format(fan_idx+1, fan_pwm))
         else:
             # Fan present test
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
+            cmd = MFG_DIAG_CMDS().MTP_MATERA_FPGA_SHOW_FAN_FMT
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("MTP command {:s} failed".format(cmd))
                 return False
@@ -1950,13 +1950,13 @@ class mtp_ctrl():
             self.cli_log_inf("MTP FAN present and status check passed")
             # Fan speed test
             ## Set Fan PWM to 50%, check fan speed RPM
-            # cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(50)
+            # cmd = MFG_DIAG_CMDS().MTP_MATERA_FAN_SET_SPD_FMT.format(50)
             # rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
             # if not rc:
             #     self.cli_log_err("Failed to set fan speed to {:d}%".format(50))
             #     return rc
             # time.sleep(30)
-            # cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
+            # cmd = MFG_DIAG_CMDS().MTP_MATERA_FPGA_SHOW_FAN_FMT
             # if not self.mtp_mgmt_exec_cmd(cmd):
             #     self.cli_log_err("MTP command {:s} failed".format(cmd))
             #     return False
@@ -1977,13 +1977,13 @@ class mtp_ctrl():
             #             self.cli_log_err("{:s} Outlet RPM {:s} at PWM 50 out of range".format(k, v['outRPM']))
             #             return False
             # ## Set Fan PWM to 100%, check fan speed RPM
-            # cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(100)
+            # cmd = MFG_DIAG_CMDS().MTP_MATERA_FAN_SET_SPD_FMT.format(100)
             # rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
             # if not rc:
             #     self.cli_log_err("Failed to set fan speed to {:d}%".format(100))
             #     return rc
             # time.sleep(30)
-            # cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
+            # cmd = MFG_DIAG_CMDS().MTP_MATERA_FPGA_SHOW_FAN_FMT
             # if not self.mtp_mgmt_exec_cmd(cmd):
             #     self.cli_log_err("MTP command {:s} failed".format(cmd))
             #     return False
@@ -2006,7 +2006,7 @@ class mtp_ctrl():
             # self.cli_log_inf("MTP FAN speed test passed")
             # Fan speed set target value
             self.cli_log_inf("Set FAN PWM to target {:d}%".format(fan_pwm))
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(fan_pwm)
+            cmd = MFG_DIAG_CMDS().MTP_MATERA_FAN_SET_SPD_FMT.format(fan_pwm)
             rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
             if not rc:
                 self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_pwm))
@@ -2014,7 +2014,7 @@ class mtp_ctrl():
             self._fanspd = fan_pwm          # update class variable
             # fan speed verify after set
             time.sleep(20)
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
+            cmd = MFG_DIAG_CMDS().MTP_MATERA_FPGA_SHOW_FAN_FMT
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("MTP command {:s} failed".format(cmd))
                 return False
@@ -2052,12 +2052,12 @@ class mtp_ctrl():
             self.cli_log_err("{:s} command failed".format(cmd), level=0)
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_STOP_REDIS_FMT
+        cmd = MFG_DIAG_CMDS().MTP_STOP_REDIS_FMT
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             self.cli_log_slot_err("Command sudo {:s} failed".format(cmd))
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
+        cmd = MFG_DIAG_CMDS().MTP_DIAG_INIT_FMT
         sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
@@ -2074,7 +2074,7 @@ class mtp_ctrl():
             return False
 
         # MTP_TYPE
-        cmd = MFG_DIAG_CMDS.MTP_TYPE_FMT
+        cmd = MFG_DIAG_CMDS().MTP_TYPE_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to send command for getting MTP type", level = 0)
             return False
@@ -2097,7 +2097,7 @@ class mtp_ctrl():
                     return False
             if stage == FF_Stage.FF_SWI:
                 # python package version
-                cmd = MFG_DIAG_CMDS.MTP_MATERA_SWI_CHECK_FMT
+                cmd = MFG_DIAG_CMDS().MTP_MATERA_SWI_CHECK_FMT
                 if not self.mtp_mgmt_exec_cmd(cmd):
                     self.cli_log_err("Failed to send command to check python package version", level = 0)
                     return False
@@ -2129,7 +2129,7 @@ class mtp_ctrl():
                 self.cli_log_err("Failed to create diagmgr session", level=0)
                 return False
 
-            cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(self._diagmgr_logfile)
+            cmd = MFG_DIAG_CMDS().MTP_DIAG_MGR_START_FMT.format(self._diagmgr_logfile)
             diagmgr_handle.sendline(cmd)
             idx = libmfg_utils.mfg_expect(diagmgr_handle, [self._mgmt_prompt])
             if idx < 0:
@@ -2160,7 +2160,7 @@ class mtp_ctrl():
                     self.cli_log_err("Command {:s} failed".format(cmd), level=0)
                     return False
 
-            cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
+            cmd = MFG_DIAG_CMDS().MTP_DSP_START_FMT
             sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
             if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
                 self.cli_log_err("Failed to start dsp", level=0)
@@ -2200,7 +2200,7 @@ class mtp_ctrl():
             inlet_1 = float(match_1.group(1))
             inlet_2 = float(match_2.group(1))
         else:
-            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            cmd = MFG_DIAG_CMDS().MTP_FAN_STATUS_FMT
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
                 self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
                 self.cli_log_err("MTP get inlet temperature failed")
@@ -2279,14 +2279,14 @@ class mtp_ctrl():
         self.cli_log_inf("DSP Restart", level=0)
 
         # stop MTP DSP
-        cmd = MFG_DIAG_CMDS.MTP_DSP_STOP_FMT
+        cmd = MFG_DIAG_CMDS().MTP_DSP_STOP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
 
         # sys cleanup
-        cmd = MFG_DIAG_CMDS.MTP_DSP_CLEANUP_FMT
+        cmd = MFG_DIAG_CMDS().MTP_DSP_CLEANUP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
@@ -2303,7 +2303,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to create new diagmgr handle", level=0)
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_RESTART_FMT.format(self._diagmgr_logfile)
+        cmd = MFG_DIAG_CMDS().MTP_DIAG_MGR_RESTART_FMT.format(self._diagmgr_logfile)
         diagmgr_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect(diagmgr_handle, ["$"])
         if idx < 0:
@@ -2319,7 +2319,7 @@ class mtp_ctrl():
             self.cli_log_err("Command {:s} failed".format(cmd), level=0)
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
+        cmd = MFG_DIAG_CMDS().MTP_DSP_START_FMT
         sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
             self.cli_log_err("Command {:s} failed".format(cmd), level=0)
@@ -2343,26 +2343,26 @@ class mtp_ctrl():
             retry += 1
             self.cli_log_inf("Init Diag ZMQ Environment <{:d}>...".format(retry), level=0)
             # 1. stop ZMQ
-            cmd = MFG_DIAG_CMDS.MTP_ZMQ_STOP_FMT
+            cmd = MFG_DIAG_CMDS().MTP_ZMQ_STOP_FMT
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd))
                 return False
 
             # 2. stop MTP DSP
-            cmd = MFG_DIAG_CMDS.MTP_DSP_STOP_FMT
+            cmd = MFG_DIAG_CMDS().MTP_DSP_STOP_FMT
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd))
                 return False
             time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
 
             # 3. sys cleanup
-            cmd = MFG_DIAG_CMDS.MTP_DSP_CLEANUP_FMT
+            cmd = MFG_DIAG_CMDS().MTP_DSP_CLEANUP_FMT
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd))
                 return False
 
             # 4. start MTP DSP
-            cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
+            cmd = MFG_DIAG_CMDS().MTP_DSP_START_FMT
             sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
             if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
                 self.cli_log_err("Failed to execute command {:s}".format(cmd))
@@ -2370,7 +2370,7 @@ class mtp_ctrl():
             time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
 
             # 5. start ZMQ
-            cmd = MFG_DIAG_CMDS.MTP_ZMQ_START_FMT
+            cmd = MFG_DIAG_CMDS().MTP_ZMQ_START_FMT
             sig_list = [MFG_DIAG_SIG.MTP_ZMQ_OK_SIG]
             if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
                 continue
@@ -2408,7 +2408,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to Init DiagSP", level=0)
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DSP_DISP_FMT
+        cmd = MFG_DIAG_CMDS().MTP_DSP_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Dump DSP failed", level=0)
             return False
@@ -2487,7 +2487,7 @@ class mtp_ctrl():
         while timeout > 0:
             inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
             if not MFG_BYPASS_PSU_CHECK and self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0 and int(self._mtp_rev) > 3:
-                cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT
+                cmd = MFG_DIAG_CMDS().MTP_PSU_TEST_FMT
                 self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
 
             if inlet == None:
@@ -2566,7 +2566,7 @@ class mtp_ctrl():
         This function only works on Matera MTP, call "inventory -cpu" command, parse the message and check cpu cores, temperature.
         '''
 
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_INVENTORY_CPU_FMT
+        cmd = MFG_DIAG_CMDS().MTP_MATERA_INVENTORY_CPU_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("MTP command {:s} failed".format(cmd))
             return False
@@ -2619,7 +2619,7 @@ class mtp_ctrl():
         This function only works on Matera MTP, call "inventory -ddr" command, parse the message and dispaly memory capacity and speed.
         '''
 
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_INVENTORY_DDR_FMT
+        cmd = MFG_DIAG_CMDS().MTP_MATERA_INVENTORY_DDR_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("MTP command {:s} failed".format(cmd))
             return False
@@ -2651,7 +2651,7 @@ class mtp_ctrl():
         This function only works for Matera MTP, call "devmgr_v2 status" command, parse the data and check board temperature in range.
         '''
 
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_DEVMGR_STATUS_FMT
+        cmd = MFG_DIAG_CMDS().MTP_MATERA_DEVMGR_STATUS_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("MTP command {:s} failed".format(cmd))
             return False
@@ -2700,7 +2700,7 @@ class mtp_ctrl():
 
         frus_list = ['FRU', 'IOBL', 'IOBR', 'FPIC']
         # Fru presence check
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_EEUTIL_INFO_FMT
+        cmd = MFG_DIAG_CMDS().MTP_MATERA_EEUTIL_INFO_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("MTP command {:s} failed".format(cmd))
             return False
@@ -2715,7 +2715,7 @@ class mtp_ctrl():
         # FRU serial number check
         for fru in frus_list:
             fru_sn = ""
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_DISP_DEV_FMT.format(fru)
+            cmd = MFG_DIAG_CMDS().MTP_MATERA_DISP_DEV_FMT.format(fru)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("MTP command {:s} failed".format(cmd))
                 return False
@@ -2757,7 +2757,7 @@ class mtp_ctrl():
         # Register read write check, Write scratch register then read back and compare
         reg_addr = '0x10' # SCRATCH_0_REG
         test_value = '0xffffffff'
-        cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_WRITE32_FMT.format(reg_addr, test_value)
+        cmd = MFG_DIAG_CMDS().MTP_FPGA_UTIL_WRITE32_FMT.format(reg_addr, test_value)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("FPGA Command Failed to write scratch register 0", level=0)
             return False
@@ -2769,7 +2769,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to parse echo back message of write scratch register 0", level=0)
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
+        cmd = MFG_DIAG_CMDS().MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("FPGA Command Failed to read scratch register 0", level=0)
             return False
@@ -2782,7 +2782,7 @@ class mtp_ctrl():
             return False
         self.cli_log_inf("MTP FPGA scratch register read/write check pass")
         # dump all registers for information
-        cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_REGDUMP_FMT
+        cmd = MFG_DIAG_CMDS().MTP_FPGA_UTIL_REGDUMP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("FPGA DUMP Registers Command Failed", level=0)
             return False
@@ -2835,7 +2835,7 @@ class mtp_ctrl():
             inlet_2 = float(match_2.group(1))
 
         else:
-            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            cmd = MFG_DIAG_CMDS().MTP_FAN_STATUS_FMT
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("MTP Inlet sensor test failed when execute command {:s}".format(cmd))
                 return False
@@ -2891,7 +2891,7 @@ class mtp_ctrl():
             inlet_1 = float(match_1.group(1))
             inlet_2 = float(match_2.group(1))
         else:
-            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            cmd = MFG_DIAG_CMDS().MTP_FAN_STATUS_FMT
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
                 self.cli_log_err("MTP get inlet temperature failed")
@@ -3117,19 +3117,19 @@ class mtp_ctrl():
             return True
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf(slot, "Init NIC boot info")
-        if nic_type != SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
+        if nic_type != SALINA_AI_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
 
-            cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+            cmd = MFG_DIAG_CMDS().NIC_DIAG_STOP_PICOCOM_FMT
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=10):
                 self.cli_log_err("Execute command {:s} failed".format(cmd))
                 return False
 
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+        cmd = MFG_DIAG_CMDS().NIC_DIAG_STOP_PICOCOM_FMT
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=10):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return False
@@ -3265,14 +3265,14 @@ class mtp_ctrl():
 
         # delete the arp entry
         ipaddr = libmfg_utils.get_nic_ip_addr(slot)
-        cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
+        cmd = MFG_DIAG_CMDS().MTP_ARP_DELET_FMT.format(ipaddr)
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             self.cli_log_slot_err(slot, "Command sudo {:s} failed".format(cmd))
             return False
         # ping to update the arp cache
         for x in range(2):
             time.sleep(11)
-            cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+            cmd = MFG_DIAG_CMDS().MTP_NIC_PING_FMT.format(ipaddr)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_slot_err(slot, "Command {:s} failed".format(cmd))
                 return False
@@ -4326,7 +4326,7 @@ class mtp_ctrl():
         fea_mtp_hex = self.mtp_get_nic_cmd_buf(slot)
         fea_mtp_match = re.search(fea_regex, fea_mtp_hex)
 
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(slot +1), "generate", "fea", "/home/diag/cpld_fea_dump_slot" + str(slot +1) + ".bin")
+        cmd = MFG_DIAG_CMDS().MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(slot +1), "generate", "fea", "/home/diag/cpld_fea_dump_slot" + str(slot +1) + ".bin")
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
@@ -4343,7 +4343,7 @@ class mtp_ctrl():
 
         if fea_mtp_match and fea_nic_match:
             if fea_mtp_match.group(1) == fea_nic_match.group(1):
-                if not self.mtp_power_on_nic(slot):
+                if not self.mtp_power_on_nic([slot]):
                     return False
                 return True
             self.cli_log_slot_err_lock(slot, "Feature row programmed incorrectly. Dump doesn't match original file.")
@@ -4365,7 +4365,7 @@ class mtp_ctrl():
         slot = [9]
         if not self.mtp_power_off_nic(slot):
             return False
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(slot[0]+1), "program", "fea", cpld_fea_jed_file)
+        cmd = MFG_DIAG_CMDS().MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(slot[0]+1), "program", "fea", cpld_fea_jed_file)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
@@ -4955,7 +4955,7 @@ class mtp_ctrl():
     def mtp_mgmt_killall_tclsh_picocom(self, slot):
         self.mtp_nic_stop_tclsh(slot)
 
-        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+        cmd = MFG_DIAG_CMDS().NIC_DIAG_STOP_PICOCOM_FMT
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
             self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
             return False
@@ -4992,6 +4992,26 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_set_vmarg(vmarg, percentage):
             self.cli_log_slot_err_lock(slot, "Set voltage margin to {:s} failed".format(vmarg))
+            self.mtp_set_nic_status_fail(slot)
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_set_salina_dpu_nic_ddr_vmarg(self, slot, vmarg):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip DDR Vmargin for Proto NIC")
+            return True
+
+        if nic_type not in SALINA_DPU_NIC_TYPE_LIST:
+            self.cli_log_slot_inf_lock(slot, "This DDR Vmarg setting only for salina DPU")
+            return False
+
+        self.cli_log_slot_inf_lock(slot, "Set Salina DPU DDR voltage margin to {:s}".format(str(vmarg)))
+
+        if not self._nic_ctrl_list[slot].salina_nic_set_ddr_vmarg(vmarg):
+            self.cli_log_slot_err_lock(slot, "Set Salina DPU DDR voltage margin to {:s} failed".format(vmarg))
             self.mtp_set_nic_status_fail(slot)
             return False
 
@@ -5291,7 +5311,7 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+        cmd = MFG_DIAG_CMDS().NIC_DIAG_STOP_PICOCOM_FMT
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
             self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
             return False
@@ -5300,7 +5320,7 @@ class mtp_ctrl():
 
     def mtp_i2c_show(self, nic_list):
         self.cli_log_inf("Show I2C device in the MTP Chassis", level=0)
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_DEVMGR_STATUS_FMT
+        cmd = MFG_DIAG_CMDS().MTP_MATERA_DEVMGR_STATUS_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to show I2C device in the MTP Chassis", level=0)
             self.mtp_dump_err_msg(self._mgmt_handle.before)
@@ -5311,7 +5331,7 @@ class mtp_ctrl():
 
     def mtp_set_mem_vddio(self, nic_list, margin=0):
         self.cli_log_inf("Set MEM VDDIO margin in the MTP Chassis", level=0)
-        cmd = MFG_DIAG_CMDS.MTP_DEVICE_MARGIN_SET_FMT.format("MEM_VDDIO",margin)
+        cmd = MFG_DIAG_CMDS().MTP_DEVICE_MARGIN_SET_FMT.format("MEM_VDDIO",margin)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to set mem vddio margin in the MTP Chassis", level=0)
             self.mtp_dump_err_msg(self._mgmt_handle.before)
@@ -5391,24 +5411,24 @@ class mtp_ctrl():
         if not mgmt:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC environment")
-            cmd = MFG_DIAG_CMDS.MTP_PARA_INIT_FMT.format(nic_list_param, asic_type)
-            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS.MATERA_MTP_SINGLE_INIT_FMT.format(nic_list_param, asic_type)
+            cmd = MFG_DIAG_CMDS().MTP_PARA_INIT_FMT.format(nic_list_param, asic_type)
+            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS().MATERA_MTP_SINGLE_INIT_FMT.format(nic_list_param, asic_type)
         elif fpo:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port with FPO")
-            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_FPO_FMT.format(nic_list_param, asic_type)
-            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS.MATERA_MTP_SINGLE_MGMT_FPO_FMT.format(nic_list_param, asic_type)
-            if asic_type == "salina": cmd = MFG_DIAG_CMDS.MATERA_SALINA_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
+            cmd = MFG_DIAG_CMDS().MTP_PARA_MGMT_FPO_FMT.format(nic_list_param, asic_type)
+            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS().MATERA_MTP_SINGLE_MGMT_FPO_FMT.format(nic_list_param, asic_type)
+            if asic_type == "salina": cmd = MFG_DIAG_CMDS().MATERA_SALINA_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
         elif aapl:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT/AAPL port")
-            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_AAPL_FMT.format(nic_list_param, asic_type)
+            cmd = MFG_DIAG_CMDS().MTP_PARA_MGMT_AAPL_FMT.format(nic_list_param, asic_type)
         else:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
-            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
-            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS.MATERA_MTP_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
-            if asic_type == "salina": cmd = MFG_DIAG_CMDS.MATERA_SALINA_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
+            cmd = MFG_DIAG_CMDS().MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
+            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS().MATERA_MTP_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
+            if asic_type == "salina": cmd = MFG_DIAG_CMDS().MATERA_SALINA_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
             if swm_lp:
                 cmd = "".join((cmd, " -swm_lp"))
 
@@ -5434,7 +5454,7 @@ class mtp_ctrl():
             self.cli_log_inf("Dump MTP Marvel Switch Port Status", level=0)
             port = '-1'
             for mvl_instance in ("0", "1"):
-                cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_MVLDUMP_CMD_FMT.format(mvl_instance, port)
+                cmd = MFG_DIAG_CMDS().MTP_MATERA_FPGAUTIL_MVLDUMP_CMD_FMT.format(mvl_instance, port)
                 if not self.mtp_mgmt_exec_cmd(cmd):
                     self.cli_log_err("Dump MTP Marvel Switch Port Status Failed", level=0)
                     self.mtp_dump_err_msg(self._mgmt_handle.before)
@@ -5491,7 +5511,7 @@ class mtp_ctrl():
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.NIC_PARA_EDMA_ENV_INIT_SIG]
-        cmd = MFG_DIAG_CMDS.MTP_PARA_EDMA_ENV_INIT_FMT.format(nic_list_param)
+        cmd = MFG_DIAG_CMDS().MTP_PARA_EDMA_ENV_INIT_FMT.format(nic_list_param)
 
         if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd, sig_list=sig_list, timeout=MTP_Const.NIC_EDMA_ENV_INIT_CMD_DELAY):
             self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
@@ -5516,7 +5536,7 @@ class mtp_ctrl():
         # delete the arp entry
         if self._nic_prsnt_list[slot]:
             ipaddr = libmfg_utils.get_nic_ip_addr(slot)
-            cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
+            cmd = MFG_DIAG_CMDS().MTP_ARP_DELET_FMT.format(ipaddr)
             if not self.mtp_mgmt_exec_sudo_cmd(cmd):
                 return False
 
@@ -5530,7 +5550,7 @@ class mtp_ctrl():
                 return False
 
             # time.sleep(5)
-            cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+            cmd = MFG_DIAG_CMDS().MTP_NIC_PING_FMT.format(ipaddr)
             if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
                 return False
 
@@ -5588,8 +5608,10 @@ class mtp_ctrl():
 
         if not self.mtp_set_nic_vmarg(slot, vmargin, vmarg_percentage):
             return False
-        if not self.mtp_nic_display_voltage(slot):
-            return False
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            if not self.mtp_nic_display_voltage(slot):
+                return False
         return True
 
     def mtp_nic_diag_init(self, nic_list, emmc_format=False, emmc_check=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=Voltage_Margin.normal, aapl=False, swm_lp=False, nic_util=False, dis_hal=False, stop_on_err=False, skip_info_dump=False, fru_fpo=False, skip_test_list=[], dsp="DIAG_INIT"):
@@ -5650,12 +5672,11 @@ class mtp_ctrl():
         if not skip_info_dump:
             test_list.append("INFO_DUMP")
 
-        ### hack for salina DPU, need remove later -->
+        ### Redefine nic diag init test suite for Salina
         for slot in nic_list:
-            if self._nic_ctrl_list[slot] and self._nic_type_list[slot] in SALINA_NIC_TYPE_LIST:
-                test_list = ["NIC_BOOT_INIT", "MAC_VALIDATE", "START_DIAG", "CPLD_DIAG"]
+            if self._nic_ctrl_list[slot] and self._nic_type_list[slot] in SALINA_DPU_NIC_TYPE_LIST:
+                test_list = ['NIC_VMARG', 'NIC_PARA_MGMT_INIT', 'NIC_BOOT_INIT', 'MAC_VALIDATE', 'START_DIAG', 'CPLD_DIAG', 'INFO_DUMP']
                 break 
-        ### hack for salina DPU, need remove later <--
 
         for test in test_list:
             if test in skip_test_list:
@@ -5731,9 +5752,9 @@ class mtp_ctrl():
         # mac_addr_reg_exp = r"([a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2})"
         mac_addr_reg_exp = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).+([a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2})"
         if self._mtp_type == MTP_TYPE.MATERA:
-            cmd = MFG_DIAG_CMDS.MATERA_MTP_NIC_MAC_DISP_FMT
+            cmd = MFG_DIAG_CMDS().MATERA_MTP_NIC_MAC_DISP_FMT
         else:
-            cmd = MFG_DIAG_CMDS.MTP_NIC_MAC_DISP_FMT
+            cmd = MFG_DIAG_CMDS().MTP_NIC_MAC_DISP_FMT
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
             self.cli_log_slot_err(slot, "Failed to validate NIC MAC address")
             return False
@@ -5755,7 +5776,7 @@ class mtp_ctrl():
         slot_list_param = ",".join(str(slot+1) for slot in slot_list)
         if not slot_list_param:
             slot_list_param = "all"
-        cmd = MFG_DIAG_CMDS.MTP_POWER_ON_NIC_FMT.format(slot_list_param)
+        cmd = MFG_DIAG_CMDS().MTP_POWER_ON_NIC_FMT.format(slot_list_param)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.mtp_nic_unlock()
             self.cli_log_err("Failed to power on NIC")
@@ -5796,7 +5817,7 @@ class mtp_ctrl():
         slot_list_param = ",".join(str(slot+1) for slot in slot_list)
         if not slot_list_param:
             slot_list_param = "all"
-        cmd = MFG_DIAG_CMDS.MTP_POWER_OFF_NIC_FMT.format(slot_list_param)
+        cmd = MFG_DIAG_CMDS().MTP_POWER_OFF_NIC_FMT.format(slot_list_param)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.mtp_nic_unlock()
             self.cli_log_err("Failed to power off NIC")
@@ -5849,7 +5870,7 @@ class mtp_ctrl():
             return False
 
         if self._mtp_type != MTP_TYPE.MATERA:
-            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1)
+            cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(slot+1)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
                 self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
                 return False
@@ -6134,7 +6155,7 @@ class mtp_ctrl():
             if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
                 self.cli_log_slot_err(slot_main, "Failed to execute command {:s}".format(cmd))
                 return fail_nic_list
-            cmd = MFG_DIAG_CMDS.MATERA_MTP_NIC_BOOT_TO.format(bootstage, ",".join(str(slot+1) for slot in slot_list))
+            cmd = MFG_DIAG_CMDS().MATERA_MTP_NIC_BOOT_TO.format(bootstage, ",".join(str(slot+1) for slot in slot_list))
             if warm_reset:
                 verify_reg_map['0x30'] = '0x12'
                 cmd += " --warm_reset"
@@ -6176,7 +6197,7 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
             self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
             return False
-        cmd = MFG_DIAG_CMDS.SALINA_BOOT_MODE_FMT.format(boot_stage, nic_list_param)
+        cmd = MFG_DIAG_CMDS().SALINA_BOOT_MODE_FMT.format(boot_stage, nic_list_param)
         if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
             self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
             return nic_list[:]
@@ -6193,7 +6214,7 @@ class mtp_ctrl():
 
     def mtp_init_nic_type(self, stage=None, scanned_fru=None, scanned_dpn=None, scanned_sku=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
-        cmd = MFG_DIAG_CMDS.NIC_PRESENT_DISP_FMT
+        cmd = MFG_DIAG_CMDS().NIC_PRESENT_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to init NIC presence")
             self.mtp_dump_err_msg(self._mgmt_handle.before)
@@ -6658,7 +6679,10 @@ class mtp_ctrl():
         self._nic_sw_pn_list[slot] = sw_pn
 
     def mtp_get_nic_type(self, slot):
-        return self._nic_type_list[slot]
+        nic_type = self._nic_type_list[slot]
+        if not nic_type:
+            nic_type = "UNKNOWN_NIC_TYPE"
+        return nic_type
 
     def mtp_set_nic_type(self, slot, nic_type):
         """
@@ -6673,6 +6697,9 @@ class mtp_ctrl():
 
     def mtp_nic_type_valid(self, slot):
         nic_type = self._nic_type_list[slot]
+        if nic_type is None:
+            self.cli_log_slot_err(slot, "NIC Type was not initialized, still None")
+            return False
         if nic_type in self._valid_type_list:
             return True
         else:
@@ -6718,7 +6745,7 @@ class mtp_ctrl():
     def mtp_get_nic_sn(self, slot):
         sn = self._nic_sn_list[slot]
         if not sn:
-            sn = "UNKNOWN"
+            sn = "UNKNOWN_SN"
         return sn
 
     def mtp_set_nic_sn(self, slot, sn):
@@ -6863,7 +6890,7 @@ class mtp_ctrl():
 
     # log the diag test history
     def mtp_mgmt_diag_history_disp(self):
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_SHIST_FMT
+        cmd = MFG_DIAG_CMDS().MTP_DIAG_SHIST_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             return False
 
@@ -6872,7 +6899,7 @@ class mtp_ctrl():
     # clear the diag test history
 
     def mtp_mgmt_diag_history_clear(self):
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_CHIST_FMT
+        cmd = MFG_DIAG_CMDS().MTP_DIAG_CHIST_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             return False
 
@@ -6937,11 +6964,11 @@ class mtp_ctrl():
             self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber), level=0)
 
         if test == "PRBS_ETH":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_TEST_FMT.format(nic_list_param, n_vmarg)
+            cmd = MFG_DIAG_CMDS().MTP_PARA_PRBS_ETH_TEST_FMT.format(nic_list_param, n_vmarg)
         elif test == "SNAKE_HBM":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, n_vmarg)
+            cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, n_vmarg)
         elif test == "SNAKE_PCIE":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, n_vmarg)
+            cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, n_vmarg)
         elif test == "SNAKE_ELBA":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
@@ -6951,26 +6978,26 @@ class mtp_ctrl():
                 return nic_list[:]
             elif nic_type == NIC_Type.ORTANO2:
                 if self.mtp_is_nic_ortano_oracle(slot):
-                    cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
-                    if matera_mtp: cmd = MFG_DIAG_CMDS.MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
+                    cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
+                    if matera_mtp: cmd = MFG_DIAG_CMDS().MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
                 else:
-                    cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
-                    if matera_mtp: cmd = MFG_DIAG_CMDS.MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
+                    cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
+                    if matera_mtp: cmd = MFG_DIAG_CMDS().MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2ADICR):
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
-                if matera_mtp: cmd = MFG_DIAG_CMDS.MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
+                cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
+                if matera_mtp: cmd = MFG_DIAG_CMDS().MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in (NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
-                if matera_mtp: cmd = MFG_DIAG_CMDS.MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
+                cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
+                if matera_mtp: cmd = MFG_DIAG_CMDS().MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
             elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, n_vmarg)
-                if matera_mtp: cmd = MFG_DIAG_CMDS.MATERA_MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, n_vmarg)
+                cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, n_vmarg)
+                if matera_mtp: cmd = MFG_DIAG_CMDS().MATERA_MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_GIGLIO_FMT.format(nic_list_param, n_vmarg)
-                if matera_mtp: cmd = MFG_DIAG_CMDS.MATERA_MTP_PARA_SNAKE_GIGLIO_FMT.format(nic_list_param, n_vmarg)
+                cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_GIGLIO_FMT.format(nic_list_param, n_vmarg)
+                if matera_mtp: cmd = MFG_DIAG_CMDS().MATERA_MTP_PARA_SNAKE_GIGLIO_FMT.format(nic_list_param, n_vmarg)
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, n_vmarg)
-                if matera_mtp: cmd = MFG_DIAG_CMDS.MATERA_MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, n_vmarg)
+                cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, n_vmarg)
+                if matera_mtp: cmd = MFG_DIAG_CMDS().MATERA_MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, n_vmarg)
 
             # when running EDVT, cover both external loopback and internal loopback
             if RUNNING_EDVT:
@@ -6994,9 +7021,9 @@ class mtp_ctrl():
                 return nic_list[:]
             else:
                 if nic_type in ELBA_NIC_TYPE_LIST:
-                    cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, n_vmarg)
+                    cmd = MFG_DIAG_CMDS().MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, n_vmarg)
                 elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                    cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_GIGLIO_FMT.format(nic_list_param, n_vmarg)
+                    cmd = MFG_DIAG_CMDS().MTP_PARA_PRBS_ETH_GIGLIO_FMT.format(nic_list_param, n_vmarg)
                 # when running EDVT, cover both external loopback and internal loopback
                 if RUNNING_EDVT:
                     if edvt_loop_idx % 2 == 0:
@@ -7012,23 +7039,23 @@ class mtp_ctrl():
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.POMONTEDELL:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param, n_vmarg)
+                cmd = MFG_DIAG_CMDS().MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_LACONA_FMT.format(nic_list_param, n_vmarg)
+                cmd = MFG_DIAG_CMDS().MTP_PARA_ARM_L1_ELBA_LACONA_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in ARM_L1_MODE_HOD_1100 or (nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_microsoft(slot)):
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, n_vmarg, "hod_1100")
+                cmd = MFG_DIAG_CMDS().MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, n_vmarg, "hod_1100")
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, n_vmarg, "hod")
+                cmd = MFG_DIAG_CMDS().MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, n_vmarg, "hod")
         elif test == "PCIE_PRBS":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
             if matera_mtp:
-                cmd = MFG_DIAG_CMDS.MATERA_MTP_PARA_PCIE_PRBS_FMT.format(nic_list_param, n_vmarg, "PRBS31")
+                cmd = MFG_DIAG_CMDS().MATERA_MTP_PARA_PCIE_PRBS_FMT.format(nic_list_param, n_vmarg, "PRBS31")
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_PCIE_PRBS_FMT.format(nic_list_param, n_vmarg, "PRBS31")
+                cmd = MFG_DIAG_CMDS().MTP_PARA_PCIE_PRBS_FMT.format(nic_list_param, n_vmarg, "PRBS31")
 
         elif test == "DDR_BIST":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_DDR_BIST_ELBA_FMT.format(nic_list_param, n_vmarg)
+            cmd = MFG_DIAG_CMDS().MTP_PARA_DDR_BIST_ELBA_FMT.format(nic_list_param, n_vmarg)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return nic_list[:]
@@ -7086,10 +7113,10 @@ class mtp_ctrl():
             self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber), level=0)
 
         if test == "RMII_LINKUP":
-            cmd = MFG_DIAG_CMDS.MTP_NCSI_RMII_LINKUP_FMT.format(nic_list_param, n_vmarg)
+            cmd = MFG_DIAG_CMDS().MTP_NCSI_RMII_LINKUP_FMT.format(nic_list_param, n_vmarg)
             sig_list = ["rmii_linkup_test done"]
         elif test == "UART_LPBACK":
-            cmd = MFG_DIAG_CMDS.MTP_NCSI_UART_LPBACK_FMT.format(nic_list_param, n_vmarg)
+            cmd = MFG_DIAG_CMDS().MTP_NCSI_UART_LPBACK_FMT.format(nic_list_param, n_vmarg)
             sig_list = ["uart_loopback_test done"]
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
@@ -7186,7 +7213,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DSP_STOP_FMT
+        cmd = MFG_DIAG_CMDS().MTP_DSP_STOP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
@@ -7198,7 +7225,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
+        cmd = MFG_DIAG_CMDS().MTP_DSP_START_FMT
         sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
@@ -7398,41 +7425,41 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip AVS for Proto NIC")
             return True
         elif nic_type == NIC_Type.NAPLES100:
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().NAPLES100_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().NAPLES100_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES100IBM:
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100IBM_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100IBM_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().NAPLES100IBM_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().NAPLES100IBM_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES100HPE:
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100HPE_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100HPE_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().NAPLES100HPE_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().NAPLES100HPE_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES100DELL:
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES100DELL_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES100DELL_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().NAPLES100DELL_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().NAPLES100DELL_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.VOMERO:
-            vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.VOMERO_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().VOMERO_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().VOMERO_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.VOMERO2:
-            vdd_avs_cmd = MFG_DIAG_CMDS.VOMERO2_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.VOMERO2_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().VOMERO2_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().VOMERO2_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES25:
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES25SWM:
             # NAPLES25SWM uses same setting as Naples25
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES25SWMDELL:
             # NAPLES25SWM uses same setting as Naples25
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES25OCP:
             # NAPLES25OCP uses same setting as Naples25
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().NAPLES25_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().NAPLES25_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.NAPLES25SWM833:
-            vdd_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_VDD_AVS_SET_FMT.format(sn, slot+1)
-            arm_avs_cmd = MFG_DIAG_CMDS.NAPLES25SWM833_ARM_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().NAPLES25SWM833_VDD_AVS_SET_FMT.format(sn, slot+1)
+            arm_avs_cmd = MFG_DIAG_CMDS().NAPLES25SWM833_ARM_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2:
             """
              Separate freq by PN:
@@ -7440,34 +7467,34 @@ class mtp_ctrl():
              - For 68-0021 (Pensando) use 1100
             """
             if self.mtp_is_nic_ortano_oracle(slot):
-                vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
+                vdd_avs_cmd = MFG_DIAG_CMDS().ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
             else:
-                vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
+                vdd_avs_cmd = MFG_DIAG_CMDS().ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO2INTERP:
-            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.POMONTEDELL:
-            vdd_avs_cmd = MFG_DIAG_CMDS.POMONTEDELL_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().POMONTEDELL_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.LACONA32DELL:
-            vdd_avs_cmd = MFG_DIAG_CMDS.LACONA32DELL_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().LACONA32DELL_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.LACONA32:
-            vdd_avs_cmd = MFG_DIAG_CMDS.LACONA32_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().LACONA32_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO2SOLO:
-            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO2SOLOORCTHS:
-            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO2SOLOMSFT:
-            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO2SOLOS4:
-            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.GINESTRA_D4:
-            vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().GINESTRA_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.GINESTRA_D5:
-            vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().GINESTRA_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.GINESTRA_S4:
-            vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().GINESTRA_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type in SALINA_NIC_TYPE_LIST:
             # salina avs set command will set both vdd and arm
-            vdd_avs_cmd = MFG_DIAG_CMDS.SALINA_AVS_SET_FMT.format(slot+1)
+            vdd_avs_cmd = MFG_DIAG_CMDS().SALINA_AVS_SET_FMT.format(slot+1)
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -7500,11 +7527,11 @@ class mtp_ctrl():
         if self._mtp_type == MTP_TYPE.MATERA:
             self._nic_ctrl_list[slot].mtp_exec_cmd("{:s}diag/util/jtag_accpcie_salina clr {:d}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH, slot+1))
         else:
-            self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
+            self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
 
     def mtp_mgmt_set_nic_avs_post(self, slot):
         self.mtp_nic_send_ctrl_c(slot)  # kill any hung tclsh in this same session
-        cmd = MFG_DIAG_CMDS.NIC_AVS_POST_FMT.format(slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_AVS_POST_FMT.format(slot+1)
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
         cmd_buf = self.mtp_get_nic_cmd_buf(slot)
@@ -7513,11 +7540,11 @@ class mtp_ctrl():
         reg_addr = 0x50
         write_data = 0
         if self._mtp_type == MTP_TYPE.MATERA:
-            cmd = MFG_DIAG_CMDS.NIC_I2C_DUMP_POST_FMT.format(slot+3) + " ;"
-            cmd += MFG_DIAG_CMDS.NIC_I2C_DUMP_4B_POST_FMT.format(slot+3) + " ;"
+            cmd = MFG_DIAG_CMDS().NIC_I2C_DUMP_POST_FMT.format(slot+3) + " ;"
+            cmd += MFG_DIAG_CMDS().NIC_I2C_DUMP_4B_POST_FMT.format(slot+3) + " ;"
         else:
-            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
-        cmd += MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
+            cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+        cmd += MFG_DIAG_CMDS().MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.mtp_dump_nic_err_msg(slot)
             return False
@@ -7525,11 +7552,22 @@ class mtp_ctrl():
         if self._mtp_type == MTP_TYPE.MATERA:
             cmd = ""
         else:
-            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
-        cmd += MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
+            cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+        cmd += MFG_DIAG_CMDS().MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.mtp_dump_nic_err_msg(slot)
             return False
+
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd_list = list()
+            cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("17","20","0"))
+            cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("17","20","9"))
+            cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("18","20","0"))
+            cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("18","20","9"))
+            for single_cmd in cmd_list:
+                if not self._nic_ctrl_list[slot].mtp_exec_cmd(single_cmd):
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
 
         return True
 
@@ -7539,17 +7577,17 @@ class mtp_ctrl():
         if nic_type == NIC_Type.ORTANO2:
             if self.mtp_is_nic_ortano_microsoft(slot):
                 if not self._nic_ctrl_list[slot].nic_fix_vrm_oc():
-                    self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
+                    self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS().ORTANO2_VRM_FIX_FMT))
                     self.mtp_dump_nic_err_msg(slot)
                     return False
             else:
                 if not self._nic_ctrl_list[slot].nic_fix_vrm():
-                    self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
+                    self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS().ORTANO2_VRM_FIX_FMT))
                     self.mtp_dump_nic_err_msg(slot)
                     return False
         elif nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4):
             if not self._nic_ctrl_list[slot].nic_fix_vrm():
-                self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
+                self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS().ORTANO2_VRM_FIX_FMT))
                 self.mtp_dump_nic_err_msg(slot)
                 return False
         elif nic_type in SALINA_NIC_TYPE_LIST:
@@ -7623,8 +7661,8 @@ class mtp_ctrl():
             if self._mtp_type == MTP_TYPE.MATERA:
                 cmd = ""
             else:
-                cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
-            cmd += MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
+                cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+            cmd += MFG_DIAG_CMDS().MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
                 # try again one more time
                 time.sleep(1)
@@ -7673,10 +7711,10 @@ class mtp_ctrl():
         if stage == FF_Stage.FF_SRN or joo == '0': esecure = "0"
 
         if self._mtp_type != MTP_TYPE.MATERA:
-            cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
+            cmd = MFG_DIAG_CMDS().NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
         else:
             # "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s} -joo {:s} -i {:s} -o {:s} -e {:s} -s {:s} -ite {:s}"
-            cmd = MFG_DIAG_CMDS.NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training, joo, loopback, offload, esecure, simplified, ite)
+            cmd = MFG_DIAG_CMDS().NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training, joo, loopback, offload, esecure, simplified, ite)
 
         self.cli_log_slot_inf(slot, cmd)
 
@@ -7715,16 +7753,16 @@ class mtp_ctrl():
             ts_record_cmd = "#######= RESET I2C HUB =#######"
             self.log_mtp_file(ts_record_cmd)
 
-            cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
+            cmd = MFG_DIAG_CMDS().MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
             self.mtp_mgmt_exec_cmd(cmd)
 
-            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(0x2)
+            cmd = MFG_DIAG_CMDS().MTP_CPLD_READ_FMT.format(0x2)
             self.mtp_mgmt_exec_cmd(cmd)
 
-            cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0x0)
+            cmd = MFG_DIAG_CMDS().MTP_CPLD_WRITE_FMT.format(0x2, 0x0)
             self.mtp_mgmt_exec_cmd(cmd)
 
-            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(0x2)
+            cmd = MFG_DIAG_CMDS().MTP_CPLD_READ_FMT.format(0x2)
             self.mtp_mgmt_exec_cmd(cmd)
 
         # on mtp_NIC*_diag.log
@@ -7733,16 +7771,16 @@ class mtp_ctrl():
             ts_record_cmd = "#######= RESET I2C HUB =#######"
             self.log_nic_file(slot, ts_record_cmd)
 
-            cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
+            cmd = MFG_DIAG_CMDS().MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
             self.mtp_mgmt_exec_cmd_para(slot, cmd)
 
-            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(0x2)
+            cmd = MFG_DIAG_CMDS().MTP_CPLD_READ_FMT.format(0x2)
             self.mtp_mgmt_exec_cmd_para(slot, cmd)
 
-            cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0x0)
+            cmd = MFG_DIAG_CMDS().MTP_CPLD_WRITE_FMT.format(0x2, 0x0)
             self.mtp_mgmt_exec_cmd_para(slot, cmd)
 
-            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(0x2)
+            cmd = MFG_DIAG_CMDS().MTP_CPLD_READ_FMT.format(0x2)
             self.mtp_mgmt_exec_cmd_para(slot, cmd)
 
         self.mtp_nic_unlock()
@@ -8212,7 +8250,7 @@ class mtp_ctrl():
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
-        cmd = MFG_DIAG_CMDS.MTP_DISP_ECC_FMT.format(nic_list_param)
+        cmd = MFG_DIAG_CMDS().MTP_DISP_ECC_FMT.format(nic_list_param)
 
         if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
@@ -8281,7 +8319,7 @@ class mtp_ctrl():
             self.cli_log_err("Execute command {:s} failed".format(cmd))
             return False, err_msg_list
 
-        cmd = MFG_DIAG_CMDS.MTP_DISP_ECC_FMT.format(str(slot+1))
+        cmd = MFG_DIAG_CMDS().MTP_DISP_ECC_FMT.format(str(slot+1))
 
         ret = self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=5*60)
 
@@ -8400,7 +8438,7 @@ class mtp_ctrl():
     def mtp_nic_l1_health_check(self, slot):
         self.cli_log_slot_inf(slot, "Running L1 health check")
         sn = self.mtp_get_nic_sn(slot)
-        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_L1_HEALTH_CHECK.format(sn, slot+1), timeout=MTP_Const.MTP_L1_HEALTH_CHECK_TIMEOUT)
+        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS().NIC_L1_HEALTH_CHECK.format(sn, slot+1), timeout=MTP_Const.MTP_L1_HEALTH_CHECK_TIMEOUT)
         # check for 3 tests with "PASS" result in elb_l1_screen*.log
         self.mtp_nic_stop_test(slot)
 
@@ -8442,9 +8480,9 @@ class mtp_ctrl():
             else:
                 self.cli_log_slot_inf(slot, "Start Disable Esec Write Protection")
         if enable:
-            cmd = MFG_DIAG_CMDS.NIC_ENA_ESEC_WRITE_PROT_FMT.format(nic_list_param)
+            cmd = MFG_DIAG_CMDS().NIC_ENA_ESEC_WRITE_PROT_FMT.format(nic_list_param)
         else:
-            cmd = MFG_DIAG_CMDS.NIC_DIS_ESEC_WRITE_PROT_FMT.format(nic_list_param)
+            cmd = MFG_DIAG_CMDS().NIC_DIS_ESEC_WRITE_PROT_FMT.format(nic_list_param)
 
         if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd, sig_list=sig_list, timeout=MTP_Const.NIC_ESEC_WRITE_PROT_DELAY):
             self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
