@@ -1438,6 +1438,10 @@ def main():
                             pass_nic_list.remove(slot)
                     break
 
+            # recover to DL QSPI image for salina cards
+            run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+            run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
+
             # log the diag test history
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
 
