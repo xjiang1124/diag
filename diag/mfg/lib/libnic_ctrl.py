@@ -1677,7 +1677,6 @@ class nic_ctrl():
             try:
                 dt = datetime.strptime(kernel_ver, timestamp_format_string)
                 self._kernel_timestamp = dt.strftime("%m-%d-%Y")
-                print(self._kernel_timestamp)
                 return True
             except ValueError:
                 self.nic_set_err_msg("Invalid NIC FW kernel version")
