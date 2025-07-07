@@ -2646,20 +2646,41 @@ class nic_ctrl():
 
 
     def nic_program_sec_key_pre(self):
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            return False
+        if self._nic_type in SALINA_NIC_TYPE_LIST:
+            cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_SCRIPT_PATH)
+            if not self.mtp_exec_cmd(cmd):
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
 
-        cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_PRE_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            return False
+            softrom_rev = MFG_AI_NIC_SOFT_ROM_VERSION if self._nic_type in SALINA_AI_NIC_TYPE_LIST else MFG_DPU_NIC_SOFT_ROM_VERSION
+            if softrom_rev not in GETSOFTROM_FILE_NAME or "qspi_softrom" not in GETSOFTROM_FILE_NAME[softrom_rev]:
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
 
-        # check signature
-        if MFG_DIAG_SIG.NIC_ESEC_PROG_PRE_SIG not in self.nic_get_cmd_buf():
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            return False
+            cmd = MFG_DIAG_CMDS().SALINA_NIC_ESEC_PROG_PRE_FMT.format(GETSOFTROM_FILE_NAME[softrom_rev]["qspi_softrom"], self._slot+1)
+            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
+
+            # check signature
+            if MFG_DIAG_SIG.NIC_ESEC_PROG_PRE_SIG not in self.nic_get_cmd_buf():
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
+        else:
+            cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+            if not self.mtp_exec_cmd(cmd):
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
+
+            cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_PRE_FMT.format(self._slot+1)
+            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
+
+            # check signature
+            if MFG_DIAG_SIG.NIC_ESEC_PROG_PRE_SIG not in self.nic_get_cmd_buf():
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
 
         return True
 
@@ -2733,17 +2754,26 @@ class nic_ctrl():
         if self._nic_type not in SALINA_NIC_TYPE_LIST:
             return False
 
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+        softrom_rev = MFG_AI_NIC_SOFT_ROM_VERSION if self._nic_type in SALINA_AI_NIC_TYPE_LIST else MFG_DPU_NIC_SOFT_ROM_VERSION
+        if softrom_rev not in GETSOFTROM_FILE_NAME or "qspi_pentrust" not in GETSOFTROM_FILE_NAME[softrom_rev]:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_SCRIPT_PATH)
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS().NIC_ESEC_PROG_DICE_IMG_SALINA_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_PENTRUST_SALINA_FMT.format(GETSOFTROM_FILE_NAME[softrom_rev]["qspi_pentrust"], self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
         # check signature
-        if MFG_DIAG_SIG.NIC_ESEC_DICE_PROG_SIG not in self.nic_get_cmd_buf():
+        if MFG_DIAG_SIG.NIC_ESEC_PENTRUST_FAIL_SIG in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        if MFG_DIAG_SIG.NIC_ESEC_PENTRUST_PASS_SIG not in self.nic_get_cmd_buf():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
@@ -2768,7 +2798,12 @@ class nic_ctrl():
             return False
 
         # check signature
-        if "SoftROM version: 0.4.3" not in self.nic_get_cmd_buf():
+        if self._nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            pass_sign = "SoftROM version: {:s}".format(MFG_DPU_NIC_SOFT_ROM_VERSION)
+        if self._nic_type in SALINA_AI_NIC_TYPE_LIST:
+            pass_sign = "SoftROM version: {:s}".format(MFG_AI_NIC_SOFT_ROM_VERSION)
+
+        if pass_sign not in self.nic_get_cmd_buf():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
@@ -2778,12 +2813,17 @@ class nic_ctrl():
         if self._nic_type not in SALINA_NIC_TYPE_LIST:
             return False
 
+        softrom_rev = MFG_AI_NIC_SOFT_ROM_VERSION if self._nic_type in SALINA_AI_NIC_TYPE_LIST else MFG_DPU_NIC_SOFT_ROM_VERSION
+        if softrom_rev not in GETSOFTROM_FILE_NAME or "hmac_file" not in GETSOFTROM_FILE_NAME[softrom_rev]:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS().NIC_ESEC_SALINA_HMAC_FUSE_PROG_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS().NIC_ESEC_SALINA_HMAC_FUSE_PROG_FMT.format(self._slot+1, GETSOFTROM_FILE_NAME[softrom_rev]["hmac_file"])
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
@@ -2873,6 +2913,27 @@ class nic_ctrl():
 
         # check expect hmac programmed status
         if MFG_DIAG_SIG.NIC_HMAC_BEEN_PROG_SIG in self.nic_get_cmd_buf():
+            return 1
+
+        return -1
+
+    def nic_val_uds_cert_category(self, stage=FF_Stage.FF_DL):
+        if self._nic_type not in SALINA_NIC_TYPE_LIST:
+            return -1
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return -1
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_VAL_UDS_CERT_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            return -1
+
+        # check signature
+        if MFG_DIAG_SIG.NIC_ESEC_DICE_CERT_SIG in self.nic_get_cmd_buf():
+            return 0
+        else:
             return 1
 
         return -1

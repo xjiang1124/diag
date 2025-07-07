@@ -561,6 +561,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_esec_write_protect(nic_list, enable=False)
             elif test == "L1_ESEC_PROG":
                 rlist = mtp_mgmt_ctrl.mtp_nic_l1_esecure_prog(nic_list)
+            elif test == "ESEC_UNLOCK":
+                rlist = mtp_mgmt_ctrl.mtp_nic_esecure_hw_unlock(nic_list)
 
             elif test == "FIX_VRM":
                 rlist = mtp_mgmt_ctrl.mtp_nic_fix_vrm(nic_list)
@@ -618,7 +620,8 @@ def main():
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
-            run_dl_test(pass_nic_list, "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED")
+            run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ESEC_UNLOCK")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
 
             if not args.scandl:
                 if "SCAN_VERIFY" in args.skip_test:
@@ -691,7 +694,6 @@ def main():
             # run_dl_test(get_slots_of_type(NIC_Type.ORTANO2ADIIBM), "UBOOTB_PROG")
             # qspi_gold_nic_list = get_slots_of_type([NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4])
             # run_dl_test(qspi_gold_nic_list, "QSPI_GOLD_PROG")
-            run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_ERASE")
             run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
             run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_SWI_QSPI_PROG")
             run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
@@ -727,7 +729,6 @@ def main():
             # brd_config_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
             # run_dl_test(brd_config_list, "BOARD_CONFIG")
 
-            run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_ERASE")
             run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
             run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
             ## 4. program cpld
