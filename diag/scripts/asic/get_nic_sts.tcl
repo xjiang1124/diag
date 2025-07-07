@@ -375,11 +375,7 @@ if { $check_prp != 0 && \
     plog_msg "=================="
     plog_msg " PRP test "
     plog_msg "=================="
-    if {[llength [info procs sal_ms_ring_full_test]] == 1} {
-        sal_ms_ring_full_test
-    } else {
-        sal_ms_ring_test
-    }
+    sal_ms_ring_test
 }
 if { $check_freq != 0 && \
      $ASIC_TYPE == "SALINA" } {
