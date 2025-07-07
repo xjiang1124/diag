@@ -121,6 +121,18 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         # Debug info dump
         plog_msg "=== Debug info dump ==="
         sal_eos_intr_chk  none none
+        if {[plog_get_err_count] != 0} {
+            plog_msg "=== Dumping PBM ECC ==="
+            rds  sal0.pm.pbm.sta_ecc_bank0
+            rds  sal0.pm.pbm.sta_ecc_bank1
+            rds  sal0.pm.pbm.sta_ecc_bank2
+            rds  sal0.pm.pbm.sta_ecc_bank3
+            plog_msg "=== Dumping PRD ECC ==="
+            plog_msg "sal0.pr.pr\[0\].prd.sta_pkt_mem:"
+            rds {sal0.pr.pr[0].prd.sta_pkt_mem}
+            plog_msg "sal0.pr.pr\[1\].prd.sta_pkt_mem:"
+            rds {sal0.pr.pr[1].prd.sta_pkt_mem}
+        }
         sal_eos_intr_clr  none none
 
         sal_top_get_cntr 0
