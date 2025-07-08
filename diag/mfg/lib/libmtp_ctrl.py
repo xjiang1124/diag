@@ -4955,6 +4955,7 @@ class mtp_ctrl():
             self.mtp_sal_check_j2c(slot, test)
             self.mtp_nic_console_unlock()
             self.mtp_single_j2c_unlock()
+            self.mtp_nic_prp_test(slot)
             self.mtp_clear_nic_uart(slot)
 
         self.mtp_mgmt_nic_diag_sys_clean()
@@ -7924,6 +7925,16 @@ class mtp_ctrl():
             return False
         self.cli_log_slot_inf(slot, "No sign of reboot")
         return True
+
+    def mtp_nic_prp_test(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            return True
+        if not self._nic_ctrl_list[slot].nic_prp_test():
+            self.cli_log_slot_err(slot, "Unable to run PRP test")
+            self.mtp_dump_nic_err_msg(slot)
+            self.mtp_nic_stop_tclsh(slot)
+            return False
 
     def mtp_nic_read_temp(self, slot):
         """
