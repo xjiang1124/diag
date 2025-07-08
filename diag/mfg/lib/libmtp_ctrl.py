@@ -4433,7 +4433,7 @@ class mtp_ctrl():
         return True
 
     @parallelize.sequential_nic_test
-    def mtp_program_nic_sec_key(self, slot):
+    def mtp_program_nic_sec_key(self, slot, skip_hmac_list=[]):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip Secure Key program for Proto NIC")
@@ -4476,13 +4476,9 @@ class mtp_ctrl():
                 return False
 
             if SALINA_HMAC_PROGRAM_ENABLE:
-                if not self._nic_ctrl_list[slot].nic_hmac_fuse_prog():
+                if slot not in skip_hmac_list and not self._nic_ctrl_list[slot].nic_hmac_fuse_prog():
                     self.cli_log_slot_err(slot, "Program HMAC fuse failed")
                     return False
-
-            if not self._nic_ctrl_list[slot].nic_val_uds_cert():
-                self.cli_log_slot_err(slot, "Program NIC validate UDS cert failed")
-                return False
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key_post():
             self.cli_log_slot_err(slot, "Post cleanup key programming failed")
@@ -4544,12 +4540,35 @@ class mtp_ctrl():
 
         return ret
 
+    @parallelize.sequential_nic_test_category
+    def mtp_nic_val_uds_cert_category(self, slot, stage=FF_Stage.FF_DL):
+        """
+        call ./esec_ctrl.py -val_uds_cert -slot -slot $slot
+        'DICE VALIDATION PASSED'
+       """
+
+        if not self._nic_ctrl_list[slot].nic_salina_clear_j2c():
+            self.cli_log_slot_err(slot, "Pre init clear j2c failed")
+            return -1
+
+        ret = self._nic_ctrl_list[slot].nic_val_uds_cert_category(stage)
+        if ret < 0:
+            self.cli_log_slot_err(slot, "NIC validate UDS cert failed")
+            return -1
+
+        return ret
+
     @parallelize.sequential_nic_test
     def mtp_nic_val_uds_cert(self, slot):
         """
         call ./esec_ctrl.py -val_uds_cert -slot -slot $slot
         'DICE VALIDATION PASSED'
         """
+
+        if not self._nic_ctrl_list[slot].nic_salina_clear_j2c():
+            self.cli_log_slot_err(slot, "Pre init clear j2c failed")
+            return False
+
         if not self._nic_ctrl_list[slot].nic_val_uds_cert():
             self.cli_log_slot_err(slot, "NIC validate UDS cert failed")
             return False
@@ -7708,7 +7727,7 @@ class mtp_ctrl():
             rs = False
 
         # do not run esecure with one wire interface
-        if stage == FF_Stage.FF_SRN or joo == '0': esecure = "0"
+        if stage == FF_Stage.FF_SRN or joo == '0' or nic_type in SALINA_NIC_TYPE_LIST: esecure = "0"
 
         if self._mtp_type != MTP_TYPE.MATERA:
             cmd = MFG_DIAG_CMDS().NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)

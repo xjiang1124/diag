@@ -1345,6 +1345,8 @@ MFG_MTP_CPLD_IO_VERSION = "0x5"
 MFG_MTP_CPLD_JTAG_VERSION = "0x3"
 MFG_MTP_CPLD_IO_ELBA_VERSION = "0x1"
 MFG_MTP_CPLD_JTAG_ELBA_VERSION = "0x1"
+MFG_AI_NIC_SOFT_ROM_VERSION = "0.4.3"
+MFG_DPU_NIC_SOFT_ROM_VERSION = "0.4.3"
 
 DIAG_NIGHTLY_REPORT_ACCOUNT = "diag-nightly@pensando.io"
 DIAG_NIGHTLY_REPORT_PASSWD = "diag-nightly"
@@ -1538,6 +1540,15 @@ SKU2BOARDID_PCI_SUBSYS_ID = {
     "VULCANO-1Q800P":                   ("0x04650001", "0x5201"),
     "VULCANO-1Q800P-O":                 ("0x04650001", "0x5201"),
     "VULCANO-1Q800P-OCP":               ("0x04650001", "0x5201"),
+}
+
+#get softRom file name
+GETSOFTROM_FILE_NAME= {
+    "0.4.3":    {
+        "qspi_softrom":"prog_qspi_softrom_43.sh",
+        "qspi_pentrust":"prog_qspi_pentrust_43.sh",
+        "hmac_file":"hmac_value_4.3.hex"
+    },
 }
 
 NIC_MGMT_USERNAME = "root"

@@ -255,6 +255,10 @@ def main():
 
         fail_nic_list = list()
         pass_nic_list = list()
+        hmac_no_prog_slots = list()
+        hmac_prog_slots = list()
+        val_cert_pass_slots = list()
+        val_cert_fail_slots = list()
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
 
@@ -379,7 +383,7 @@ def main():
             elif test == "EFUSE_PROG":
                 rlist = mtp_mgmt_ctrl.mtp_program_nic_efuse(nic_list)
             elif test == "SEC_KEY_PROG":
-                rlist = mtp_mgmt_ctrl.mtp_program_nic_sec_key(nic_list)
+                rlist = mtp_mgmt_ctrl.mtp_program_nic_sec_key(nic_list, skip_hmac_list=hmac_prog_slots)
             elif test == "SEC_KEY_VAL_UDS":
                 rlist = mtp_mgmt_ctrl.mtp_nic_val_uds_cert(nic_list)
             elif test == "SEC_PROG_VERIFY":
@@ -454,6 +458,19 @@ def main():
             elif test == "ESEC_UNLOCK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_esecure_hw_unlock(nic_list)
 
+            elif test == "SEC_KEY_VAL_UDS_CATE":
+                rlist, rlist_val_cert_pass_slots, rlist_val_cert_fail_slots = libmfg_utils.get_val_uds_cert_category_slots(mtp_mgmt_ctrl, nic_list, stage=test_kwargs["stage"])
+                for slot in rlist_val_cert_pass_slots:
+                    val_cert_pass_slots.append(slot)
+                for slot in rlist_val_cert_fail_slots:
+                    val_cert_fail_slots.append(slot)
+            elif test == "HMAC_PROG_CATE":
+                rlist, rlist_hmac_no_prog_slots, rlist_hmac_prog_slots = libmfg_utils.get_hmac_category_slots(mtp_mgmt_ctrl, nic_list, stage=test_kwargs["stage"])
+                for slot in rlist_hmac_no_prog_slots:
+                    hmac_no_prog_slots.append(slot)
+                for slot in rlist_hmac_prog_slots:
+                    hmac_prog_slots.append(slot)
+
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
                 rlist = nic_list
@@ -490,16 +507,9 @@ def main():
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ESEC_UNLOCK")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
-            fail_slot, hmac_no_prog_slots, hmac_prog_slots = libmfg_utils.get_hmac_category_slots(mtp_mgmt_ctrl, pass_nic_list, dsp)
-            for slot in fail_slot:
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, testname="HMAC_PROG_CATEGORY")
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-
-            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_prog_slots)), "SEC_KEY_VAL_UDS")
-            run_swi_test(list(set(pass_nic_list) & set(hmac_no_prog_slots)), "CLEAR_PRE_UBOOT_SECTION")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "HMAC_PROG_CATE", stage=dsp)
+            run_swi_test(hmac_prog_slots, "SEC_KEY_VAL_UDS_CATE", stage=dsp)
+            run_swi_test(list(set(pass_nic_list) - set(val_cert_pass_slots)), "CLEAR_PRE_UBOOT_SECTION")
             # run_swi_test(pass_nic_list, "CONSOLE_BOOT")
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
 
@@ -551,10 +561,10 @@ def main():
             # run_swi_test(non_capri_type_list, "DISABLE_ESEC_WP")
             # # Powercycle and also fix diag.exe as needed for elba's efuse script
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
-            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_no_prog_slots)), "NIC_INIT")
-            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_no_prog_slots)), "EFUSE_PROG")
-            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_no_prog_slots)), "SEC_KEY_PROG")
-            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_no_prog_slots)), "DUMP_BOOT_BIN")
+            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) - set(val_cert_pass_slots)), "NIC_INIT")
+            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) - set(val_cert_pass_slots)), "EFUSE_PROG")
+            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) - set(val_cert_pass_slots)), "SEC_KEY_PROG")
+            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) - set(val_cert_pass_slots)), "DUMP_BOOT_BIN")
             # run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux")
             # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
