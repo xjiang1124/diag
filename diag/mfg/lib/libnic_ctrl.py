@@ -6262,6 +6262,25 @@ class nic_ctrl():
 
         return ret
 
+    def nic_prp_test(self):
+        if not self.mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT):
+            return False
+        if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
+            return False
+
+        cmd = "tclsh ./sal_prp_test.tcl -slot {:d}".format(self._slot+1)
+
+        if not self.mtp_exec_cmd(cmd, timeout=60):
+            self.nic_stop_test()
+            return False
+
+        if MFG_DIAG_SIG.NIC_PRP_TEST_SIG not in self.nic_get_cmd_buf():
+            self.nic_stop_test()
+            return False
+
+        self.nic_stop_test()
+        return True
+
     def read_nic_temp(self, skip_reboot=False):
         if not self.mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT):
             return False
