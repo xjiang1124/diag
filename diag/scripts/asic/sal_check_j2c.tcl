@@ -90,6 +90,7 @@ for {set i 0} {$i < $ite} {incr i} {
         sal_ow_axi
         plog_msg "OW AXI mode"
     }
+    set prev_val [_msrd]
  
     set val [regrd 0x0 0x90000]
     plog_msg "regrd 0x0 0x90000: $val"
@@ -113,6 +114,7 @@ for {set i 0} {$i < $ite} {incr i} {
         plog_msg "=== OW AXI is good"
         set ow_axi_good 1
     }
+    _mswr $prev_val ; #cleanup the 0x12345678 for subsequent failure analysis
 
     set core_pll_good 1
     set core_pll_0 0
