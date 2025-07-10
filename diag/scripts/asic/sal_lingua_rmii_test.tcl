@@ -12,6 +12,9 @@ if { $card_type != "LINGUA" } {
     exit -1
 }
 
+exec turn_on_slot.sh off $slot
+after 5000
+exec turn_on_slot.sh on $slot
 
 set ASIC_SRC $::env(ASIC_SRC)
 
