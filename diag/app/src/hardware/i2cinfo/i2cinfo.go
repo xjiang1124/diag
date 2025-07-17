@@ -882,9 +882,33 @@ var MateraI2cTbl = []I2cInfo {
     I2cInfo {"FAN",       "FPGA",      0, 0xff,    0x0,  "HUB_NONE",  0,    0},
 }
 
+var PanareaI2cTbl = []I2cInfo {
+    //       name            comp         Bus  devAddr  page  HubName     HubPort  Flag
+    I2cInfo {"FRU",          "AT24C04C",  20,  0x50,    0x0,  "HUB_NONE",  0,    0},   //MB FRU
+    I2cInfo {"IOBL",         "AT24C04C",  18,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"IOBR",         "AT24C04C",  17,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"FPIC",         "AT24C04C",  19,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"CLK_SYN_L",    "RC22308",   18,  0x9,     0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"CLK_SYN_R",    "RC22308",   17,  0x9,     0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR_MB",   "LM75",      20,  0x48,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR_IOBL", "LM75",      18,  0x48,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR_IOBR", "LM75",      17,  0x48,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"MEM_VDDIO",    "TPS53688",  16,  0x5E,    0x0,  "HUB_NONE",  0,    0},   //cannot ping
+    I2cInfo {"P12V",         "TPS25990",  16,  0x41,    0x0,  "HUB_NONE",  0,    0},   //hot swap contorller
+    I2cInfo {"CPU_VDDCR",    "ISL69247",  16,  0x60,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"PSU_1_FRU",    "DPS-2100",  14,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"PSU_1",        "DPS-2100",  14,  0x58,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"PSU_2_FRU",    "DPS-2100",  15,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"PSU_2",        "DPS-2100",  15,  0x58,    0x0,  "HUB_NONE",  0,    0},
+    //THESE DEVICES DONT HAVE I2C, BUT DUE TO HOW HWINFO AND DEVMGR WORKS, THEY NEED ENTRIES IN THIS TABLE
+    I2cInfo {"FAN",       "FPGA",      0, 0xff,    0x0,  "HUB_NONE",  0,    0},
+}
 
 // simulate UUT on Lipari using its 8 Elba CPLD
 var MateraHubI2cTbl = []I2cInfo {
+}
+
+var PanareaHubI2cTbl = []I2cInfo {
 }
 
 func init() {
@@ -893,6 +917,7 @@ func init() {
     MtpI2cTbl    = append(MtpI2cTbl,    MtpHubI2cTbl...)
     MtpsI2cTbl   = append(MtpsI2cTbl,   MtpHubI2cTbl...)
     MateraI2cTbl = append(MateraI2cTbl, MateraHubI2cTbl...)
+    PanareaI2cTbl = append(PanareaI2cTbl, PanareaHubI2cTbl...)
     NaplesMtpTbl = append(NaplesMtpTbl, MtpHubI2cTbl...)
     Naples100MtpTbl = append(Naples100MtpTbl, MtpHubI2cTbl...)
     Naples100HPEMtpTbl = append(Naples100HPEMtpTbl, MtpHubI2cTbl...)
@@ -985,6 +1010,8 @@ func init() {
         I2cTbl = MtpsI2cTbl
     } else if CardType == "MTP_MATERA" { 
         I2cTbl = MateraI2cTbl
+    } else if CardType == "MTP_PANAREA" {
+        I2cTbl = PanareaI2cTbl
     } else if CardType == "TAORMINA" {
         I2cTbl = TaorTbl
     } else if CardType == "TAORELBA" {
@@ -1020,7 +1047,7 @@ func FindUutTypeMtp(uutName string) (uutType string, err int) {
         return
     }
 
-    if (cardType != "MTP" && cardType != "MTPS" && cardType != "MTP_MATERA") {
+    if (cardType != "MTP" && cardType != "MTPS" && cardType != "MTP_MATERA" && cardType != "MTP_PANAREA") {
         return "UUT_NONE", errType.SUCCESS
     }
 
@@ -1066,9 +1093,9 @@ func FindUutType(uutName string) (uutType string, err int) {
  */
 func UpdateNicI2cBus(uutName string) (err int) {
     mCardTyp, _ := os.LookupEnv("CARD_TYPE")
-    if (mCardTyp != "MTP_MATERA") {
+    if (mCardTyp != "MTP_MATERA" && mCardTyp != "MTP_PANAREA") {
         err = errType.INVALID_PARAM
-        cli.Println("e", "Currently only MATERA needs to update nic i2c bus! CARD_TYPE is", mCardTyp)
+        cli.Println("e", "Currently only MATERA and PANAREA needs to update nic i2c bus! CARD_TYPE is", mCardTyp)
         return
     }
 

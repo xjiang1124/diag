@@ -522,6 +522,10 @@ func SetJTAGbusToSPI(slot uint32) (err error) {
     var data32 uint32 = 0
     var i byte
 
+    if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        return
+    }
+
     if slot > MAXSLOT {
         err = fmt.Errorf("ERROR: SetJTAGbusToSPI: Invalid slot number -> %d \n", slot);
         fmt.Printf("%v", err)
@@ -575,6 +579,10 @@ func SetJTAGbusToSPI(slot uint32) (err error) {
 func SetJTAGbusToJTAG(slot uint32) (err error) {
     var data32 uint32 = 0
     var i byte
+
+    if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        return
+    }
 
     if slot > MAXSLOT {
         err = fmt.Errorf("ERROR: SetJTAGbusToJTAG: Invalid slot number -> %d \n", slot);

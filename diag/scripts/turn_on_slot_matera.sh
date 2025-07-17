@@ -203,6 +203,69 @@ control_all() {
     fpgautil r32 $matera_perst_addr
 }
 
+control_slot_panarea() {
+    if [[ $on_off == "off" ]]
+    then
+        for slot_one_based in $slot_list
+        do
+            slot=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            printf "Setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
+            wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
+            # PERST
+            wValue=$(( $wValue & 0xFFFFFFFB ))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+            sleep 0.2
+            # 12V
+            wValue=$(( $wValue & 0xFFFFFFFD ))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+            sleep 0.2
+            # 3V3
+            wValue=$(( $wValue & 0xFFFFFFFE ))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+            sleep 0.2
+        done
+    elif [[ $on_off == "on" ]]
+    then
+        for slot_one_based in $slot_list
+        do
+            slot=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            printf "Setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
+            # 3V3
+            wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
+            wValue=$(( $wValue | 0x1 ))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+        done
+        sleep 2
+        for slot_one_based in $slot_list
+        do
+            slot=$(( $slot_one_based - 1 ))
+            enable_nic_mtp_r3 $slot_one_based
+            elba_enable_jtag $slot_one_based
+            set_prod_mode $slot_one_based $prod_mode
+            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            # 12V
+            wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
+            wValue=$(( $wValue | 0x2 ))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+            # PERST
+            wValue=$(( $wValue | 0x4 ))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+
+            card_adapter_enable_power $slot_one_based
+        done
+    fi
+    # display
+    sleep 0.2
+    for slot_one_based in $slot_list
+    do
+        slot=$(( $slot_one_based - 1 ))
+        slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+        sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
+    done
+}
+
 usage() {
     echo "========================="
     echo "Turn_on_slot.sh Usage"
@@ -231,6 +294,14 @@ then
         fpgautil r32 $matera_P12V_addr
         fpgautil r32 $matera_P3V3_addr
         fpgautil r32 $matera_perst_addr
+    elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
+    then
+        slot_list=(1 2 3 4 5 6 7 8 9 10)
+        for slot in $slot_list
+        do
+            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
+        done
     else
         cpldutil -cpld-rd -addr=0x10
         cpldutil -cpld-rd -addr=0x11
@@ -261,8 +332,15 @@ fi
 if [[ $2 == "all" ]]
 then
     on_off=$1
-    (flock -x -w 50 99 || { echo "ERROR: Failed to acquire lock within 50 seconds"; exit 1;}; control_all $on_off;
-    ) 99>/home/diag/turn_on_slot.lock
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        (flock -x -w 50 99 || { echo "ERROR: Failed to acquire lock within 50 seconds"; exit 1;}; control_all $on_off;
+        ) 99>/home/diag/turn_on_slot.lock
+    elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
+    then
+        slot_list=(1 2 3 4 5 6 7 8 9 10)
+        control_slot_panarea
+    fi
 else
     slot_list=$(echo $2 | tr "," "\n")
 	pc_low=0
@@ -301,6 +379,9 @@ else
     then
         (flock -x -w 50 99 || { echo "ERROR: Failed to acquire lock within 50 seconds"; exit 1;}; control_slot_matera;
         ) 99>/home/diag/turn_on_slot.lock
+    elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
+    then
+        control_slot_panarea
     else
         declare -a low_high_list=("low" "high")
         for low_high in "${low_high_list[@]}"

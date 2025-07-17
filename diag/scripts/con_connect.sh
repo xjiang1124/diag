@@ -15,7 +15,7 @@ then
         i2cset -y 3 0x4a 0x21 0x61
         picocom -b 115200 -f h /dev/ttyS3
     fi
-elif [[ $CARD_TYPE == "MTP_MATERA" ]]
+elif [[ $CARD_TYPE == "MTP_MATERA" || $CARD_TYPE == "MTP_PANAREA" ]]
 then
     slot=$1
     uart_id=0

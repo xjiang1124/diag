@@ -97,7 +97,7 @@ if [ $# -lt 1 ]; then
     usage
     exit
 fi
-if [[ $MTP_TYPE != "MTP_MATERA" ]]; then
+if [[ $MTP_TYPE != "MTP_MATERA" && $MTP_TYPE != "MTP_PANAREA" ]]; then
     exit 0
 fi
 slot=$1

@@ -27,7 +27,7 @@ import (
 func Margin(devName string, pct int, uutName string) (err int) {
     if uutName == "UUT_NONE" {
         err = margin(devName, pct, true)
-    } else if uutName == "MTP_MATERA" {
+    } else if uutName == "MTP_MATERA" || uutName == "MTP_PANAREA" {
         err = margin(devName, pct, false)
     } else {
         err = marginUut(devName, pct, uutName)

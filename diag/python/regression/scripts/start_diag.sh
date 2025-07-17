@@ -51,13 +51,16 @@ if [[ -n $skip_untar ]]
 then
     echo "Using existing ASIC lib"
 else
-    echo "Untar ASIC lib"
-    chmod -R 755 $DIAG_DIR/asic_all/$asic/
-    rm -rf  $DIAG_DIR/asic_all/$asic/*
-    tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
-    cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
-    cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
-    rm -rf $DIAG_DIR/asic_all/$asic/nic
+    if [[ $asic != "vulcano" ]]
+    then
+        echo "Untar ASIC lib"
+        chmod -R 755 $DIAG_DIR/asic_all/$asic/
+        rm -rf  $DIAG_DIR/asic_all/$asic/*
+        tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
+        cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
+        cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
+        rm -rf $DIAG_DIR/asic_all/$asic/nic
+    fi
 fi
 
 mkdir -p $DIAG_DIR/log/
@@ -73,8 +76,14 @@ then
     cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
     if [[ $FPGA_PRST == "YES" ]]
     then
-        export MTP_TYPE=MTP_MATERA
-        export CARD_TYPE=MTP_MATERA
+        if [[ $asic == "salina" ]]
+        then
+            export MTP_TYPE=MTP_MATERA
+            export CARD_TYPE=MTP_MATERA
+        else
+            export MTP_TYPE=MTP_PANAREA
+            export CARD_TYPE=MTP_PANAREA
+        fi
         export UUT_1="UUT_NONE"
         export UUT_2="UUT_NONE"
         export UUT_3="UUT_NONE"
@@ -89,7 +98,12 @@ then
         cp /home/diag/diag/python/regression/scripts/dft_bashrc /etc/skel/.bashrc
         cp /home/diag/diag/python/regression/scripts/dft_bashrc /home/diag/.bashrc
         cp /home/diag/diag/python/regression/scripts/dft_bashrc /etc/bash.bashrc
-        /home/diag/diag/python/regression/envinit_matera.py
+        if [[ $asic == "salina" ]]
+        then
+            /home/diag/diag/python/regression/envinit_matera.py
+        else
+            /home/diag/diag/python/regression/envinit_panarea.py
+        fi
     else 
         /home/diag/diag/python/regression/envinit.py
     fi
@@ -170,6 +184,11 @@ then
     echo "Matera  MTP"
     echo "export MTP_TYPE=MTP_MATERA" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/${asic_type,,}
+elif [[ $mtp_id == "0x000c" ]]
+then
+    echo "Panarea  MTP"
+    echo "export MTP_TYPE=MTP_PANAREA" >> temp_profile
+    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/${asic_type,,}
 else
     echo "Default MTP to Capri"
     echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
@@ -193,6 +212,11 @@ then
     echo "export CARD_TYPE=MTP_MATERA" >> temp_profile
     echo "export REDIS_IP=127.0.0.1" >> temp_profile
     export REDIS_IP="127.0.0.1"
+elif [[ $mtp_id == "0x000c" ]]
+then
+    echo "export CARD_TYPE=MTP_PANAREA" >> temp_profile
+    echo "export REDIS_IP=127.0.0.1" >> temp_profile
+    export REDIS_IP="127.0.0.1"
 else
     source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
     echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
@@ -201,7 +225,7 @@ fi
 
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
-if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" || $mtp_id == "0x000b" ]]
+if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" || $mtp_id == "0x000b" || $mtp_id == "0x000c" ]]
 then
     hack_asic_elba.sh
 else
