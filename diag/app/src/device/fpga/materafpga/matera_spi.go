@@ -358,6 +358,10 @@ func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
     var shift, data8, i byte
     err_i := errType.SUCCESS
 
+    if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        return
+    }
+
     for i=0; i<100; i++ {
         locked, err_l := mcp23008_lock.TryLock()
         if err_l != nil {
@@ -445,6 +449,11 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
     var dev string
     var shift, data8, i byte
     err_i := errType.SUCCESS
+
+    if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        return
+    }
+
     for i=0; i<100; i++ {
         locked, err_l := mcp23008_lock.TryLock()
         if err_l != nil {

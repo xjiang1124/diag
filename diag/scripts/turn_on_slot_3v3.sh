@@ -72,7 +72,7 @@ power_on_naples25_swm_ocp() {
 elba_enable_jtag() {
     slot=$1
 
-    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    if [[ $MTP_TYPE == "MTP_MATERA" || $MTP_TYPE == "MTP_PANAREA" ]]
     then
         reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x22)
         if [ $? -ne 0 ]
@@ -110,7 +110,7 @@ elba_delay() {
 enable_nic_mtp_r3() {
     slot=$1
 
-    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    if [[ $MTP_TYPE == "MTP_MATERA" || $MTP_TYPE == "MTP_PANAREA" ]]
     then
         echo "uart_id is $uart_id"
 
@@ -260,6 +260,7 @@ control_slot_matera() {
     fpgautil r32 $matera_P3V3_addr
 }
 
+
 control_all() {
     if [[ "$1" == "on" ]]
     then
@@ -316,6 +317,45 @@ control_all() {
     fi
 }
 
+control_slot_panarea() {
+    if [[ $on_off == "off" ]]
+    then
+        for slot_one_based in $slot_list
+        do
+            slot=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            printf "Setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
+            wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
+            wValue=$(( $wValue & 0xFFFFFFFE ))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+            sleep 0.2
+        done
+    elif [[ $on_off == "on" ]]
+    then
+        for slot_one_based in $slot_list
+        do
+            slot=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            printf "Setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
+            # 3V3
+            wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
+            wValue=$(( $wValue | 0x1 ))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+
+            enable_nic_mtp_r3 $slot_one_based
+            elba_enable_jtag $slot_one_based
+            set_prod_mode $slot_one_based $prod_mode
+        done
+    fi
+    sleep 0.2
+    for slot_one_based in $slot_list
+    do
+        slot=$(( $slot_one_based - 1 ))
+        slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+        sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
+    done
+}
+
 usage() {
     echo "========================="
     echo "Turn_on_slot.sh Usage"
@@ -342,6 +382,14 @@ then
     if [[ $MTP_TYPE == "MTP_MATERA" ]]
     then
         fpgautil r32 $matera_P3V3_addr
+    elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
+        slot_list=(1 2 3 4 5 6 7 8 9 10)
+        for slot in $slot_list
+        do
+            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
+        done
+    then
     else
         cpldutil -cpld-rd -addr=0x12
         cpldutil -cpld-rd -addr=0x13
@@ -355,7 +403,7 @@ then
     exit
 fi
 
-if [[ $MTP_TYPE != "MTP_MATERA" ]]
+if [[ $MTP_TYPE != "MTP_MATERA" && $MTP_TYPE != "MTP_PANAREA" ]]
 then
     swm_lp_mode=0
     if [[ $# -eq 3 ]]
@@ -376,7 +424,7 @@ else
     fi
 fi
 
-if [[ $MTP_TYPE != "MTP_MATERA" ]]
+if [[ $MTP_TYPE != "MTP_MATERA" && $MTP_TYPE != "MTP_PANAREA" ]]
 then
     mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
     mtp_id_str1=($mtp_id_str)
@@ -386,8 +434,15 @@ fi
 if [[ $2 == "all" ]]
 then
     on_off=$1
-    (flock -x -w 50 99 || { echo "ERROR: Failed to acquire lock within 50 seconds"; exit 1;}; control_all $on_off;
-    ) 99>/home/diag/turn_on_slot.lock
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        (flock -x -w 50 99 || { echo "ERROR: Failed to acquire lock within 50 seconds"; exit 1;}; control_all $on_off;
+        ) 99>/home/diag/turn_on_slot.lock
+    elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
+    then
+        slot_list=(1 2 3 4 5 6 7 8 9 10)
+        control_slot_panarea
+    fi
 else
     slot_list=$(echo $2 | tr "," "\n")
 	pc_low=0
@@ -426,6 +481,9 @@ else
     then
         (flock -x -w 50 99 || { echo "ERROR: Failed to acquire lock within 50 seconds"; exit 1;}; control_slot_matera;
         ) 99>/home/diag/turn_on_slot.lock
+    elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
+    then
+        control_slot_panarea
     else
         declare -a low_high_list=("low" "high")
         for low_high in "${low_high_list[@]}"
@@ -441,7 +499,7 @@ else
 
     for slot in $slot_list
     do
-        if [[ $MTP_TYPE != "MTP_MATERA" ]]
+        if [[ $MTP_TYPE != "MTP_MATERA" && $MTP_TYPE != "MTP_PANAREA" ]]
         then
             reset_hub
             turn_on_hub.sh $slot

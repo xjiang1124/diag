@@ -50,7 +50,7 @@ func FindUutI2cDev(uutName string) (i2cDevIdx int, err int) {
         return
     }
 
-    if (cardType != "MTP" && cardType != "MTPS" && cardType != "MTP_MATERA") {
+    if (cardType != "MTP" && cardType != "MTPS" && cardType != "MTP_MATERA" && cardType != "MTP_PANAREA") {
         err = errType.INVALID_PARAM
         return
     }
@@ -95,7 +95,7 @@ func EnableHubChannel(devName string) (err int) {
         taorfpga.SetI2Cmux((i2cInfo.Bus - 1), uint32(i2cInfo.HubPort))
         return
     }
-    if cardType == "LIPARI" || cardType == "MTP_MATERA" {
+    if cardType == "LIPARI" || cardType == "MTP_MATERA" || cardType == "MTP_PANAREA" {
         var i2cInfo i2cinfo.I2cInfo
         i2cInfo, err = i2cinfo.GetI2cInfo(devName)
         if err != errType.SUCCESS {
@@ -237,7 +237,7 @@ func PreUutSetup(uutName string) (lockName string, err int) {
     var i2cDevIdx int = 0
 
     //Matera does not lock dmutex, neither EnableHubChannelUut
-    if cardType != "MTP_MATERA" {
+    if cardType != "MTP_MATERA" && cardType != "MTP_PANAREA" {
         i2cDevIdx, err = FindUutI2cDev(uutName)
         if err != errType.SUCCESS {
             return
@@ -259,7 +259,7 @@ func PreUutSetup(uutName string) (lockName string, err int) {
     if err != errType.SUCCESS {
         return
     }
-    if cardType == "MTP_MATERA" {
+    if cardType == "MTP_MATERA" || cardType == "MTP_PANAREA" {
         i2cinfo.UpdateNicI2cBus(uutName)
     }
 
@@ -279,7 +279,7 @@ func PreUutSetupBlind(uutName string) (lockName string, err int) {
     var i2cDevIdx int = 0
 
     //Matera does not lock dmutex, neither EnableHubChannelUut
-    if cardType != "MTP_MATERA" {
+    if cardType != "MTP_MATERA" && cardType != "MTP_PANAREA" {
         i2cDevIdx, err = FindUutI2cDev(uutName)
         if err != errType.SUCCESS {
             return
@@ -301,7 +301,7 @@ func PreUutSetupBlind(uutName string) (lockName string, err int) {
     if err != errType.SUCCESS {
         return
     }
-    if cardType == "MTP_MATERA" {
+    if cardType == "MTP_MATERA" || cardType == "MTP_PANAREA" {
         i2cinfo.UpdateNicI2cBus(uutName)
     }
 
@@ -318,7 +318,7 @@ func PreUutSetupBlind(uutName string) (lockName string, err int) {
  */
 func PostUutClean(lockName string) {
     //Matera does not lock/unlock dmutex
-    if cardType != "MTP_MATERA" {
+    if cardType != "MTP_MATERA" && cardType != "MTP_PANAREA" {
         dmutex.Unlock(lockName)
     }
     SwitchHwInfo("UUT_NONE")

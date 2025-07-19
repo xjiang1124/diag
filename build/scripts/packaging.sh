@@ -27,14 +27,15 @@ do
     if [[ $item == "elba" ]] || \
        [[ $item == "capri" ]] || \
        [[ $item == "giglio" ]] || \
-       [[ $item == "salina" ]]
+       [[ $item == "salina" ]] || \
+       [[ $item == "vulcano" ]]
     then
         asic_list+=($item)
     fi
 done
 if [[ ${#asic_list[@]} == 0 ]]
 then
-    asic_list=("giglio" "elba" "capri" "salina")
+    asic_list=("giglio" "elba" "capri" "salina" "vulcano")
 fi
 
 for asic in ${asic_list[@]}
@@ -67,7 +68,7 @@ do
     elif [[ $asic == "elba" ]]
     then
         declare -a j2cd_list=("ftdi" "lipari" "fpga")
-    elif [[ $asic == "salina" ]]
+    elif [[ $asic == "salina" || $asic == "vulcano" ]]
     then
         declare -a j2cd_list=("fpga")
     else
@@ -137,6 +138,10 @@ do
         if [[ $asic == "salina" ]]
         then
             echo "export ASIC_TYPE=SALINA" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
+        fi
+        if [[ $asic == "vulcano" ]]
+        then
+            echo "export ASIC_TYPE=VULCANO" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
         fi
         if [[ $asic == "capri" ]]
         then
@@ -249,8 +254,12 @@ do
             echo "Copying stable ASIC lib for $asic"
             for j2cd in ${j2cd_list[@]}
             do
-                ASIC_IMG="/vol/hw/diag/diag_repo/asic_lib_rel_stable/nic_${arch}_${asic}_${j2cd}.tar.gz"
-                cp $ASIC_IMG $TEMP_DIR_TOP/
+                # do not bundle asic lib for vulcano yet
+                if [[ $asic == "salina" ]]
+                then
+                    ASIC_IMG="/vol/hw/diag/diag_repo/asic_lib_rel_stable/nic_${arch}_${asic}_${j2cd}.tar.gz"
+                    cp $ASIC_IMG $TEMP_DIR_TOP/
+                fi
             done
         fi
         if [[ $asiclib == "latest" ]]

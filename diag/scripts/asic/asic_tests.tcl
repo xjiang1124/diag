@@ -234,7 +234,7 @@ proc set_avs_gig { {board_id SN000001} {j2c_slot 1} {core_freq 1100} {arm_freq 3
     if {$MTP_TYPE == "MTP_TURBO_ELBA"} {
         set j2c_port [get_port_turbo $slot]
         set slot 1
-    } elseif {$MTP_TYPE == "MTP_MATERA"} {
+    } elseif {$MTP_TYPE == "MTP_MATERA" || $MTP_TYPE == "MTP_PANAREA"} {
         set j2c_port $slot
     }
 
