@@ -3015,7 +3015,7 @@ class nic_ctrl():
 
         return True
 
-    def salina_nic_program_qspi(self, image_path=None):
+    def salina_nic_program_qspi(self, image_path=None, img_type="standalone"):
         '''
         This funtion is for Matera capability NIC cards to program NIC QSPI Flash
         image_path is the path of program qspi bash script in with file name or path only
@@ -3050,11 +3050,28 @@ class nic_ctrl():
 
         # call qspi_prog.sh to program qspi flash
         if not prog_cmd:
-            cmd = "chmod +x {:s}".format("./qspi_prog.sh")
+            if self._nic_type == NIC_Type.POLLARA:
+                if img_type == "secure":
+                    cmd = "chmod +x {:s}".format("./qspi_prog_secure.v2.sh")
+                elif img_type == "nonsecure":
+                    cmd = "chmod +x {:s}".format("./qspi_prog.v2.sh")
+                else:
+                    cmd = "chmod +x {:s}".format("./qspi_prog.sh")
+            else:
+                cmd = "chmod +x {:s}".format("./qspi_prog.sh")
             if not self.mtp_exec_cmd(cmd):
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 return False
-            cmd = MFG_DIAG_CMDS().MTP_MATERA_QSPI_PROG_SH_CMD_FMT.format(str(self._slot + 1))
+
+            if self._nic_type == NIC_Type.POLLARA:
+                if img_type == "secure":
+                    cmd = MFG_DIAG_CMDS().MTP_MATERA_POLLARA_QSPI_PROG_SECURE_SH_CMD_FMT.format(str(self._slot + 1))
+                elif img_type == "nonsecure":
+                    cmd = MFG_DIAG_CMDS().MTP_MATERA_POLLARA_QSPI_PROG_SH_CMD_FMT.format(str(self._slot + 1))
+                else:
+                    cmd = MFG_DIAG_CMDS().MTP_MATERA_QSPI_PROG_SH_CMD_FMT.format(str(self._slot + 1))
+            else:
+                cmd = MFG_DIAG_CMDS().MTP_MATERA_QSPI_PROG_SH_CMD_FMT.format(str(self._slot + 1))
         else:
             cmd = "chmod +x {:s}".format(prog_cmd)
             if not self.mtp_exec_cmd(cmd):
@@ -6279,6 +6296,14 @@ class nic_ctrl():
             return False
 
         self.nic_stop_test()
+        return True
+
+    def nic_dump_reg(self):
+        # dump all registers for information
+        cmd = MFG_DIAG_CMDS().MTP_FPGA_UTIL_REGDUMP_FMT
+        if not self.mtp_exec_cmd(cmd, timeout=5):
+            return False
+
         return True
 
     def read_nic_temp(self, skip_reboot=False):

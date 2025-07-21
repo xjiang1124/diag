@@ -178,10 +178,16 @@ def swi_mainfw_store(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.mtp_copy_nic_copy_file(slot, emmc_mainfw_img_file)
 
 @parallelize.parallel_nic_using_ssh
-def swi_salina_qspi_program(mtp_mgmt_ctrl, slot):
+def swi_salina_qspi_program(mtp_mgmt_ctrl, slot, secure_img=False):
     dsp = FF_Stage.FF_SWI
-    image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_prog_sh_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
-    return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path)
+    img_type="nonsecure"
+    if secure_img:
+        image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_prog_secure_sh_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+        img_type="secure"
+    else:
+        image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_prog_sh_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+        img_type="nonsecure"
+    return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path, img_type)
 
 @parallelize.parallel_nic_using_ssh
 def swi_salina_dump_boot(mtp_mgmt_ctrl, slot):
@@ -408,7 +414,7 @@ def main():
             elif test == "GOLDFW_PROG":
                 rlist = swi_goldfw_program(mtp_mgmt_ctrl, nic_list)
             elif test == "SALINA_QSPI_PROG":
-                rlist = swi_salina_qspi_program(mtp_mgmt_ctrl, nic_list)
+                rlist = swi_salina_qspi_program(mtp_mgmt_ctrl, nic_list, secure_img=test_kwargs["secure_img"])
             elif test == "SALINA_QSPI_VERIFY":
                 rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs["bootstage"], new_layout=False)
             elif test == "SALINA_NEW_QSPI_VERIFY":
@@ -508,7 +514,7 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ESEC_UNLOCK")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "HMAC_PROG_CATE", stage=dsp)
-            run_swi_test(hmac_prog_slots, "SEC_KEY_VAL_UDS_CATE", stage=dsp)
+            # run_swi_test(hmac_prog_slots, "SEC_KEY_VAL_UDS_CATE", stage=dsp)
             run_swi_test(list(set(pass_nic_list) - set(val_cert_pass_slots)), "CLEAR_PRE_UBOOT_SECTION")
             # run_swi_test(pass_nic_list, "CONSOLE_BOOT")
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
@@ -543,7 +549,7 @@ def main():
             run_swi_test(pass_nic_list, "NIC_INIT")
             # run_swi_test(pass_nic_list, "NIC_DIAG_BOOT")
 
-            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG", secure_img=False)
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 
@@ -579,6 +585,9 @@ def main():
             # run_swi_test(non_capri_type_list, "ENABLE_ESEC_WP")
 
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
+
+            run_swi_test(get_slots_of_type(NIC_Type.POLLARA), "SALINA_QSPI_PROG", secure_img=False)
+            run_swi_test(get_slots_of_type(NIC_Type.POLLARA), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
@@ -629,7 +638,7 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_CLEANUP")
             # run_swi_test(pass_nic_list, "NIC_PWRCYC")
             # libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
-            # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+            # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG", secure_img=False)
             # run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="linux")
             # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 

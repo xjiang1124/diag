@@ -27,6 +27,7 @@ arm_n_ubootb = "arm_n_ubootb"
 arm_n_ubootg = "arm_n_ubootg"
 arm_n_kernel_goldfw = "arm_n_kernel_goldfw"
 qspi_prog_sh_img = "qspi_prog_sh_img"
+qspi_prog_secure_sh_img = "qspi_prog_secure_sh_img"
 qspi_snake_img = "qspi_snake_img"
 arm_a_zephyr = "arm_a_zephyr"
 arm_a_zephyr_gold = "arm_a_zephyr_gold"
@@ -36,6 +37,11 @@ fwsel = "fwsel"
 device_config_dtb = "device_config_dtb"
 firmware_config_dtb = "firmware_config_dtb"
 mbist_boot0_img = "mbist_boot0_img"
+bl1_img = "bl1"
+pentrust_img = "pentrust"
+fipa_img = "fipa"
+fipb_img = "fipb"
+fipg_img = "fipg"
 
 def get_dict_entry(mtp_mgmt_ctrl, img_dict, nic_type):
     try:
@@ -249,6 +255,12 @@ def get_qspi_prog_sh_img(mtp_mgmt_ctrl, slot, stage):
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.qspi_prog_sh_img, nic_type)
     }
 
+def get_qspi_prog_secure_sh_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, qspi_prog_secure_sh_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.qspi_prog_secure_sh_img, nic_type)
+    }
+
 def get_qspi_snake_img(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, qspi_snake_img)
     return {
@@ -259,6 +271,36 @@ def get_mbist_boot0_img(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, mbist_boot0_img)
     return {
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.mbist_boot0_img, nic_type)
+    }
+
+def get_bl1_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, bl1_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.bl1_img, nic_type)
+    }
+
+def get_pentrust_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, pentrust_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.pentrust_img, nic_type)
+    }
+
+def get_fipa_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, fipa_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.fipa_img, nic_type)
+    }
+
+def get_fipb_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, fipb_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.fipb_img, nic_type)
+    }
+
+def get_fipg_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, fipg_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.fipg_img, nic_type)
     }
 
 def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
@@ -297,8 +339,14 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         arm_n_ubootg: get_arm_n_ubootg_img,
         arm_n_kernel_goldfw: get_arm_n_kernel_goldfw_img,
         qspi_prog_sh_img: get_qspi_prog_sh_img,
+        qspi_prog_secure_sh_img: get_qspi_prog_secure_sh_img,
         qspi_snake_img: get_qspi_snake_img,
-        mbist_boot0_img: get_mbist_boot0_img
+        mbist_boot0_img: get_mbist_boot0_img,
+        bl1_img: get_bl1_img,
+        pentrust_img: get_pentrust_img,
+        fipa_img: get_fipa_img,
+        fipb_img: get_fipb_img,
+        fipg_img: get_fipg_img,
         }
 
     images_needed = list()
@@ -419,6 +467,13 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(firmware_config_dtb)
                 images_needed.append(arm_a_zephyr)
                 images_needed.append(fwsel)
+            if nic_type == NIC_Type.POLLARA:
+                images_needed.append(bl1_img)
+                images_needed.append(pentrust_img)
+                images_needed.append(fipa_img)
+                images_needed.append(fipb_img)
+                images_needed.append(fipg_img)
+                images_needed.append(qspi_prog_secure_sh_img)
 
     # return dict with {"Image display name": filepath}
     ret_dict = dict()
