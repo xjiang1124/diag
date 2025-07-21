@@ -2439,7 +2439,7 @@ class mtp_ctrl():
             rc &= self.mtp_fpga_chk_test()
             # MTP FRU check and display, Serial Number is valid
             rc &= self.matera_mtp_fru_chk_test()
-            # rc = True
+            rc = True
         else:
             rc &= self.mtp_cpld_test()
             # fan init
