@@ -37,6 +37,7 @@ import (
     "device/cpu/XeonD"
     "device/clkgen/rc19013"
     "device/ioexpander/mcp23008"
+    "device/clkgen/rc22308"
 
     "gopkg.in/yaml.v2"
 )
@@ -613,9 +614,8 @@ func init() {
     panareaDispStaList["TSENSOR_MB"]   = lm75a.DispStatus
     panareaDispStaList["TSENSOR_IOBL"] = lm75a.DispStatus
     panareaDispStaList["TSENSOR_IOBR"] = lm75a.DispStatus
-    // to be added
-    //panareaDispStaList["CLK_SYN_L"]      = rc22308.DispStatus
-    //panareaDispStaList["CLK_SYN_R"]      = rc22308.DispStatus
+    panareaDispStaList["CLK_SYN_L"]    = rc22308.DispStatus
+    panareaDispStaList["CLK_SYN_R"]    = rc22308.DispStatus
     panareaDispStaList["MEM_VDDIO"] = tps53688.DispStatus
     panareaDispStaList["P12V"] = tps25990.DispStatus
     panareaDispStaList["CPU_VDDCR"] = isl69247.DispStatus
