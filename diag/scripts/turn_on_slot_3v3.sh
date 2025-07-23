@@ -383,13 +383,13 @@ then
     then
         fpgautil r32 $matera_P3V3_addr
     elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
+    then
         slot_list=(1 2 3 4 5 6 7 8 9 10)
         for slot in $slot_list
         do
             slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
         done
-    then
     else
         cpldutil -cpld-rd -addr=0x12
         cpldutil -cpld-rd -addr=0x13
