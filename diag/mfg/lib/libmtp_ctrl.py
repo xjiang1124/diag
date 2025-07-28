@@ -4471,6 +4471,12 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "Program NIC check Uboot failed")
                 return False
 
+            if nic_type in NIC_Type.POLLARA:
+                image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_prog_secure_sh_img(self, slot, FF_Stage.FF_SWI)["filename"]
+                if not self.matera_mtp_program_nic_qspi(slot, image_path, img_type="secure"):
+                    self.cli_log_slot_err(slot, "Program NIC secure qspi imgage failed")
+                    return False
+
             if not self._nic_ctrl_list[slot].nic_check_uds_cert():
                 self.cli_log_slot_err(slot, "Program NIC check UDS cert failed")
                 return False
@@ -4478,6 +4484,10 @@ class mtp_ctrl():
             if SALINA_HMAC_PROGRAM_ENABLE:
                 if slot not in skip_hmac_list and not self._nic_ctrl_list[slot].nic_hmac_fuse_prog():
                     self.cli_log_slot_err(slot, "Program HMAC fuse failed")
+                    return False
+
+                if slot not in skip_hmac_list and not self._nic_ctrl_list[slot].nic_val_uds_cert():
+                    self.cli_log_slot_err(slot, "Check NIC UDS cert failed")
                     return False
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key_post():
@@ -4631,8 +4641,8 @@ class mtp_ctrl():
             return False
         return True
 
-    def matera_mtp_program_nic_qspi(self, slot, image_path):
-        if not self._nic_ctrl_list[slot].salina_nic_program_qspi(image_path):
+    def matera_mtp_program_nic_qspi(self, slot, image_path, img_type="standalone"):
+        if not self._nic_ctrl_list[slot].salina_nic_program_qspi(image_path, img_type):
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
             self.mtp_dump_nic_err_msg(slot)
             return False
@@ -4955,6 +4965,7 @@ class mtp_ctrl():
             self.mtp_sal_check_j2c(slot, test)
             self.mtp_nic_console_unlock()
             self.mtp_single_j2c_unlock()
+            self.mtp_nic_dump_reg(slot)
             self.mtp_nic_prp_test(slot)
             self.mtp_clear_nic_uart(slot)
 
@@ -7934,6 +7945,15 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Unable to run PRP test")
             self.mtp_dump_nic_err_msg(slot)
             self.mtp_nic_stop_tclsh(slot)
+            return False
+
+    def mtp_nic_dump_reg(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            return True
+        if not self._nic_ctrl_list[slot].nic_dump_reg():
+            self.cli_log_slot_err(slot, "Unable to run register dump")
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
     def mtp_nic_read_temp(self, slot):

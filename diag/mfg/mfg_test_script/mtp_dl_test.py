@@ -135,7 +135,7 @@ def dl_salina_qspi_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_prog_sh_img(mtp_mgmt_ctrl, slot, dsp)["filename"])
-    return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path)
+    return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path, img_type="standalone")
 
 @parallelize.parallel_nic_using_ssh
 def dl_salina_swi_qspi_program(mtp_mgmt_ctrl, slot):
@@ -147,7 +147,7 @@ def dl_salina_swi_qspi_program(mtp_mgmt_ctrl, slot):
         image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.qspi_prog_sh_img["POLLARA-1Q400P-OCP"])
     else:
         image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_prog_sh_img(mtp_mgmt_ctrl, slot, dsp)["filename"])
-    return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path)
+    return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path, img_type="nonsecure")
 
 @parallelize.parallel_nic_using_ssh
 def dl_goldfw_program(mtp_mgmt_ctrl, slot):

@@ -1271,6 +1271,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname=""):
             if mtp_mgmt_ctrl.mtp_nic_failed_boot(slot):
                 mtp_mgmt_ctrl.mtp_nic_l1_health_check(slot) # for a CONSOLE_BOOT failure ONLY: do a mini L1
             mtp_mgmt_ctrl.mtp_single_j2c_unlock()
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in SALINA_NIC_TYPE_LIST: mtp_mgmt_ctrl.mtp_nic_dump_reg(slot)
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in SALINA_NIC_TYPE_LIST: mtp_mgmt_ctrl.mtp_nic_prp_test(slot)
     
 
