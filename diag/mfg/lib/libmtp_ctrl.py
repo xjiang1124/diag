@@ -6071,7 +6071,7 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_ssh
-    def mtp_i2c_qsfp_salina(self, slot, vmarg="normal", timeout=180):
+    def mtp_i2c_qsfp_salina(self, slot, vmarg="normal", timeout=600):
         '''
         run salina i2c qsfp
         '''

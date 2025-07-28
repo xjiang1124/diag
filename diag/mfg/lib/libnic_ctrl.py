@@ -6216,7 +6216,8 @@ class nic_ctrl():
     @nic_console_test()
     def nic_check_rebooted(self):
 
-        if self._nic_type in SALINA_NIC_TYPE_LIST:
+        ret = True
+        if self._nic_type in SALINA_AI_NIC_TYPE_LIST:
             nic_cmd_list = list()
             nic_cmd_list.append("kernel uptime")
             for nic_cmd in nic_cmd_list:
@@ -6224,9 +6225,8 @@ class nic_ctrl():
                 idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=10)
                 if idx < 0:
                     self.nic_set_cmd_buf(self._nic_handle.before)
-                    return False
+                    ret &= False
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-            ret = True
             if not cmd_buf:
                 self.nic_set_err_msg("Buffer empty")
                 ret &= False
@@ -6234,8 +6234,7 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         nic_cmd_list.append("uptime")
-        nic_cmd_list.append("dmesg | tail -n20")
-        nic_cmd_list.append("dmesg | grep mmc")
+        nic_cmd_list.append("dmesg")
         nic_cmd_list.append("mount")
 
         for nic_cmd in nic_cmd_list:
@@ -6243,19 +6242,16 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=10)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                return False
+                ret &= False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            return False
+            ret &= False
 
-        ret = True
         if "/dev/mmcblk0p10" not in cmd_buf:
             self.nic_set_err_msg("EMMC not mounted")
             self.nic_set_cmd_buf(cmd_buf)
             ret &= False
-
-
 
         nic_cmd_list = list()
         nic_cmd_list.append("env | grep -v PS1")
@@ -6264,11 +6260,11 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=10)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                return False
+                ret &= False
         cmd_buf = self._nic_handle.before
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            return False
+            ret &= False
 
         # if "CARD_NAME=NIC{:d}".format(self._slot+1) in cmd_buf:
         if "CARD_ENV=" in cmd_buf:
