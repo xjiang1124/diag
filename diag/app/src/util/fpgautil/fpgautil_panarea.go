@@ -48,7 +48,7 @@ func panarea_fpga_cli() {
         }
 
         if (os.Args[1] == "r32") {
-            data32, err = panareafpga.MateraReadU32(uint64(addr))
+            data32, err = panareafpga.ReadU32(uint64(addr))
             if err != nil {
                 cli.Printf("e", "MateraReadU32 Failed")
                 os.Exit(-1)
@@ -56,7 +56,7 @@ func panarea_fpga_cli() {
             fmt.Printf("RD [0x%.04x] = 0x%.08x\n", addr, data32)
         } else {
             data64, err = strconv.ParseUint(os.Args[3], 0, 32)
-            err = panareafpga.MateraWriteU32(uint64(addr), uint32(data64))
+            err = panareafpga.WriteU32(uint64(addr), uint32(data64))
             fmt.Printf("WR [0x%.04x] = 0x%.08x\n", addr, uint32(data64))
         }
         os.Exit(0)

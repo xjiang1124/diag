@@ -9,7 +9,6 @@ import (
     "syscall"
     "unsafe"
     "common/cli"
-    "device/fpga/materafpga"
 )
 
 
@@ -90,37 +89,37 @@ func MMAP_Device(addr int64, size int) (mmap []byte, fd *os.File, err error) {
 } 
  
 
-func MateraReadU8(addr uint64) (value uint8, err error) {
+func ReadU8(addr uint64) (value uint8, err error) {
     value = *(*uint8)(unsafe.Pointer(&Glob_mmap0[addr]))
     return
 }
 
 
-func MateraReadU16(addr uint64) (value uint16, err error) {
+func ReadU16(addr uint64) (value uint16, err error) {
     value = *(*uint16)(unsafe.Pointer(&Glob_mmap0[addr]))
     return
 }
 
 
-func MateraReadU32(addr uint64) (value uint32, err error) {
+func ReadU32(addr uint64) (value uint32, err error) {
     value = *(*uint32)(unsafe.Pointer(&Glob_mmap0[addr]))
     return
 }
 
 
-func MateraWriteU8(addr uint64, data uint8) (err error) {
+func WriteU8(addr uint64, data uint8) (err error) {
     *(*uint8)(unsafe.Pointer(&Glob_mmap0[addr])) = data
     return
 }
 
 
-func MateraWriteU16(addr uint64, data uint16) (err error) {
+func WriteU16(addr uint64, data uint16) (err error) {
     *(*uint16)(unsafe.Pointer(&Glob_mmap0[addr])) = data
     return
 }
 
 
-func MateraWriteU32(addr uint64, data uint32) (err error) {
+func WriteU32(addr uint64, data uint32) (err error) {
     *(*uint32)(unsafe.Pointer(&Glob_mmap0[addr])) = data
     return
 }
@@ -133,7 +132,7 @@ func FpgaDumpRegionRegisters() (err error) {
     fmt.Printf("PANAREA FPGA REGISTER DUMP---\n")
     for _, entry := range(PANAREA_FPGA_REGISTERS) {
 
-        data32, err = materafpga.MateraReadU32(uint64(entry.Address))
+        data32, err = ReadU32(uint64(entry.Address))
         if err != nil {
             return
         }
