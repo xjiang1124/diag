@@ -433,8 +433,8 @@ func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
         return
     }
 
-
-    time.Sleep(time.Duration(1) * time.Millisecond)
+    //Slight delay to let the CPLD pick up the signal change
+    time.Sleep(time.Duration(5) * time.Millisecond)
     //Check the CPLD Status Register 0x22 BIT0.   1 = SPI MODE,  0 = J2C MODE
     data8, err_i = ReadByteSmbus("CPLD", 0x22, spiNumber) 
     if err_i != errType.SUCCESS {
@@ -544,7 +544,7 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
         return
     }
 
-    //Hardware said it can take up to a millisecond for the cpld to see the change in the signal
+    //Slight delay to let the CPLD pick up the signal change
     time.Sleep(time.Duration(5) * time.Millisecond)
     //Check the CPLD Status Register 0x22 BIT0.   1 = SPI MODE,  0 = J2C MODE
     data8, err_i = ReadByteSmbus("CPLD", 0x22, spiNumber) 
