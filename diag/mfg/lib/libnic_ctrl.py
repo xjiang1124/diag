@@ -847,14 +847,17 @@ class nic_ctrl():
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         if not self.mtp_exec_cmd(cmd):
             return False
-
-        cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg)
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
-            return False
-        if MFG_DIAG_SIG.MATERA_NIC_SALINA_JTAG_MBIST_SIG in self.nic_get_cmd_buf():
-            return True
-        else:
-            return False
+        for i in range(2):
+            reset_type = "cold" if i % 2 == 0 else "warm"
+            cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg, reset_type)
+            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+                return False
+            if MFG_DIAG_SIG.MATERA_NIC_SALINA_JTAG_MBIST_SIG not in self.nic_get_cmd_buf():
+                return False
+            # power cycle before run next iteration
+            cmd = "turn_on_slot.sh off {:s}; sleep 5; turn_on_slot.sh on {:s}".format(str(self._slot+1), str(self._slot+1))
+            self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+        return True
 
     def nic_snake_mtp_salina(self, snake_type='esam_pktgen_max_power_sor', vmarg="normal", dura=120, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
         '''
