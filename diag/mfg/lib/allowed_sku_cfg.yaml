@@ -19,30 +19,32 @@
 
 ### GINESTRA SSDK
 - 68-0076:
-    - 58-0001-01:
-        - DSC2A-2Q200-32S32F64P-S4
+      - 58-0001-01:
+            - DSC2A-2Q200-32S32F64P-S4
 ### POLLARA
 - 102-P11100:
-    - 58-0004-01:
-        - POLLARA-1Q400P
-        - POLLARA-1Q400P-O
-    - 58-0004-02:
-        - POLLARA-1Q400P
-        - POLLARA-1Q400P-O
+      - 58-0004-01:
+            - POLLARA-1Q400P
+            - POLLARA-1Q400P-O
+            - POLLARA-1Q400P-D
+      - 58-0004-02:
+            - POLLARA-1Q400P
+            - POLLARA-1Q400P-O
+            - POLLARA-1Q400P-D
 ### LINGUA
 - 102-P11500:
-    - 58-0006-01:
-        - POLLARA-1Q400P-OCP
+      - 58-0006-01:
+            - POLLARA-1Q400P-OCP
 ### LENI48G
 - 102-P10801:
-    - 58-0003-01:
-        - DSC3-2Q400-48R64E64P
+      - 58-0003-01:
+            - DSC3-2Q400-48R64E64P
 ### LENI
 - 102-P10800:
-    - 58-0007-01:
-        - DSC3-2Q400-64S64E64P
-        - DSC3-2Q400-64R64E64P-O
+      - 58-0007-01:
+            - DSC3-2Q400-64S64E64P
+            - DSC3-2Q400-64R64E64P-O
 ### MALFA
 - 102-P10600:
-    - 58-000x-01:
-        - DSC3-2Q400-128S64E256P
+      - 58-000x-01:
+            - DSC3-2Q400-128S64E256P

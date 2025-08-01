@@ -18,12 +18,16 @@ HPE_PROD_NUM_FMT = r"([A-Z0-9]{6}-B[0-9]{2})"
 
 # DC: [last digit of year][month 1-9,A-C][day1-9,A-K=10-20,L-V:21-31]
 DELL_PPID_COUNTRY_FMT = r"(?:US|MY)"
-DELL_PPID_PART_NUM_FMT = r"(?:0PCFPC|0X322F|0W5WGK)"
+DELL_PPID_PART_NUM_FMT = r"(?:0PCFPC|0X322F|0W5WGK|0745T9)"
 DELL_PPID_MFG_ID_FMT = r"(?:FLUPK|FLEPK|FLPAM)"
 DELL_PPID_DATE_CODE_FMT = r"[0-9][1-9A-C][1-9A-V]"
 DELL_PPID_SER_NUM_FMT = r"[0-9A-O][0-9A-Z]{3}"
 DELL_PPID_REV_FMT = r"[X|A][0-9]{2}"
 DELL_PPID_FMT = DELL_PPID_COUNTRY_FMT + DELL_PPID_PART_NUM_FMT + DELL_PPID_MFG_ID_FMT + DELL_PPID_DATE_CODE_FMT + DELL_PPID_SER_NUM_FMT + DELL_PPID_REV_FMT
+# DO NOT put older DELL PN into this table
+DELL_SKU_TO_DELL_PN = {
+    "POLLARA-1Q400P-D": ["0745T9"],
+    }
 
 MAC_OUI_1 = r"00%s[a,A][e,E]%s[c,C][d,D]%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}"
 MAC_OUI_2 = r"04%s90%s81%s(?:0[a-fA-F1-9]|[a-fA-F1-9][a-fA-F0-9])%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}"
@@ -94,6 +98,7 @@ class PART_NUMBERS_MATCH:
     LENI_PN_FMT = r"102-P10800-0[A-Z0-9]{2}(?:\s[A-Z0-9]{1,2})?"                                    #102-P10800-00B 01  LENI
     LENI48G_PN_FMT = r"102-P10801-0[A-Z0-9]{2}(?:\s[A-Z0-9]{1,2})?"                                 #102-P10801-00B 01  LENI48G
     POLLARA_PN_FMT = r"102-P11100-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                               #102-P11100-00B 01  POLLARA
+    POLLARA_DELL_PN_FMT = r"0745T9(?:X|A)[0-9]{2}"                                                  #0745T9 X/A         POLLARA DELL PN
     LINGUA_PN_FMT = r"102-P11500-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                                #102-P11500-00B 01  LINGUA
     MALFA_PN_FMT = r"102-P10600-0[0-9]{1}(?:\s[A-Z0-9]{1,2})?"                                      #102-P10600-00 01   MALFA
 
@@ -297,7 +302,8 @@ PN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.LENI48G_PN_FMT                       #102-P10801-00B   LENI48G
         ],
     NIC_Type.POLLARA: [
-        PART_NUMBERS_MATCH.POLLARA_PN_FMT                       #102-P11100-00    POLLARA
+        PART_NUMBERS_MATCH.POLLARA_PN_FMT,                      #102-P11100-00    POLLARA
+        PART_NUMBERS_MATCH.POLLARA_DELL_PN_FMT                  #0745T9 X/A       POLLARA DELL
         ],
     NIC_Type.LINGUA: [
         PART_NUMBERS_MATCH.LINGUA_PN_FMT                        #102-P11500-00    LINGUA
