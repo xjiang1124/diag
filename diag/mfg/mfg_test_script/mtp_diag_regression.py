@@ -842,7 +842,12 @@ def main():
 
                     # special err msg display
                     err_msg_list = []
-                    err_msg_list.append(mtp_mgmt_ctrl.mtp_clear_nic_err_msg(slot))
+                    if dsp == "L1" and mtp_mgmt_ctrl._io_cpld_ver == "0x7":
+                        # too many j2c retries may produce huge logfile which will cause MemoryError on capri MTP
+                        pass
+                    else:
+                        err_msg_list.append(mtp_mgmt_ctrl.mtp_clear_nic_err_msg(slot))
+
                     if dsp == "PHY" or dsp == "MVL":
                         err_msg_list.append(mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot))
 
