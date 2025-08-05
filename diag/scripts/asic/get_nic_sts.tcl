@@ -206,7 +206,18 @@ if {$ASIC_TYPE != "SALINA"} {
     diag_open_j2c_if $port $slot
 }
 set val [_msrd]
-if { $val != 0x00000001 } {
+if { $ASIC_TYPE == "SALINA" } {
+    if { $val == 0x0 } {
+        plog_err "J2C sanity test failed!"
+        exit 0
+    } elseif { $val != 0x00000001 } {
+        plog_msg "Ignoring previously modified scratch register"
+        _mswr 0x1
+    } else {
+        # $val == 0x1
+        plog_msg "J2C connected"
+    }
+} elseif { $val != 0x00000001 } {
     plog_msg "J2C sanity test failed!"
     exit 0
 }

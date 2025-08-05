@@ -9,6 +9,7 @@ set usage {
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
     {tcl_path.arg   ""                      "ASIC lib location"}
+    {reset.arg      "cold"                  "Reset method: warm/cold; default: cold"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -171,7 +172,13 @@ exec fpgautil spimode $slot off
 sal_j2c
 plog_msg "_msrd"
 plog_msg [eval _msrd]
-reset_to_proto_mode no_proto
+
+if { $reset == "cold" } {
+    reset_to_proto_mode no_proto
+} else {
+    reset_to_proto_mode warm_rot
+}
+
 sal_set_vmarg $vmarg
 sal_print_die_id
 set err_cnt_fnl [ plog_get_err_count ]
