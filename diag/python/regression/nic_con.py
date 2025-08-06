@@ -506,7 +506,7 @@ class nic_con:
             print("=== Failed to enter uboot ===")
         return ret
 
-    def salina_power_cycle(self, session, slot=0, warm_reset=False, pc=True, v12_reset=False):
+    def salina_power_cycle(self, session, slot=0, warm_reset=False, pc=True, v12_reset=False, pc_delay=10):
         if pc:
             if warm_reset:
                 self.nic_warm_reset(session, slot)
@@ -514,18 +514,21 @@ class nic_con:
                 print("Powercycling 12V...")
                 cmd = "turn_on_slot_12v.sh off {}".format(slot)
                 common.session_cmd(session, cmd)
-                time.sleep(5)
+                if pc_delay < 5:
+                    print("=== Failed: --v12_reset is restricted to pc_delay >= 5. Entered --pc_delay: {:s}".format(pc_delay))
+                    return
+                common.count_down(pc_delay)
                 cmd = "turn_on_slot_12v.sh on {}".format(slot)
                 common.session_cmd(session, cmd)
             else:
                 print("Powercycling...")
                 cmd = "turn_on_slot.sh off {}".format(slot)
                 common.session_cmd(session, cmd)
-                time.sleep(3)
+                common.count_down(pc_delay)
                 cmd = "turn_on_slot.sh on {}".format(slot)
                 common.session_cmd(session, cmd)
 
-    def enter_uboot_salina(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1, expect_sig=["Autoboot "], warm_reset=False, pc=True, v12_reset=False):
+    def enter_uboot_salina(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1, expect_sig=["Autoboot "], warm_reset=False, pc=True, v12_reset=False, pc_delay=10):
         expstr = ["DSC# "]
         ret = 0
         if slot == 0 or slot > 10:
@@ -541,7 +544,7 @@ class nic_con:
         uart_session.sendline(cmd)
         uart_session.expect(["Terminal ready", "buffer cleared"])
 
-        self.salina_power_cycle(session, slot, warm_reset, pc, v12_reset)
+        self.salina_power_cycle(session, slot, warm_reset, pc, v12_reset, pc_delay)
 
         self.set_cpld_uart_bits(session, slot, uart_id=uart_id)
         #time.sleep(1) # extra time to ctrl-c doesn't get captured by fpga_uart

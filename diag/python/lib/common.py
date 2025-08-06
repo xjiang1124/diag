@@ -521,4 +521,11 @@ def switch_to_sudo(session, sudo_passwd, ending=bash_prompt, timeout=30):
 
     return ret
 
-
+#=============================
+def count_down(seconds):
+    secs = seconds
+    while secs:
+        sys.stdout.write("Time left: {:03d} seconds....\r".format(secs))
+        sys.stdout.flush()
+        time.sleep(1)
+        secs -= 1
