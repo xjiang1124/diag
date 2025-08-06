@@ -104,10 +104,12 @@ proc mbist_with_diag {} {
     if {$arm_err != 0} {
         plog_err "Errors encountered in ARM MBIST. Running diagnostics..."
         sal_jtag_arm_diag
-    } elseif {$east_err != 0} {
+    }
+    if {$east_err != 0} {
         plog_err "Errors encountered in East MBIST. Running diagnostics..."
         sal_jtag_east_diag
-    } elseif {$west_err != 0} {
+    }
+    if {$west_err != 0} {
         plog_err "Errors encountered in West MBIST. Running diagnostics..."
         sal_jtag_west_diag
     }
