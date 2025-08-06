@@ -77,7 +77,7 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
         return 0
 
     con_ctrl = nic_con()
-    if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["Autoboot "], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)) != 0:
+    if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["Autoboot "], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False), pc_delay=kwargs.get('pc_delay', 10)) != 0:
         print("==== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
@@ -99,7 +99,7 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
             print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
             return -1
     else:
-        if 0 != con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["rt:~\$", "any key to stop"], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)):
+        if 0 != con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["rt:~\$", "any key to stop"], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False), pc_delay=kwargs.get('pc_delay', 10)):
             return -1
 
         con_ctrl.uart_session_connect(session, slot, uart_id=0)
@@ -305,6 +305,7 @@ if __name__ == "__main__":
     parser.add_argument("--slot", "-slot", "-s", help="NIC slot", type=int, required=True)
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
     parser.add_argument("--v12_reset", "-v12", help="v12 reset instead of powercycle", action='store_true', default=False)
+    parser.add_argument("--pc_delay", "-pcd", help="Wait for X seconds between power off and power on", type=int, default=10)
     parser.add_argument("--skip_a35_uboot", action='store_true', default=False)
     parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
     parser.add_argument("--new_ainic_layout", "-na", help="No effect. Keeping for backward compatability.", action='store_true', default=False)

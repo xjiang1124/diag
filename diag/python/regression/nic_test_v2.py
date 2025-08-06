@@ -1742,7 +1742,7 @@ class nic_test_v2:
             print("=== Ite:", ite, "===")
     
             uart_session = common.session_start()
-            if sal_con.enter_a35_zephyr(args.slot, uart_session, warm_reset=args.warm, v12_reset=args.v12, awd_showparms=False):
+            if sal_con.enter_a35_zephyr(args.slot, uart_session, warm_reset=args.warm, v12_reset=args.v12, awd_showparms=False, pc_delay=args.pc_delay):
                 print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
                 ret = -1
                 break
@@ -2249,6 +2249,7 @@ if __name__ == "__main__":
     group_sal_pc = parser_sal_pc.add_mutually_exclusive_group(required=False)
     group_sal_pc.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
     group_sal_pc.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
+    parser_sal_pc.add_argument("--pc_delay", "-pcd", help="Wait for X seconds between power off and power on", type=int, default=10)
     parser_sal_pc.set_defaults(func=test.sal_pc_test)
 
     # salina emmc test
