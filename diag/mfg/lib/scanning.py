@@ -3,6 +3,7 @@ from libdefs import Swm_Test_Mode
 from libdefs import MTP_DIAG_Logfile
 from libdefs import FF_Stage
 from libsku_utils import PART_NUMBERS_MATCH
+from libsku_utils import DELL_SKU_TO_DELL_PN
 from barcode_field import *
 import libmfg_utils
 import testlog
@@ -38,43 +39,56 @@ def validate_nic_slot_scan(mtp_mgmt_ctrl, usr_input, mtp_scan_rslt):
     mtp_scan_rslt[usr_input]["VALID"] = False
     return usr_input
 
-def validate_sn(usr_input):
+def validate_sn(usr_input,already_scanned_list):
     return libmfg_utils.serial_number_validate(usr_input)
 
-def validate_mac(usr_input):
+def validate_mac(usr_input, already_scanned_list):
     return libmfg_utils.mac_address_validate(usr_input)
 
-def validate_pn(usr_input):
+def validate_pn(usr_input, already_scanned_list):
     return libmfg_utils.part_number_validate(usr_input)
 
-def validate_swpn(usr_input):
+def validate_swpn(usr_input, already_scanned_list):
     if re.match("90-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}", usr_input):
         return usr_input
     return None
 
-def validate_rot_sn(usr_input):
+def validate_rot_sn(usr_input, already_scanned_list):
     return libmfg_utils.rot_cable_serial_number_validate(usr_input)
 
-def validate_dpn(usr_input):
+def validate_dpn(usr_input, already_scanned_list):
     return usr_input in libmfg_utils.get_all_valid_dpn()
 
-def validate_sku(usr_input):
+def validate_sku(usr_input, already_scanned_list):
     return usr_input in libmfg_utils.get_all_valid_sku()
+
+def validate_dell_ppid(usr_input, already_scanned_list):
+    # format validation
+    dell_ppid = libmfg_utils.dell_ppid_validate(usr_input)
+    if not dell_ppid:
+        return False
+    dell_pn_from_ppid = libmfg_utils.extract_pn_from_dell_ppid(dell_ppid)[:6]
+    sku_id = already_scanned_list[-1]
+    # value validation
+    if dell_pn_from_ppid not in DELL_SKU_TO_DELL_PN[sku_id]:
+        return False
+    return True
 
 def handle_scan(mtp_mgmt_ctrl, scan_item_str, usr_input, already_scanned_list):
     scan_item_to_validation_func = {
-        SN:      validate_sn,
-        PN:      validate_pn,
-        MAC:     validate_mac,
-        DPN:     validate_dpn,
-        SWPN:    validate_swpn,
-        SKU:     validate_sku,
-        ALOM_SN: validate_sn,
-        ALOM_PN: validate_pn,
-        ROT_SN:  validate_rot_sn,
+        SN:             validate_sn,
+        PN:             validate_pn,
+        MAC:            validate_mac,
+        DPN:            validate_dpn,
+        SWPN:           validate_swpn,
+        SKU:            validate_sku,
+        ALOM_SN:        validate_sn,
+        ALOM_PN:        validate_pn,
+        ROT_SN:         validate_rot_sn,
+        DELL_PPID:      validate_dell_ppid,
     }
     validation_func = scan_item_to_validation_func.get(scan_item_str)
-    if validation_func(usr_input):
+    if validation_func(usr_input, already_scanned_list):
         if usr_input not in already_scanned_list:
             return True
         elif usr_input in already_scanned_list and ("Part Number" in scan_item_str or "PN" in scan_item_str or scan_item_str == SKU): #pns are not unique
@@ -112,7 +126,7 @@ def inner_mtp_barcode_scan(mtp_mgmt_ctrl, stage, skip_scan_list=[], swmtestmode=
         if slot is None:
             continue
 
-        scan_item_list = [SN, MAC, PN, DPN, SKU, ROT_SN]
+        scan_item_list = [SN, MAC, PN, DPN, SKU, DELL_PPID, ROT_SN]
         if swmtestmode == Swm_Test_Mode.ALOM:
             scan_item_list = [ALOM_SN, ALOM_PN]
 
@@ -125,9 +139,12 @@ def inner_mtp_barcode_scan(mtp_mgmt_ctrl, stage, skip_scan_list=[], swmtestmode=
                 if libmfg_utils.dell_ppid_validate(mtp_scan_rslt[slot][SN]):
                     # it's Dell PPID, already part of SN, dont need to scan PN
                     raw_scan = mtp_scan_rslt[slot][SN]
-                    mtp_scan_rslt[slot][SN] = libmfg_utils.extract_sn_from_dell_ppid(raw_scan)
-                    mtp_scan_rslt[slot][PN] = libmfg_utils.extract_pn_from_dell_ppid(raw_scan)
-                    continue
+                    dell_pn_from_ppid = libmfg_utils.extract_pn_from_dell_ppid(raw_scan)
+                    # check if DELL PN old card which scan DELL ppid as serial number
+                    if re.match(PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT, dell_pn_from_ppid) or re.match(PART_NUMBERS_MATCH.LACONA32DELL_PN_FMT, dell_pn_from_ppid):
+                        mtp_scan_rslt[slot][SN] = libmfg_utils.extract_sn_from_dell_ppid(raw_scan)
+                        mtp_scan_rslt[slot][PN] = dell_pn_from_ppid
+                        continue
 
             if scan_item == DPN:
                 if stage != FF_Stage.FF_DL:
@@ -151,6 +168,15 @@ def inner_mtp_barcode_scan(mtp_mgmt_ctrl, stage, skip_scan_list=[], swmtestmode=
                 if stage != FF_Stage.FF_FST:
                     continue
                 if not libmfg_utils.part_number_match_rot_require_list(mtp_scan_rslt[slot][PN]):
+                    continue
+
+            if scan_item == DELL_PPID:
+                if stage != FF_Stage.FF_SWI:
+                    continue
+                # copy SKU scan condition, if SKU bot scanned, skip DELL_PPID scan
+                if not re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, mtp_scan_rslt[slot][PN]) and not mtp_scan_rslt[slot][PN].startswith("102-"):
+                    continue
+                if mtp_scan_rslt[slot][SKU] not in DELL_SKU_TO_DELL_PN:
                     continue
             ###################################
 

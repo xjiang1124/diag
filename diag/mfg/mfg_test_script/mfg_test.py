@@ -1576,7 +1576,7 @@ if __name__ == "__main__":
     parser_swi.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
     parser_swi.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
     parser_swi.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
-    parser_swi.add_argument("--sku", help="Supply CTO SKU, for QA/lab only...MFG should enter SKU through scanning", default=None)
+    parser_swi.add_argument("--sku", "-sku", help="Supply CTO SKU, for QA/lab only...MFG should enter SKU through scanning", default=None)
     parser_swi.set_defaults(func=run_swi_tests)
 
     parser_fst.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
