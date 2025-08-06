@@ -414,7 +414,7 @@ func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
         return
     }
 
-    //Drive the signal high. 
+    //Drive the signal high. Bus control set to J2C disabled / SPI enabled
     data8, err_i = mcp23008.ReadByteSmbus(dev, mcp23008.GPIO) 
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
@@ -433,9 +433,27 @@ func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
         return
     }
 
+    //Slight delay to let the CPLD pick up the signal change
+    time.Sleep(time.Duration(5) * time.Millisecond)
+    //Check the CPLD Status Register 0x22 BIT0.   1 = SPI MODE,  0 = J2C MODE
+    data8, err_i = ReadByteSmbus("CPLD", 0x22, spiNumber) 
+    if err_i != errType.SUCCESS {
+        err = fmt.Errorf("ERROR: SpiBusEnableIOexpander: Slot-%d CPLD access failed reading address 0x22\n", spiNumber+1);
+        fmt.Printf("%v", err)
+        return
+    }
+    if ((data8 & 0x01) != 0x01) {
+        err = fmt.Errorf("ERROR: SpiBusEnableIOexpander: Slot-%d CPLD SPI MODE STATUS INCORRECT.  EXPECT SPI MODE ENABLED (BIT0=1).   Reg 0x22=%x\n", spiNumber+1, data8);
+        fmt.Printf("%v", err)
+        return
+    }
+
     TARGET_SPI_IOEXPANDER_EN[spiNumber] = 1
     writeArrayToFile(mcp23008_lock_filename, TARGET_SPI_IOEXPANDER_EN)
     mcp23008_lock.Unlock()
+
+
+
     return
 }
 
@@ -488,7 +506,7 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
     }
 
 
-    //Set the I/O DIRECTION. 1 = INPUT.   INTERFACE DISABLED
+    //Set the I/O DIRECTION. 0 = OUTPUT.
     data8, err_i = mcp23008.ReadByteSmbus(dev, mcp23008.IODIR) 
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
@@ -497,7 +515,7 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
         return
     }
 
-    data8 = data8 | byte(1 << shift)
+    data8 = data8 & byte(^(1 << shift))
 
     err_i = mcp23008.WriteByteSmbus(dev, mcp23008.IODIR, data8) 
     if err_i != errType.SUCCESS {
@@ -507,7 +525,7 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
         return
     }
 
-    //Drive the signal low. 
+    //Drive the signal low. Bus control set to spi disabled / j2c enabled
     data8, err_i = mcp23008.ReadByteSmbus(dev, mcp23008.GPIO) 
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
@@ -525,9 +543,26 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
         mcp23008_lock.Unlock()
         return
     }
+
+    //Slight delay to let the CPLD pick up the signal change
+    time.Sleep(time.Duration(5) * time.Millisecond)
+    //Check the CPLD Status Register 0x22 BIT0.   1 = SPI MODE,  0 = J2C MODE
+    data8, err_i = ReadByteSmbus("CPLD", 0x22, spiNumber) 
+    if err_i != errType.SUCCESS {
+        err = fmt.Errorf("ERROR: SpiBusDisableIOexpander: Slot-%d CPLD access failed reading address 0x22\n", spiNumber+1);
+        fmt.Printf("%v", err)
+        return
+    }
+    if ((data8 & 0x01) != 0x00) {
+        err = fmt.Errorf("ERROR: SpiBusDisableIOexpander: Slot-%d CPLD SPI MODE STATUS INCORRECT.  EXPECT SPI MODE DISABLED (BIT0=0).   Reg 0x22=%x\n", spiNumber+1, data8);
+        fmt.Printf("%v", err)
+        return
+    }
+
     TARGET_SPI_IOEXPANDER_EN[spiNumber] = 0
     writeArrayToFile(mcp23008_lock_filename, TARGET_SPI_IOEXPANDER_EN)
     mcp23008_lock.Unlock()
+
     return
 }
 
@@ -704,7 +739,10 @@ func matera_spi_generic_transaction_w_spiBus_enable(spiNumber uint32, spiDevice 
             //Enable the spi bus mux on the fpga that muxes between spi and j2c.  
             //This is seperate from the spi mailbox mux that controls the mux between the fpga and elba.
             //Too many muxes.......
-            SetJTAGbusToSPI(spiNumber)
+            err = SetJTAGbusToSPI(spiNumber)
+            if err != nil {
+                goto SPI_TRANSACTION_END2
+            }
 
             //Enable spi bus on the iob card via the mcp23008 i/o expander
             err = SpiBusEnableIOexpander(spiNumber)
