@@ -899,7 +899,7 @@ def read_amd64_img_version(mtp_mgmt_ctrl, diag_img_tarball):
     return rgx_extract_commit_date(mtp_mgmt_ctrl.mtp_get_cmd_buf())
 
 def read_asiclib_version(mtp_mgmt_ctrl, diag_img_tarball):
-    cmd = "tar tvf {:s} | grep -E 'nic.*\.tar\.gz' | awk '{{print $NF}}'".format(diag_img_tarball)
+    cmd = r"tar tvf {:s} | grep -E 'nic.*\.tar\.gz' | awk '{{print $NF}}'".format(diag_img_tarball)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Command {:s} failed".format(cmd), level=0)
         return None
@@ -958,7 +958,7 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
         if "/" in image:
             image_dir += os.path.dirname(image) + os.path.sep
             mkdir_cmd = f"ssh diag@{mtp_ip_addr} 'mkdir -p {image_dir}'"
-            (command_output, exitstatus) = pexpect.run(mkdir_cmd, events={'(?i)password': mtp_passwd +'\n', '\(yes\/no': 'yes\n'}, withexitstatus=1)
+            (command_output, exitstatus) = pexpect.run(mkdir_cmd, events={'(?i)password': mtp_passwd +'\n', r'\(yes\/no': 'yes\n'}, withexitstatus=1)
             if exitstatus != 0:
                 mtp_mgmt_ctrl.cli_log_err(str(command_output))
                 return False
