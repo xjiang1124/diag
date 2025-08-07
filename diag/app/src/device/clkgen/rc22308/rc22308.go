@@ -91,7 +91,7 @@ func ReadVendorID(devName string) (err int) {
     if err != errType.SUCCESS {
         cli.Println("e", fmt.Sprintf("Failed to read VENDOR_ID @ 0x%02X for dev %s", VENDOR_ID, devName))
     } else {
-        fmt.Printf("VENDOR_ID: 0x%04x\n", vendor_id)
+        cli.Println("i", fmt.Sprintf("Reg[VENDOR_ID] = 0x%04x", vendor_id))
     }
     return
 }
@@ -102,7 +102,7 @@ func ReadDevID(devName string) (err int) {
     if err != errType.SUCCESS {
         cli.Println("e", fmt.Sprintf("Failed to read DEVICE_ID @ 0x%02X for dev %s", DEVICE_ID, devName))
     } else {
-        fmt.Printf("DEVICE_ID: 0x%04x\n", dev_id)
+        cli.Println("i", fmt.Sprintf("Reg[DEVICE_ID] = 0x%04x", dev_id))
     }
     return
 }
@@ -113,7 +113,7 @@ func ReadDevRev(devName string) (err int) {
     if err != errType.SUCCESS {
         cli.Println("e", fmt.Sprintf("Failed to read DEVICE_REV @ 0x%02X for dev %s", DEVICE_REV, devName))
     } else {
-        fmt.Printf("DEVICE_REV: 0x%04x\n", dev_rev)
+        cli.Println("i", fmt.Sprintf("Reg[DEVICE_REV] = 0x%04x", dev_rev))
     }
     return
 }
@@ -124,7 +124,7 @@ func ReadDevPgm(devName string) (err int) {
     if err != errType.SUCCESS {
         cli.Println("e", fmt.Sprintf("Failed to read DEVICE_PGM @ 0x%02X for dev %s", DEVICE_PGM, devName))
     } else {
-        fmt.Printf("DEVICE_PGM: 0x%04x\n", dev_pgm)
+        cli.Println("i", fmt.Sprintf("Reg[DEVICE_PGM] = 0x%04x", dev_pgm))
     }
     return
 }
@@ -137,8 +137,8 @@ func ReadDevCnfg(devName string) (err int) {
     if err != errType.SUCCESS {
         cli.Println("e", fmt.Sprintf("Failed to read DEVICE_CNFG @ 0x%02X for dev %s", DEVICE_CNFG, devName))
     } else {
-        value := uint32(dev_cnfg[0]) << 24 | uint32(dev_cnfg[1]) << 16 | uint32(dev_cnfg[2]) << 8 | uint32(dev_cnfg[3])
-        fmt.Printf("DEVICE_CNFG: 0x%08x\n", value)
+        value := uint32(dev_cnfg[3]) << 24 | uint32(dev_cnfg[2]) << 16 | uint32(dev_cnfg[1]) << 8 | uint32(dev_cnfg[0])
+        cli.Println("i", fmt.Sprintf("Reg[DEVICE_CNFG] = 0x%08x", value))
     }
     return
 }
@@ -149,7 +149,7 @@ func ReadMiscCnfg(devName string) (err int) {
     if err != errType.SUCCESS {
         cli.Println("e", fmt.Sprintf("Failed to read MISC_CNFG @ 0x%02X for dev %s", MISC_CNFG, devName))
     } else {
-        fmt.Printf("MISC_CNFG: 0x%02x\n", misc_cnfg)
+        cli.Println("i", fmt.Sprintf("Reg[MISC_CNFG] = 0x%02x", misc_cnfg))
     }
     return
 }
@@ -160,7 +160,7 @@ func ReadMiscCtrl(devName string) (err int) {
     if err != errType.SUCCESS {
         cli.Println("e", fmt.Sprintf("Failed to read MISC_CTRL @ 0x%02X for dev %s", MISC_CTRL, devName))
     } else {
-        fmt.Printf("MISC_CTRL: 0x%02x\n", misc_ctrl)
+        cli.Println("i", fmt.Sprintf("Reg[MISC_CTRL] = 0x%02x", misc_ctrl))
     }
     return
 }
@@ -171,7 +171,7 @@ func ReadStartupSts(devName string) (err int) {
     if err != errType.SUCCESS {
         cli.Println("e", fmt.Sprintf("Failed to read STARTUP_STS @ 0x%02X for dev %s", STARTUP_STS, devName))
     } else {
-        fmt.Printf("STARTUP_STS: 0x%04x\n", startup_sts)
+        cli.Println("i", fmt.Sprintf("Reg[STARTUP_STS] = 0x%04x", startup_sts))
     }
     return
 }
@@ -184,8 +184,8 @@ func ReadDevSts(devName string) (err int) {
     if err != errType.SUCCESS {
         cli.Println("e", fmt.Sprintf("Failed to read DEVICE_STS @ 0x%02X for dev %s", DEVICE_STS, devName))
     } else {
-        value := uint32(dev_sts[0]) << 24 | uint32(dev_sts[1]) << 16 | uint32(dev_sts[2]) << 8 | uint32(dev_sts[3])
-        fmt.Printf("DEVICE_STS: 0x%08x\n", value)
+        value := uint32(dev_sts[3]) << 24 | uint32(dev_sts[2]) << 16 | uint32(dev_sts[1]) << 8 | uint32(dev_sts[0])
+        cli.Println("i", fmt.Sprintf("Reg[DEVICE_STS] = 0x%08x", value))
     }
     return
 }
@@ -195,6 +195,8 @@ func DispStatus(devName string) (err int) {
     if err != errType.SUCCESS {
         return
     }
+    cli.Println("i", "=================================")
+    cli.Println("i", devName)
     ReadVendorID(devName)
     ReadDevID(devName)
     ReadDevRev(devName)

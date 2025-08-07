@@ -98,7 +98,7 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
         mtpType = os.Getenv("MTP_TYPE")
         if ( mtpType == "MTP_TURBO_ELBA" ) {
             eeprom.EepromTbl = eeprom.MtpTurboTbl
-        } else if ( mtpType == "MTP_MATERA" ) {
+        } else if ( mtpType == "MTP_MATERA" || mtpType == "MTP_PANAREA") {
             eeprom.CustType = "MTP_MATERA"
             eeprom.EepromTbl = nil
             if strings.Contains(dev, "FRU") || strings.Contains(dev, "MB") {

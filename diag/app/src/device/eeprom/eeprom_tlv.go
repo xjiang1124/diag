@@ -373,6 +373,12 @@ var CardTypesTlv = []cardDevPn{
     cardDevPn{"MTP_MATERA",  "IOBL",        PN_MTP_MATERA_IOB},
     cardDevPn{"MTP_MATERA",  "IOBR",        PN_MTP_MATERA_IOB},
     cardDevPn{"MTP_MATERA",  "FPIC",        PN_MTP_MATERA_FPIC},
+    //MTP_PANAREA
+    cardDevPn{"MTP_PANAREA", "FRU",         PN_MTP_PANAREA_FRU},
+    cardDevPn{"MTP_PANAREA", "MB",          PN_MTP_PANAREA_MB},
+    cardDevPn{"MTP_PANAREA", "IOBL",        PN_MTP_PANAREA_IOB},
+    cardDevPn{"MTP_PANAREA", "IOBR",        PN_MTP_PANAREA_IOB},
+    cardDevPn{"MTP_PANAREA", "FPIC",        PN_MTP_PANAREA_FPIC},
 }
 
 type fpgaOffsetW struct {

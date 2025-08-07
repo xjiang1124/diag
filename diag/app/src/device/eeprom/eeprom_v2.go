@@ -94,6 +94,10 @@ const (
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
     PN_MTP_MATERA_FPIC string = "102-P10500-00"
+    PN_MTP_PANAREA_FRU  string = "102-P11700-00"
+    PN_MTP_PANAREA_MB   string = "102-P11700-00"
+    PN_MTP_PANAREA_IOB  string = "102-P11800-00"
+    PN_MTP_PANAREA_FPIC string = "102-P11900-00"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
@@ -1879,7 +1883,7 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
         }
     } else {
         var lockName string
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
             lockName, _, err = hwinfo.LockDev(devName)
             if err != errType.SUCCESS {
                 return
@@ -1888,7 +1892,7 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
         //Writes FRU data to EEPROM
         err = smbusNew.Open(devName, bus, devAddr)
         if err != errType.SUCCESS {
-            if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
                 hwinfo.UnlockDev(lockName)
             }
             return
@@ -1903,14 +1907,14 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
             if err != errType.SUCCESS {
                 cli.Printf("e", "ERROR: Failed to write to FRU at offset %d", i)
                 smbusNew.Close()
-                if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+                if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
                     hwinfo.UnlockDev(lockName)
                 }
                 return err
             }
         }
         smbusNew.Close()
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
             hwinfo.UnlockDev(lockName)
         }
     }
@@ -1931,7 +1935,7 @@ func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
         }
     } else {
         var lockName string
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
             lockName, _, err = hwinfo.LockDev(devName)
             if err != errType.SUCCESS {
                 return
@@ -1939,7 +1943,7 @@ func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
         }
         err = smbusNew.Open(devName, bus, devAddr)
         if err != errType.SUCCESS {
-            if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
                 hwinfo.UnlockDev(lockName)
             }
             return
@@ -1950,14 +1954,14 @@ func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
             DataRaw = append(DataRaw, fruData)
             if err != errType.SUCCESS {
                 smbusNew.Close()
-                if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+                if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
                     hwinfo.UnlockDev(lockName)
                 }
                 return
             }
         }
         smbusNew.Close()
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
             hwinfo.UnlockDev(lockName)
         }
     }
@@ -1986,7 +1990,7 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
         return
     } 
 
-    if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+    if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
         lockName, _, err = hwinfo.LockDev(devName)
         if err != errType.SUCCESS {
             return
@@ -1994,7 +1998,7 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
     }
     err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
             hwinfo.UnlockDev(lockName)
         }
         return
@@ -2014,7 +2018,7 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
     boardInfoOff, productInfoOff, mraInfoOff, err := getOffsetsCHdr(start)
     if err != errType.SUCCESS {
         smbusNew.Close()
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
             hwinfo.UnlockDev(lockName)
         }
         return
@@ -2059,14 +2063,14 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
         if err != errType.SUCCESS {
             cli.Printf("e", "ERROR: Failed to read from FRU at offset %s", i)
             smbusNew.Close()
-            if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
                 hwinfo.UnlockDev(lockName)
             }
             return
         }
     }
     smbusNew.Close()
-    if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+    if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
         hwinfo.UnlockDev(lockName)
     }
     return

@@ -184,7 +184,7 @@ then
     echo "Matera  MTP"
     echo "export MTP_TYPE=MTP_MATERA" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/${asic_type,,}
-elif [[ $mtp_id == "0x000c" ]]
+elif [[ $mtp_id == "0x000d" ]]
 then
     echo "Panarea  MTP"
     echo "export MTP_TYPE=MTP_PANAREA" >> temp_profile
@@ -194,7 +194,8 @@ else
     echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
 fi
-
+if [[ $asic != "vulcano" ]]
+then
 ASIC_LIB_BUNDLE=$DIAG_DIR/asic
 rm -rf $ASIC_LIB_BUNDLE
 ln -sf $ASIC_DIR_SUB_TOP $ASIC_LIB_BUNDLE
@@ -205,6 +206,7 @@ echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> temp_profile
 echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> temp_profile
 echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
 echo "source \$ASIC_LIB/source_env_path" >> temp_profile
+fi
 
 #==================================
 if [[ $mtp_id == "0x000b" ]]
@@ -212,7 +214,7 @@ then
     echo "export CARD_TYPE=MTP_MATERA" >> temp_profile
     echo "export REDIS_IP=127.0.0.1" >> temp_profile
     export REDIS_IP="127.0.0.1"
-elif [[ $mtp_id == "0x000c" ]]
+elif [[ $mtp_id == "0x000d" ]]
 then
     echo "export CARD_TYPE=MTP_PANAREA" >> temp_profile
     echo "export REDIS_IP=127.0.0.1" >> temp_profile
@@ -225,9 +227,12 @@ fi
 
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
-if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" || $mtp_id == "0x000b" || $mtp_id == "0x000c" ]]
+if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" || $mtp_id == "0x000b" || $mtp_id == "0x000d" ]]
 then
+    if [[ $asic != "vulcano" ]]
+    then
     hack_asic_elba.sh
+    fi
 else
     hack_asic.sh
 fi
