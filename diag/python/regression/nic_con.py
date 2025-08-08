@@ -49,7 +49,7 @@ class nic_con:
         session.sendline(cmd)
         if sleep:
             print("\nWaiting for {:d} seconds before attempting login".format(sleep))
-            time.sleep(sleep)
+            common.count_down(sleep)
         if self.get_asic_type(slot) == "SALINA":
             timeout=30
         for ite in range(3):
@@ -1032,7 +1032,7 @@ class nic_con:
             if asic_type == "SALINA":
                 self.uart_session_cmd(session, cmd_pre)
                 print("wait 30 s for mgmt port to be ready")
-                time.sleep(30)
+                common.count_down(30)
                 #self.uart_session_cmd(session, "dpctl debug update pipeline pin-lif --lif 65 --uplink 8", 30)
             session.sendline("ifconfig -a")
             session.expect("\#")
