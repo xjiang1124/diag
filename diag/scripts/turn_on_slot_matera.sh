@@ -208,8 +208,8 @@ control_slot_panarea() {
     then
         for slot_one_based in $slot_list
         do
-            slot=$(( $slot_one_based - 1 ))
-            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            slot_zero_based=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
             printf "Setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
             wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
             # PERST
@@ -217,11 +217,11 @@ control_slot_panarea() {
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
             sleep 0.2
             # 12V
-            wValue=$(( $wValue & 0xFFFFFFFD ))
+            wValue=$(( $wValue & 0xFFFFFFF9 ))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
             sleep 0.2
             # 3V3
-            wValue=$(( $wValue & 0xFFFFFFFE ))
+            wValue=$(( $wValue & 0xFFFFFFF8 ))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
             sleep 0.2
         done
@@ -229,8 +229,8 @@ control_slot_panarea() {
     then
         for slot_one_based in $slot_list
         do
-            slot=$(( $slot_one_based - 1 ))
-            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            slot_zero_based=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
             printf "Setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
             # 3V3
             wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
@@ -240,17 +240,17 @@ control_slot_panarea() {
         sleep 2
         for slot_one_based in $slot_list
         do
-            slot=$(( $slot_one_based - 1 ))
+            slot_zero_based=$(( $slot_one_based - 1 ))
             enable_nic_mtp_r3 $slot_one_based
             elba_enable_jtag $slot_one_based
             set_prod_mode $slot_one_based $prod_mode
-            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
             # 12V
             wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
-            wValue=$(( $wValue | 0x2 ))
+            wValue=$(( $wValue | 0x3 ))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
             # PERST
-            wValue=$(( $wValue | 0x4 ))
+            wValue=$(( $wValue | 0x7 ))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
 
             card_adapter_enable_power $slot_one_based
@@ -260,8 +260,8 @@ control_slot_panarea() {
     sleep 0.2
     for slot_one_based in $slot_list
     do
-        slot=$(( $slot_one_based - 1 ))
-        slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+        slot_zero_based=$(( $slot_one_based - 1 ))
+        slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
         sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
     done
 }
@@ -296,10 +296,11 @@ then
         fpgautil r32 $matera_perst_addr
     elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
     then
-        slot_list=(1 2 3 4 5 6 7 8 9 10)
-        for slot in $slot_list
+        slot_list="1 2 3 4 5 6 7 8 9 10"
+        for slot_one_based in $slot_list
         do
-            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            slot_zero_based=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
         done
     else
@@ -338,7 +339,7 @@ then
         ) 99>/home/diag/turn_on_slot.lock
     elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
     then
-        slot_list=(1 2 3 4 5 6 7 8 9 10)
+        slot_list="1 2 3 4 5 6 7 8 9 10"
         control_slot_panarea
     fi
 else
