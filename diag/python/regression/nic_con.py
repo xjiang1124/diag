@@ -58,6 +58,11 @@ class nic_con:
 
             try:
                 #session.expect("Terminal ready")
+                if self.get_asic_type(slot) == "SALINA":
+                    # zephyr needs ctrl-c
+                    time.sleep(1)
+                    print("C+C")
+                    session.send(chr(3))
                 print("sending r")
                 session.send("\r")
 
@@ -106,6 +111,11 @@ class nic_con:
 
             try:
                 #session.expect("Terminal ready")
+                if self.get_asic_type(slot) == "SALINA":
+                    # zephyr needs ctrl-c
+                    time.sleep(1)
+                    print("C+C")
+                    session.send(chr(3))
                 print("sending r")
                 session.send("\r")
 
