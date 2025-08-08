@@ -36,7 +36,7 @@ func init () {
         }
         file.Close()
     } else {
-        shcmds := []string{ "lspci -v -d 1dd8:000D | grep 'Memory at' | awk '{print $3}'"}
+        shcmds := []string{ "lspci -v -d 1dd8:000B | grep 'Memory at' | awk '{print $3}'"}
         execOutput, errGo := exec.Command("sh", "-c", shcmds[0] ).Output()
         if errGo != nil {
             cli.Println("e", "ERROR: Failed to get FPGA BAR VALUE.   GO ERROR=%v", errGo)
