@@ -15,6 +15,7 @@ targets:
     - build-arm64-giglio
     - build-amd64-salina
     - build-arm64-salina
+    - build-amd64-vulcano
 
 image:
   bind_dir: "/psdiag"

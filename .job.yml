@@ -1,6 +1,11 @@
 ---
 version: 2.0
 builds:
+  build-amd64-vulcano:
+    commands: [ "sh", "-c", "cd build; make amd64 asic=vulcano asiclib=stable" ]
+    owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_amd64_vulcano.tar
   build-amd64-salina:
     commands: [ "sh", "-c", "cd build; make amd64 asic=salina asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
