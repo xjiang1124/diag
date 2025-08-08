@@ -359,7 +359,7 @@ control_slot_panarea() {
             wValue=$(( $wValue | 0x2 ))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
             # PERST
-            wValue=$(( $wValue | 0x4 ))
+            wValue=$(( $wValue | 0x6 ))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
         done
     fi
