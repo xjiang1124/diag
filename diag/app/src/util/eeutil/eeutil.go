@@ -103,10 +103,19 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
             eeprom.EepromTbl = nil
             if strings.Contains(dev, "FRU") || strings.Contains(dev, "MB") {
                 eeprom.EepromTlvs = eeprom.MtpMateraMbTlvs
+                if mtpType == "MTP_PANAREA" {
+                    eeprom.EepromTlvs[0] = eeprom.MtpPanareaMbProductName
+                }
             } else if strings.Contains(dev, "IOB") {
                 eeprom.EepromTlvs = eeprom.MtpMateraIobTlvs
+                if mtpType == "MTP_PANAREA" {
+                    eeprom.EepromTlvs[0] = eeprom.MtpPanareaIobProductName
+                }
             } else if strings.Contains(dev, "FPIC") {
                 eeprom.EepromTlvs = eeprom.MtpMateraFpicTlvs
+                if mtpType == "MTP_PANAREA" {
+                    eeprom.EepromTlvs[0] = eeprom.MtpPanareaFpicProductName
+                }
             } else {
                 cli.Println("e", "Not supported MTP_TYPE", mtpType, "devName", dev)
                 return errType.FAIL
