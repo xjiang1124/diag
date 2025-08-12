@@ -23,7 +23,7 @@ proc define_test_list {{override_test_list ""}} {
     plog_msg "Got override_test_list = $override_test_list"
     
     if { $override_test_list == "" } {
-        set names_list [list ID MBIST]
+        set names_list [list ID MBIST] ; # DEFAULT TEST LIST
     } else {
         set names_list [split $override_test_list]
     }
@@ -31,29 +31,29 @@ proc define_test_list {{override_test_list ""}} {
     set test_list [dict create]
     foreach test_name $names_list {
         switch $test_name {
-            # #TEST NAME ##################### RST PRE                      COMMAND                       POST
-            ID              { set cmd_list [list 0 ""                       sal_jtag_id                   "" ] }
-            FREQ            { set cmd_list [list 0 ""                       sal_jtag_freq_test            sal_pcc ] }
+            # #TEST NAME ##################### RST PRE              COMMAND                       POST
+            ID              { set cmd_list [list 0 _msrd            sal_jtag_id                   sal_j2c ] }
+            FREQ            { set cmd_list [list 0 ""               sal_jtag_freq_test            sal_pcc ] }
 
-            MBIST           { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag               verify_frequencies ] }
-            MBIST_STP       { set cmd_list [list 0 set_pollara_frequency    mbist_stp                     verify_frequencies ] }
-            MBIST_ARM       { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_stp              "" ] }
-            MBIST_EAST      { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_stp             "" ] }
-            MBIST_WEST      { set cmd_list [list 0 set_pollara_frequency    sal_jtag_west_stp             "" ] }
+            MBIST_ORIG      { set cmd_list [list 0 ""               mbist_no_stp                  ""      ] }
+            MBIST_ORIG_EAST { set cmd_list [list 0 ""               sal_jtag_east_mbist           ""      ] }
+            MBIST_ORIG_WEST { set cmd_list [list 0 ""               sal_jtag_west_mbist           ""      ] }
 
-            MBIST_ORIG      { set cmd_list [list 0 set_pollara_frequency    mbist_no_stp                  verify_frequencies ] }
-            MBIST_ORIG_EAST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_mbist           "" ] }
-            MBIST_ORIG_WEST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_west_mbist           "" ] }
+            MBIST           { set cmd_list [list 0 _msrd            mbist_with_diag               sal_j2c ] }
+            MBIST_STP       { set cmd_list [list 0 ""               mbist_stp                     ""      ] }
+            MBIST_ARM       { set cmd_list [list 0 ""               sal_jtag_arm_stp              ""      ] }
+            MBIST_EAST      { set cmd_list [list 0 ""               sal_jtag_east_stp             ""      ] }
+            MBIST_WEST      { set cmd_list [list 0 ""               sal_jtag_west_stp             ""      ] }
 
-            DIAG_MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_only_diag               verify_frequencies ] }
-            DIAG_ARM        { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_diag             "" ] }
-            DIAG_EAST       { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_diag            "" ] }
-            DIAG_WEST       { set cmd_list [list 0 set_pollara_frequency    sal_jtag_west_diag            "" ] }
+            DIAG_MBIST      { set cmd_list [list 0 _msrd            mbist_only_diag               sal_j2c ] }
+            DIAG_ARM        { set cmd_list [list 0 ""               sal_jtag_arm_diag             ""      ] }
+            DIAG_EAST       { set cmd_list [list 0 ""               sal_jtag_east_diag            ""      ] }
+            DIAG_WEST       { set cmd_list [list 0 ""               sal_jtag_west_diag            ""      ] }
 
-            ALGO22          { set cmd_list [list 0 set_pollara_frequency    mbist_algo22                  verify_frequencies ] }
-            ALGO22_ARM      { set cmd_list [list 0 set_pollara_frequency    sal_jtag_algo22_mbist_arm     "" ] }
-            ALGO22_EAST     { set cmd_list [list 0 set_pollara_frequency    sal_jtag_algo22_mbist_east    "" ] }
-            ALGO22_WEST     { set cmd_list [list 0 set_pollara_frequency    sal_jtag_algo22_mbist_west    "" ] }
+            ALGO22          { set cmd_list [list 0 _msrd            mbist_algo22                  sal_j2c ] }
+            ALGO22_ARM      { set cmd_list [list 0 ""               sal_jtag_algo22_mbist_arm     ""      ] }
+            ALGO22_EAST     { set cmd_list [list 0 ""               sal_jtag_algo22_mbist_east    ""      ] }
+            ALGO22_WEST     { set cmd_list [list 0 ""               sal_jtag_algo22_mbist_west    ""      ] }
 
             default         { set cmd_list [list 0 "" "" ""] }
         }
@@ -267,16 +267,18 @@ if {$err_cnt != 0} {
     plog_err "JTAG TESTS FAILED"
     exit -2
 }
+set err_cnt [ sal_get_myerr_cnt set_pollara_frequency ]
+if {$err_cnt != 0} {
+    plog_err "JTAG TESTS FAILED"
+    plog_err "JTAG TESTS FAILED"
+    exit -2
+}
 
 ### run tests
 set final_rslt 0
 set test_name_list [dict keys $test_list]
 foreach test_name $test_name_list {
     set cmd_list [dict get $test_list $test_name]
-    set cmd_0 [lindex $cmd_list 0]
-    set cmd_1 [lindex $cmd_list 1]
-    set cmd_2 [lindex $cmd_list 2]
-    set cmd_3 [lindex $cmd_list 3]
     set err_cnt1 0
     set err_cnt2 0
     set err_cnt3 0
@@ -291,18 +293,16 @@ foreach test_name $test_name_list {
 
         ## exec reset command
         set cmd [lindex $cmd_list 0]
+        set jtag_rst_cmd reset_to_proto_mode
         if {$cmd == 1 || $cmd == 2} {
-            plog_msg "cmd0 $jtag_rst_cmd"
+            plog_msg "cmd $jtag_rst_cmd"
             eval $jtag_rst_cmd
-            #if {$cmd == 2} {
-            #   run_ddr 6400
-            #}
         }
 
         ## exec prepare command
         set cmd [lindex $cmd_list 1]
         if {$cmd != ""} {
-            plog_msg "cmd_1 $cmd"
+            plog_msg "cmd $cmd"
             set err_cnt1 [sal_get_myerr_cnt $cmd]
         }
 
@@ -310,14 +310,14 @@ foreach test_name $test_name_list {
         # sal_print_voltage_temp
         set cmd [lindex $cmd_list 2]
         if {$cmd != ""} {
-            plog_msg "cmd_2 $cmd"
+            plog_msg "cmd $cmd"
             set err_cnt2 [sal_get_myerr_cnt $cmd 0 0 1]
         }
 
         ## exec post command
         set cmd [lindex $cmd_list 3]
         if {$cmd != ""} {
-            plog_msg "cmd_3 $cmd"
+            plog_msg "cmd $cmd"
             set err_cnt3 [sal_get_myerr_cnt $cmd]
         }
 
@@ -339,6 +339,12 @@ foreach test_name $test_name_list {
         set test_time_out [format "%d:%02d" $test_time_min $test_time_sec]
         plog_msg "Test time used: $test_time_out; Test time(sec): $test_time"
     }
+}
+
+# reading ARM freq may mess up jtag. check it at the end of test.
+set err_cnt_fnl [ sal_get_myerr_cnt verify_frequencies ]
+if {$err_cnt_fnl != 0} {
+    set final_rslt 1
 }
 
 diag_close_j2c_if $port $slot
