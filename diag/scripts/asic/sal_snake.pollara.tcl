@@ -92,10 +92,10 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
             get_sal_offload_cnt 0
             get_sal_offload_cnt 1
         }
-        if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" || \
-             $test_type == "esam_pktgen_pollara_max_power_arm"      || \
-             $test_type == "esam_pktgen_max_power_2p4net_ainic" } {
-            plog_msg "find_avg_rate 5 500\n"
+        if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
+             $test_type == "esam_pktgen_pollara_max_power_arm"      ||
+             $test_type == "esam_pktgen_max_power_2p4net_ainic"} {
+            plog_msg "find_avg_rate 5 650\n"
             find_avg_rate 5 650
         } else {
             find_avg_rate 5 4000
@@ -109,7 +109,7 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         #set ret [sal_port_sync]
         #plog_msg "sal_port_sync: $ret"
 
-        if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" || \
+        if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" || 
              $test_type == "esam_pktgen_max_power_2p4net_ainic" } {
             plog_msg "pcie width and mac status:"
             pcie_check_link_width_and_mac_status 1100 LENI 4 0
@@ -246,8 +246,9 @@ if {$ainic_mode == "ainic_net" && [sal_harvested_asic] == 1} {
 #===========================
 # Disable PCIe for now
 plog_msg "pcie bring-up"
-if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
-     $test_type == "esam_pktgen_max_power_2p4net_ainic" } {
+if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" || 
+     $test_type == "esam_pktgen_max_power_2p4net_ainic"     || 
+     $test_type == "esam_pktgen_pollara_llc_arm" } {
     set in_err_ecc [plog_get_err_count]
     # temporarily use LENI before POLLARA ready
     plog_msg "pcie_mtp_bringup_ports 1100 LENI 4\n"
@@ -272,7 +273,8 @@ after 1000
 
 if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
      $test_type == "esam_pktgen_pollara_max_power_arm"      ||
-     $test_type == "esam_pktgen_max_power_2p4net_ainic" } {
+     $test_type == "esam_pktgen_max_power_2p4net_ainic"     ||
+     $test_type == "esam_pktgen_pollara_llc_arm" } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
     sal_front_panel_port_up $int_lpbk "CU" $lt 2x400 0
@@ -341,7 +343,8 @@ if {$test_type == "esam_pktgen_pollara_sor"} {
 } elseif {$test_type == "esam_pktgen_max_power_ainic"            ||
           $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
           $test_type == "esam_pktgen_pollara_max_power_arm"      ||
-          $test_type == "esam_pktgen_max_power_2p4net_ainic" } {
+          $test_type == "esam_pktgen_max_power_2p4net_ainic"     ||
+          $test_type == "esam_pktgen_pollara_llc_arm" } {
     set stream_list_all "30-33,40-43"
 } else {
     plog_err "Unsupported snake: ${test_type} "
@@ -355,6 +358,8 @@ plog_msg "stream_list: ${stream_list}"
 
 # Pipeline PPS
 sal_window_setup 0xfff0 0xfff0
+
+#sknobs_set_value sal_top_stream_cfg/sal0/data_pattern 0x00
 
 foreach stream $stream_list { sal_top_stream_load_snake_traffic 0 $stream }
 
@@ -373,6 +378,12 @@ for {set idx 0} {$idx < $ite} {incr idx} {
 }
 # after test completes
 sal_top_eos 0
+
+rds sal0.pm.pbm.sta_ecc_bank0
+rds sal0.pm.pbm.sta_ecc_bank1
+rds sal0.pm.pbm.sta_ecc_bank2
+rds sal0.pm.pbm.sta_ecc_bank3
+
 plog_msg "Counters after stop snake"
 # check counters
 sal_top_get_cntr 0

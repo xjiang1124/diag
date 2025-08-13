@@ -641,6 +641,7 @@ class nic_test_v2:
         # check uart console
         if args.snake_type != "esam_pktgen_llc_sor" and \
            args.snake_type != "esam_pktgen_ddr_burst_400G_no_mac" and \
+           args.snake_type != "esam_pktgen_pollara_llc_arm" and \
            args.snake_type != "esam_pktgen_ddr_burst":
             uart_session = common.session_start()
             self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=0)
