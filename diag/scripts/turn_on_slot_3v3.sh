@@ -322,8 +322,8 @@ control_slot_panarea() {
     then
         for slot_one_based in $slot_list
         do
-            slot=$(( $slot_one_based - 1 ))
-            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            slot_zero_based=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
             printf "Setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
             wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
             wValue=$(( $wValue & 0xFFFFFFFE ))
@@ -334,8 +334,8 @@ control_slot_panarea() {
     then
         for slot_one_based in $slot_list
         do
-            slot=$(( $slot_one_based - 1 ))
-            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            slot_zero_based=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
             printf "Setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
             # 3V3
             wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
@@ -350,8 +350,8 @@ control_slot_panarea() {
     sleep 0.2
     for slot_one_based in $slot_list
     do
-        slot=$(( $slot_one_based - 1 ))
-        slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+        slot_zero_based=$(( $slot_one_based - 1 ))
+        slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
         sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
     done
 }
@@ -384,10 +384,11 @@ then
         fpgautil r32 $matera_P3V3_addr
     elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
     then
-        slot_list=(1 2 3 4 5 6 7 8 9 10)
-        for slot in $slot_list
+        slot_list="1 2 3 4 5 6 7 8 9 10"
+        for slot_one_based in $slot_list
         do
-            slot_ctrl_reg_addr=$((0x180 + (slot * 4)))
+            slot_zero_based=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
         done
     else
@@ -440,7 +441,7 @@ then
         ) 99>/home/diag/turn_on_slot.lock
     elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
     then
-        slot_list=(1 2 3 4 5 6 7 8 9 10)
+        slot_list="1 2 3 4 5 6 7 8 9 10"
         control_slot_panarea
     fi
 else

@@ -262,6 +262,12 @@ var MtpMateraMbTlvs = []tlvEntry {
     tlvEntry{ crc_32,             INT8,   209,   4,   []byte{0x00, 0x00, 0x00, 0x00}},
 }
 
+var MtpPanareaMbProductName = tlvEntry{ product_name,      STRING,   11,  20,   []byte{
+            //"PANAREA MB"
+            0x50, 0x41, 0x4E, 0x41, 0x52, 0x45, 0x41, 0x20,
+            0x4d, 0x42, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+            0x20, 0x20, 0x20, 0x20}}
+
 var MtpMateraIobTlvs = []tlvEntry {
     //tlvEntry{ tlv_id_str,        STRING,    0,    8,   []byte(TlvInfoId)},
     //tlvEntry{ tlv_hdr_ver,       INT8,      8,    1,   TlvHdrVer},
@@ -306,6 +312,12 @@ var MtpMateraIobTlvs = []tlvEntry {
     tlvEntry{ eng_bits,          STRING,  205,   2,   []byte{0x00, 0x00}},
     tlvEntry{ crc_32,             INT8,   209,   4,   []byte{0x00, 0x00, 0x00, 0x00}},
 }
+
+var MtpPanareaIobProductName = tlvEntry{ product_name,      STRING,   11,  20,   []byte{
+            //"PANAREA IOB"
+            0x50, 0x41, 0x4E, 0x41, 0x52, 0x45, 0x41, 0x20,
+            0x49, 0x4f, 0x42, 0x20, 0x20, 0x20, 0x20, 0x20,
+            0x20, 0x20, 0x20, 0x20}}
 
 var MtpMateraFpicTlvs = []tlvEntry {
     //tlvEntry{ tlv_id_str,        STRING,    0,    8,   []byte(TlvInfoId)},
@@ -352,6 +364,11 @@ var MtpMateraFpicTlvs = []tlvEntry {
     tlvEntry{ crc_32,             INT8,   209,   4,   []byte{0x00, 0x00, 0x00, 0x00}},
 }
 
+var MtpPanareaFpicProductName = tlvEntry{ product_name,      STRING,   11,  20,   []byte{
+            //"PANAREA FPIC"
+            0x50, 0x41, 0x4E, 0x41, 0x52, 0x45, 0x41, 0x20,
+            0x46, 0x50, 0x49, 0x43, 0x20, 0x20, 0x20, 0x20,
+            0x20, 0x20, 0x20, 0x20}}
 
 type cardDevPn struct {
     cardTyp     string
