@@ -322,7 +322,7 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("MTP ASIC Version: {:s}".format(self._asic_ver))
 
-        script_ver_match = re.search("image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+        script_ver_match = re.search(r"image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
         if script_ver_match:
             self._script_ver = script_ver_match.group(2)
         self.cli_log_report_inf("MFG Script Version: {:s}".format(self._script_ver))
@@ -343,7 +343,7 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("MTPS Location: {:s}".format(self.get_mtp_factory_location()))
 
-        script_ver_match = re.search("image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+        script_ver_match = re.search(r"image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
         if script_ver_match:
             self._script_ver = script_ver_match.group(2)
         self.cli_log_report_inf("MFG Script Version: {:s}".format(self._script_ver))
@@ -1103,7 +1103,7 @@ class mtp_ctrl():
             prompt_str = "{:s}@NIC-{:02d}:{:s} ".format(userid, slot+1, prompt)
         else:
             prompt_str = "{:s}@MTP:{:s} ".format(userid, prompt)
-        handle.sendline("PS1='[\D{%Y-%m-%d_%H:%M:%S}] " + prompt_str + "'")
+        handle.sendline("PS1=r'[\D{%Y-%m-%d_%H:%M:%S}] " + prompt_str + "'")
 
         # refresh
         handle.sendline("uname")
@@ -5504,10 +5504,10 @@ class mtp_ctrl():
         logbuf = [""] * self._slots
         for line in buf.splitlines():
             for slot in nic_list:
-                if re.search("Starting [\w ]+ on slot %s" % str(slot+1), line) or re.search("Checking [\w ]*result on slot %s" % str(slot+1), line):
+                if re.search(r"Starting [\w ]+ on slot %s" % str(slot+1), line) or re.search(r"Checking [\w ]*result on slot %s" % str(slot+1), line):
                     capture = [False] * self._slots
                     capture[slot] = True
-                elif re.search("Setup env on slot %s env setup done" % str(slot+1), line) or re.search("on slot %s started" % str(slot+1), line) or re.search("Check?ing [\w ]*result on slot %s Done" % str(slot+1), line):
+                elif re.search("Setup env on slot %s env setup done" % str(slot+1), line) or re.search("on slot %s started" % str(slot+1), line) or re.search(r"Check?ing [\w ]*result on slot %s Done" % str(slot+1), line):
                     capture = [False] * self._slots
                     logbuf[slot] += line + "\n"  # final line
                 if capture[slot]:
@@ -5548,7 +5548,7 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
             return nic_list[:]
         if "FAIL list:" in self.mtp_get_nic_cmd_buf(slot_main):
-            match = re.search("FAIL list:', \[([0-9,']+)\]", self.mtp_get_nic_cmd_buf(slot_main))
+            match = re.search(r"FAIL list:', \[([0-9,']+)\]", self.mtp_get_nic_cmd_buf(slot_main))
             if match:
                 fail_slot_str = match.group(1).replace("'", "")
                 for slot in libmfg_utils.expand_range_of_numbers(fail_slot_str, range_min=1, range_max=self._slots, dev=self._id):
@@ -6233,7 +6233,7 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
             return nic_list[:]
         if "Failed" in self.mtp_get_nic_cmd_buf(slot_main):
-            match = re.search("Failed slots: \[*([0-9,]+)\]", self.mtp_get_nic_cmd_buf(slot_main))
+            match = re.search(r"Failed slots: \[*([0-9,]+)\]", self.mtp_get_nic_cmd_buf(slot_main))
             if match:
                 for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
                     slot = slot-1
@@ -6509,7 +6509,7 @@ class mtp_ctrl():
                 cmd = "lspci -vvv -s {:s} | grep \"Part number\" --color=never".format(bus)
                 self.mtp_mgmt_exec_cmd_para(slot, cmd)
                 cmd_buf = self.mtp_get_nic_cmd_buf(slot)
-                pn_match = re.search("Part number: *([A-Z0-9\-]*)", cmd_buf)
+                pn_match = re.search(r"Part number: *([A-Z0-9\-]*)", cmd_buf)
                 if pn_match:
                     nic_type = get_product_name_from_pn_and_sn(pn_match.group(1), sn_match.group(1))
                     self.mtp_set_nic_type(slot, nic_type)

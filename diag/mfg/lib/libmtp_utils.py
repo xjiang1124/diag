@@ -301,7 +301,7 @@ def mtp_issue_3v3powercycle(mtp_mgmt_ctrl, slot, pc_iter=100):
     """
 
     pc_cmd = "turn_on_slot.sh off {:d}; ".format(slot+1)
-    pc_cmd += "sleep 3; "
+    pc_cmd += "sleep 10; "
     pc_cmd += "turn_on_slot_3v3_new.sh on {:d}; ".format(slot+1)
     pc_cmd += "turn_on_slot.sh on {:d}".format(slot+1)
 
@@ -321,7 +321,7 @@ def mtp_issue_ac_powercycle(mtp_mgmt_ctrl, slot, iteration_index):
     """
 
     pc_cmd = "turn_on_slot.sh off {:d}; ".format(slot+1)
-    pc_cmd += "sleep 3; "
+    pc_cmd += "sleep 10; "
     pc_cmd += "turn_on_slot.sh on {:d}".format(slot+1)
 
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "AC power cycle at iteration {:d}, CMD: {:s}".format(iteration_index, pc_cmd), level=0)

@@ -311,7 +311,7 @@ class mtp_health_ctrl():
             return False
 
         prompt_str = "{:s}@MTP:{:s} ".format(userid, prompt)
-        handle.sendline("PS1='[\D{%Y-%m-%d_%H:%M:%S}] " + prompt_str + "'")
+        handle.sendline(r"PS1='[\D{%Y-%m-%d_%H:%M:%S}] " + prompt_str + "'")
 
         # refresh
         handle.sendline("uname")

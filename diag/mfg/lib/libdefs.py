@@ -626,6 +626,7 @@ class MFG_DIAG_CMDS:
     MATERA_MTP_NIC_BOOT_TO = "python3 sal_con.py --boot_to {:s} --slot {:s}"
     MATERA_MTP_PROG_DPU_DRU_FMT = "nic_test_v2.py prog_dpu_fru -slot {:s}  -skip_fru2"
     MATERA_MTP_SALINA_NIC_JTAG_MBIST = "tclsh jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s} -reset {:s}"
+    MATERA_MTP_SALINA_NIC_JTAG_MBIST_WITH_TEST_LIST = "tclsh jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s} -reset {:s} -test_list {:s}"
     MATERA_MTP_SALINA_NIC_VRM_FIX_FMT = "nic_test_v2.py fix_sal_vrm -slot {:s}"
     MATERA_MTP_CLEAR_J2C_IF_LOCK = "/home/diag/diag/util/jtag_accpcie_salina clr {:s}"
     MATERA_SET_PCIEAWD_ENV_FMT         = "nic_test_v2.py salina pcieawd_env -slot {:s} -eqbk_en 1 -cmn_kp 56 -cmn_ki 9 -tx_prop_adj 1 -rx_prop_adj 4 -tx_mag 9 -rx_mag 9"
