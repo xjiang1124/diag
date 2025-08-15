@@ -6,6 +6,7 @@ import (
     "fmt"
     "strconv"
     "common/cli"
+    "platform/panarea"
     "device/fpga/panareafpga"
 )
 
@@ -13,6 +14,8 @@ const errhelpPanarea = "\nfpgautil:\n" +
         "fpgautil regdump\n" + 
         "fpgautil r32 <addr>\n" +
         "fpgautil w32 <addr> <data>\n" +
+        "\n" + 
+        "fpgautil show fan" +
         "\n"
 
 
@@ -60,7 +63,10 @@ func panarea_fpga_cli() {
             fmt.Printf("WR [0x%.04x] = 0x%.08x\n", addr, uint32(data64))
         }
         os.Exit(0)
-
+    } else if os.Args[1] == "show" {
+        if os.Args[2][0] == 'f' || os.Args[2][0] == 'F' {
+            panarea.ShowFanInfo()
+        }
     } else {
         fmt.Printf("\n Incorrect Arg or Command used.  See the help Below!!\n")
         fmt.Printf(" %s \n", errhelpPanarea)

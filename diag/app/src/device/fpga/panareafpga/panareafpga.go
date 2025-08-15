@@ -11,6 +11,19 @@ import (
     "common/cli"
 )
 
+const (
+    PSU0 = 0
+    PSU1 = 1
+    MAXPSU = 2
+    FAN0 = 0
+    FAN1 = 1
+    FAN2 = 2
+    FAN3 = 3
+    FAN4 = 4
+    MAXFAN = 5
+    DUALFAN = 1
+    MAXSLOT = 10 //Panarea MTP has 10 + 1 debug slot.  0 - 10 are valid slots
+)
 
 var Glob_fd0 *os.File = nil
 var Glob_mmap0 []byte
@@ -140,5 +153,28 @@ func FpgaDumpRegionRegisters() (err error) {
     }
     fmt.Printf("\n");
 
+    return
+}
+
+func PSU_present(PSUnumber uint32) (present bool, err error) {
+    var data32 uint32
+    present = false
+
+    if PSUnumber > (MAXPSU - 1) {
+        err = fmt.Errorf(" Error: PSU_present.  PSU NUMBER PASSED (%d) IS NOT VALID!", PSUnumber)
+        cli.Printf("e", "%s", err)
+        return
+    }
+    data32, err = ReadU32(FPGA_PSU_STAT_REG)
+    if err != nil {
+        return
+    }
+
+    if PSUnumber == PSU0 && ( (data32 &  FPGA_PSU_STAT_PRSNT0) == FPGA_PSU_STAT_PRSNT0) {
+        present = true
+    }
+    if PSUnumber == PSU1 && ( (data32 &  FPGA_PSU_STAT_PRSNT1) == FPGA_PSU_STAT_PRSNT1) {
+        present = true
+    }
     return
 }

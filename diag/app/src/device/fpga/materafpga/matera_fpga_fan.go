@@ -360,7 +360,7 @@ func Fan_Init() (err int) {
 
 
     for i=0; i<MAXFAN; i++ {
-        rc := FAN_Set_PWM(i, 102)   //40% PWM
+        rc := FAN_Set_PWM(i, 40)   //40% PWM
         if rc != errType.SUCCESS {
             cli.Printf("e", " Error: FanInit.  Fan-%d set pwm failed", i)
             err = errType.FAIL
