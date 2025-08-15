@@ -11,6 +11,7 @@ import (
     "hardware/hwdev"
     "device/fpga/liparifpga"
     "device/fpga/materafpga"
+    "device/fpga/panareafpga"
 )
 
 
@@ -84,9 +85,12 @@ func main() {
         if i2cinfo.CardType == "LIPARI" {
             maxfan = liparifpga.MAXFAN
             daulfan = liparifpga.DUALFAN
-        } else if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" {
+        } else if i2cinfo.CardType == "MTP_MATERA" {
             maxfan = materafpga.MAXFAN
             daulfan = materafpga.DUALFAN
+        } else if i2cinfo.CardType == "MTP_PANAREA" {
+            maxfan = panareafpga.MAXFAN
+            daulfan = panareafpga.DUALFAN
         }
 
         if os.Args[3] == "all" {
