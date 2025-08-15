@@ -25,6 +25,9 @@ proc check_vrd_fault {} {
     plog_msg "CPLD reg 0x32: $faultcode"
     if { $resetcode != "0x0" } {
         plog_err "Encountered abnormal reset code: $resetcode"
+        if { $resetcode == "0x0b" } {
+            plog_err "Special case: ARM initiated reboot; make sure ARM is not interfering."
+        }
     }
     if { $faultcode != "0x0" } {
         plog_err "Encountered abnormal fault code: $faultcode"
@@ -32,6 +35,7 @@ proc check_vrd_fault {} {
             sal_j2c
             plog_msg "Dumping VRM faultcodes:"
             sal_tps53688_explain_status 2 0x60 0
+            sal_tps53688_explain_status 2 0x60 1
         }
     }
 }
@@ -103,8 +107,7 @@ proc set_pollara_frequency {{arm_freq "none"}} {
     }
     plog_msg "set_pollara_frequency :: running with repairs"; sal_jtag_smsg_ctrl_saferr
     sal_j2c
-    sal_cpld_warm_reset
-    clear_resetcode 0x12
+    reset_to_proto_mode warm_rot
 }
 
 proc cpld_disable_wdt {} {
