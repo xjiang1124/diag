@@ -904,8 +904,9 @@ class nic_ctrl():
             return False
 
         test_name = "max_pwr"
+        lt = "0" if self._nic_type == NIC_Type.POLLARA else "1"
 
-        cmd = MFG_DIAG_CMDS().MATERA_AINIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
+        cmd = MFG_DIAG_CMDS().MATERA_AINIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk, lt)
         cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
         print(cmd)
         if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
