@@ -1,4 +1,4 @@
-package materafpga
+package panareafpga
 
 
 import (
@@ -35,7 +35,7 @@ func FAN_Get_RPM(fanNumber uint32) (inner uint32, outer uint32, err int) {
         return
     }
 
-    data32, errGo := MateraReadU32(FPGA_FAN0_TACH_REG + ( 4 * uint64(fanNumber)) )
+    data32, errGo := ReadU32(FPGA_FAN0_TACH_REG + ( 4 * uint64(fanNumber)) )
     if errGo != nil {
         err = errType.FAIL
         return
@@ -77,7 +77,7 @@ func FAN_Set_PWM(fanNumber uint32, pwmPercent uint32) (err int) {
         FanCtrlReg = FPGA_FAN_PWM_CTRL0_REG
     }
 
-    data32, errGo = MateraReadU32(FanCtrlReg)
+    data32, errGo = ReadU32(FanCtrlReg)
     if errGo != nil {
         return
     }
@@ -110,7 +110,7 @@ func FAN_Set_PWM(fanNumber uint32, pwmPercent uint32) (err int) {
 
     data32 = data32 & (^(pwmMask))
     data32 = data32 | ((pwmVal<<pwmShift) & pwmMask)
-    MateraWriteU32(FanCtrlReg, data32)
+    WriteU32(FanCtrlReg, data32)
     return
 }
 
@@ -140,7 +140,7 @@ func FAN_Get_PWM(fanNumber uint32) (pwm uint32, err int) {
         FanCtrlReg = FPGA_FAN_PWM_CTRL0_REG
     }
 
-    data32, errGo = MateraReadU32(FanCtrlReg)
+    data32, errGo = ReadU32(FanCtrlReg)
     if errGo != nil {
         err = errType.FAIL
         return
@@ -184,7 +184,7 @@ func FAN_Get_PowerOn_Status(fanNumber uint32) (powerOn uint32, err int) {
         err = errType.FAIL
         return
     }
-    data32, errGo := MateraReadU32(FPGA_FAN_PWR_CTRL_REG)
+    data32, errGo := ReadU32(FPGA_FAN_PWR_CTRL_REG)
     if errGo != nil {
         err = errType.FAIL
         return
@@ -220,7 +220,7 @@ func FAN_Get_Fault(fanNumber uint32) (fanErr uint32, err int) {
         err = errType.FAIL
         return
     }
-    data32, errGo := MateraReadU32(FPGA_FAN_STAT_REG)
+    data32, errGo := ReadU32(FPGA_FAN_STAT_REG)
     if errGo != nil {
         err = errType.FAIL
         return
@@ -262,7 +262,7 @@ func FAN_Set_Power_Enable(fanNumber uint32, enable uint32) (err int) {
         return
     }
 
-    data32, errGo := MateraReadU32(FPGA_FAN_PWR_CTRL_REG)
+    data32, errGo := ReadU32(FPGA_FAN_PWR_CTRL_REG)
     if errGo != nil {
         err = errType.FAIL
         return
@@ -282,7 +282,7 @@ func FAN_Set_Power_Enable(fanNumber uint32, enable uint32) (err int) {
     } else {
         data32 = data32 & (^(mask))
     }
-    MateraWriteU32(FPGA_FAN_PWR_CTRL_REG, data32)
+    WriteU32(FPGA_FAN_PWR_CTRL_REG, data32)
 
     return
 }
@@ -300,7 +300,7 @@ func FAN_Get_Power_Enable(fanNumber uint32) (enable uint32, err int) {
         return
     }
 
-    data32, errGo := MateraReadU32(FPGA_FAN_PWR_CTRL_REG)
+    data32, errGo := ReadU32(FPGA_FAN_PWR_CTRL_REG)
     if errGo != nil {
         err = errType.FAIL
         return
@@ -328,7 +328,7 @@ func FAN_Get_Module_present(fanNumber uint32) (present bool, err int) {
         err = errType.FAIL
         return
     }
-    data32, errGo := MateraReadU32(FPGA_FAN_STAT_REG)
+    data32, errGo := ReadU32(FPGA_FAN_STAT_REG)
     if errGo != nil {
         err = errType.FAIL
         return
