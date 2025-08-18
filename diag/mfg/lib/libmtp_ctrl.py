@@ -6019,11 +6019,7 @@ class mtp_ctrl():
         slot_asic_dir_path = asic_dir_path[slot]
 
         if not self._nic_ctrl_list[slot].ainic_snake_mtp_salina(snake_type, vmarg, dura, timeout, slot_asic_dir_path, ite, int_lpbk):
-            if snake_type == "esam_pktgen_pollara_max_power_pcie_arm":
-                self.cli_log_slot_err(slot, "NIC ESAM PKTGEN MAX POWER SNAKE TEST FAILED")
-            else:
-                self.cli_log_slot_err(slot, "NIC ESAM PKTGEN SOR SNAKE TEST FAILED")
-            self.mtp_get_nic_err_msg(slot)
+            self.cli_log_slot_err_lock(slot, "nic_test_v2 nic_snake_mtp {:s} TEST FAILED".format(snake_type))
             return False
 
         return True

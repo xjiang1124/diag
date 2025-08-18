@@ -903,7 +903,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        test_name = "max_pwr"
+        test_name = "max_pwr" if snake_type == "esam_pktgen_pollara_max_power_pcie_arm" else "p4net"
         lt = "0" if self._nic_type == NIC_Type.POLLARA else "1"
 
         cmd = MFG_DIAG_CMDS().MATERA_AINIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk, lt)
