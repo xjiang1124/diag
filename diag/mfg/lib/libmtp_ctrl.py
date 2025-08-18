@@ -4962,10 +4962,10 @@ class mtp_ctrl():
             self.mtp_single_j2c_lock()
             self.mtp_nic_console_lock()
             self.mtp_get_nic_sts(slot, skip_vrm_check, test)
+            self.mtp_nic_dump_reg(slot)
             self.mtp_sal_check_j2c(slot, test)
             self.mtp_nic_console_unlock()
             self.mtp_single_j2c_unlock()
-            self.mtp_nic_dump_reg(slot)
             self.mtp_nic_prp_test(slot)
             self.mtp_clear_nic_uart(slot)
 
