@@ -7083,11 +7083,11 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             return False
 
-        if "not present" in self.nic_get_cmd_buf():
+        cmd_buf = self.nic_get_cmd_buf()
+        if "not present" in cmd_buf or "ERROR:" in cmd_buf:
             return False
 
-        cmd_buf = self.nic_get_cmd_buf()
-        sn_match = re.search(r"XCVR SN:\s+(.*)", cmd_buf)
+        sn_match = re.search(r"XCVR SN:\s+(\w+)", cmd_buf)
 
         if sn_match is None or len(sn_match.groups()) == 0:
             self.nic_set_cmd_buf(cmd_buf)
