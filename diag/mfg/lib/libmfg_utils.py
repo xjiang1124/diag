@@ -1276,7 +1276,9 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname=""):
     
 
     # in case nic hung up the bus:
-    mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
+    # turn off card only if when not stop_on_err
+    if not mtp_mgmt_ctrl.stop_on_err:
+        mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
     mtp_mgmt_ctrl.mtp_reset_hub(slot)
     mtp_mgmt_ctrl.log_nic_file(slot, "######## {:s} ########".format("END post fail debug"))
     mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_clear_fa()

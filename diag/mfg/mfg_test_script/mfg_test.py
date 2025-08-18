@@ -1504,7 +1504,7 @@ if __name__ == "__main__":
 
     parser_dl.add_argument("--verbosity", "-verbosity", help="Increase output verbosity; default to %(default)s", action='store_true', default=False)
     parser_dl.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
-    parser_dl.add_argument("--dpn", help="Supply Diagnostic Part Number, for QA/lab only...MFG should enter DPN through scanning", default=None)
+    parser_dl.add_argument("--dpn", "-dpn", help="Supply Diagnostic Part Number, for QA/lab only...MFG should enter DPN through scanning", default=None)
     parser_dl.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
     parser_dl.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
     parser_dl.add_argument("--skip_slots", "-skip_slots", metavar=('1', '1 2'), help="skip one or more particular slot", nargs="*", default=[])

@@ -81,6 +81,7 @@ class nic_ctrl():
         self._gold_fpga_updated = False 
 
         self._mtp_type = ""
+        self.stop_on_err = False
 
     def nic_handle_init(self, handle, prompt):
         self._nic_handle = handle

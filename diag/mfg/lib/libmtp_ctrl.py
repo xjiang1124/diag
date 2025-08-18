@@ -115,10 +115,12 @@ class mtp_ctrl():
         self._temppn = None
         self._test_log_folder = None  # relative path to log folder
         self._open_file_handles = []
+        self.stop_on_err = False
 
     def _propogate_properties_to_nic(self, slot):
         if self._nic_ctrl_list[slot]:
             self._nic_ctrl_list[slot]._mtp_type = self._mtp_type
+            self._nic_ctrl_list[slot].stop_on_err = self.stop_on_err
 
     def cli_log_inf(self, msg, level=0):
         if msg is None:

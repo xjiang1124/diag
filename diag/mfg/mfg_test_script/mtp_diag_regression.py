@@ -414,6 +414,9 @@ def main():
                              slots_to_skip = mtp_slots_to_skip,
                              dbg_mode = verbosity)
 
+    # pass in stop_on_err into mtp_mgmt_ctrl instance
+    mtp_mgmt_ctrl.stop_on_err = stop_on_err
+
     # logfiles
     mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=stage)
 
