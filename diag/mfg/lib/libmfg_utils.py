@@ -1255,6 +1255,10 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname=""):
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC not powered on")
         mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
     else:
+
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in SALINA_NIC_TYPE_LIST:
+            mtp_mgmt_ctrl.mtp_nic_dump_reg(slot)
+            mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
         
         mtp_mgmt_ctrl.mtp_nic_console_lock()
         if mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in SALINA_AI_NIC_TYPE_LIST:
@@ -1262,10 +1266,6 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname=""):
             mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_check_rebooted()
         mtp_mgmt_ctrl.mtp_nic_port_counters(slot) # if mtp_mgmt_ctrl._nic_ctrl_list[slot]._nic_status == NIC_Status.NIC_STA_MGMT_FAIL
         mtp_mgmt_ctrl.mtp_nic_console_unlock()
-
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in SALINA_NIC_TYPE_LIST:
-            mtp_mgmt_ctrl.mtp_nic_dump_reg(slot)
-            mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
 
         mtp_mgmt_ctrl.mtp_sal_check_j2c(slot, testname)
 
