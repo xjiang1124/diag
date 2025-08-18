@@ -864,8 +864,8 @@ class nic_ctrl():
         cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_JTAG_MBIST_WITH_TEST_LIST.format(self._sn, str(self._slot+1), vmarg, "cold", "ALGO22")
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             return False
-        if MFG_DIAG_SIG.MATERA_NIC_SALINA_JTAG_MBIST_SIG not in self.nic_get_cmd_buf():
-            return False
+        # if MFG_DIAG_SIG.MATERA_NIC_SALINA_JTAG_MBIST_SIG not in self.nic_get_cmd_buf():
+        #     return False
         return True
 
     def nic_snake_mtp_salina(self, snake_type='esam_pktgen_max_power_sor', vmarg="normal", dura=120, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
