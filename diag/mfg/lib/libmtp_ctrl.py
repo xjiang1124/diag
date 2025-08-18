@@ -4959,9 +4959,9 @@ class mtp_ctrl():
 
         # For Salina Cards run get_nic_sts.tcl for every failure
         if nic_type in SALINA_NIC_TYPE_LIST:
-            self.mtp_nic_dump_reg(slot)
             self.mtp_single_j2c_lock()
             self.mtp_nic_console_lock()
+            self.mtp_nic_dump_reg(slot)
             self.mtp_get_nic_sts(slot, skip_vrm_check, test)
             self.mtp_sal_check_j2c(slot, test)
             self.mtp_nic_console_unlock()
