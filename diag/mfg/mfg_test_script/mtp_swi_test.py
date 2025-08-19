@@ -99,7 +99,7 @@ def swi_fru_program(mtp_mgmt_ctrl, slot):
     mac = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)[1].replace('-', '')
     pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot)
     dpn = mtp_mgmt_ctrl.mtp_get_nic_dpn(slot)
-    sku = mtp_mgmt_ctrl.get_scanned_sku(slot)
+    sku = mtp_mgmt_ctrl.get_scanned_sku(slot) if mtp_mgmt_ctrl.get_scanned_sku(slot) != "POLLARA-1Q400P-D" else "POLLARA-1Q400P"
     prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
     return mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, sku)
 

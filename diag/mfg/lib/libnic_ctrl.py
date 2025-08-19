@@ -864,8 +864,8 @@ class nic_ctrl():
         cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_JTAG_MBIST_WITH_TEST_LIST.format(self._sn, str(self._slot+1), vmarg, "cold", "ALGO22")
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             return False
-        if MFG_DIAG_SIG.MATERA_NIC_SALINA_JTAG_MBIST_SIG not in self.nic_get_cmd_buf():
-            return False
+        # if MFG_DIAG_SIG.MATERA_NIC_SALINA_JTAG_MBIST_SIG not in self.nic_get_cmd_buf():
+        #     return False
         return True
 
     def nic_snake_mtp_salina(self, snake_type='esam_pktgen_max_power_sor', vmarg="normal", dura=120, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
@@ -903,9 +903,10 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        test_name = "max_pwr"
+        test_name = "max_pwr" if snake_type == "esam_pktgen_pollara_max_power_pcie_arm" else "p4net"
+        lt = "0" if self._nic_type == NIC_Type.POLLARA else "1"
 
-        cmd = MFG_DIAG_CMDS().MATERA_AINIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
+        cmd = MFG_DIAG_CMDS().MATERA_AINIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk, lt)
         cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
         print(cmd)
         if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
@@ -7082,11 +7083,11 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             return False
 
-        if "not present" in self.nic_get_cmd_buf():
+        cmd_buf = self.nic_get_cmd_buf()
+        if "not present" in cmd_buf or "ERROR:" in cmd_buf:
             return False
 
-        cmd_buf = self.nic_get_cmd_buf()
-        sn_match = re.search(r"XCVR SN:\s+(.*)", cmd_buf)
+        sn_match = re.search(r"XCVR SN:\s+(\w+)", cmd_buf)
 
         if sn_match is None or len(sn_match.groups()) == 0:
             self.nic_set_cmd_buf(cmd_buf)

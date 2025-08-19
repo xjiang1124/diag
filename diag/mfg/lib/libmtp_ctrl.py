@@ -4961,11 +4961,11 @@ class mtp_ctrl():
         if nic_type in SALINA_NIC_TYPE_LIST:
             self.mtp_single_j2c_lock()
             self.mtp_nic_console_lock()
+            self.mtp_nic_dump_reg(slot)
             self.mtp_get_nic_sts(slot, skip_vrm_check, test)
             self.mtp_sal_check_j2c(slot, test)
             self.mtp_nic_console_unlock()
             self.mtp_single_j2c_unlock()
-            self.mtp_nic_dump_reg(slot)
             self.mtp_nic_prp_test(slot)
             self.mtp_clear_nic_uart(slot)
 
@@ -6019,11 +6019,7 @@ class mtp_ctrl():
         slot_asic_dir_path = asic_dir_path[slot]
 
         if not self._nic_ctrl_list[slot].ainic_snake_mtp_salina(snake_type, vmarg, dura, timeout, slot_asic_dir_path, ite, int_lpbk):
-            if snake_type == "esam_pktgen_pollara_max_power_pcie_arm":
-                self.cli_log_slot_err(slot, "NIC ESAM PKTGEN MAX POWER SNAKE TEST FAILED")
-            else:
-                self.cli_log_slot_err(slot, "NIC ESAM PKTGEN SOR SNAKE TEST FAILED")
-            self.mtp_get_nic_err_msg(slot)
+            self.cli_log_slot_err_lock(slot, "nic_test_v2 nic_snake_mtp {:s} TEST FAILED".format(snake_type))
             return False
 
         return True
@@ -7702,7 +7698,7 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     continue
 
-    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=Voltage_Margin.normal, stage=FF_Stage.FF_P2C, joo='1', loopback='0', offload='0', esecure='0', simplified='0', ite='1', ddr="1"):
+    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=Voltage_Margin.normal, stage=FF_Stage.FF_P2C, joo='1', loopback='0', offload='0', esecure='0', simplified='0', ite='1', ddr="1", lt='1'):
         """
         cd ~diag/scripts/asic/
         ./run_l1.test -sn <sn> -slot <slot> -m <mode> -v <vmarg>
@@ -7718,6 +7714,7 @@ class mtp_ctrl():
         s:    0: simplified test disabled; 1: simlified test enabled; default: 0
         hc:   0: Soft training; 1: hardcoded DDR training; default: 0
         ddr:  0: DDR test skipped; 1: DDR test enabled
+        lt:   0: fixed settings; 1: link training
         ite:  Number of iterations
         """
         rs = False
@@ -7733,6 +7730,9 @@ class mtp_ctrl():
         if stage == FF_Stage.FF_SRN:
             skip_ddr_bist = "0"
 
+        if nic_type == NIC_Type.POLLARA:
+            lt = "0"
+
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
             self.cli_log_slot_err(slot, "Command {:s} failed")
@@ -7745,7 +7745,7 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS().NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
         else:
             # "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s} -joo {:s} -i {:s} -o {:s} -e {:s} -s {:s} -ite {:s}"
-            cmd = MFG_DIAG_CMDS().NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training, joo, loopback, offload, esecure, simplified, ite)
+            cmd = MFG_DIAG_CMDS().NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training, joo, loopback, offload, esecure, simplified, ite, lt)
 
         self.cli_log_slot_inf(slot, cmd)
 

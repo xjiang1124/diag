@@ -219,7 +219,7 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, slot, mtp_para_test_list):
 
     return ret
 
-def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequential, joo='1', loopback='0', offload='0', esecure='1', simplified='0', ite='1', ddr="1"):
+def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequential, joo='1', loopback='0', offload='0', esecure='1', simplified='0', ite='1', ddr="1", lt="1"):
 
     @parallelize.parallel_nic_using_j2c
     def run_j2c_test_normally(mtp_mgmt_ctrl, slot, test, vmarg):
@@ -231,7 +231,7 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequent
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
             mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage using Part Number: {:s} For before run_l1.sh".format(n_vmarg, pn), level=0)
 
-        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg, stage, joo, loopback, offload, esecure, simplified, ite, ddr)
+        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg, stage, joo, loopback, offload, esecure, simplified, ite, ddr, lt)
 
     @parallelize.sequential_nic_test
     def run_j2c_test_sequentially(mtp_mgmt_ctrl, slot, test, vmarg):
@@ -243,7 +243,7 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequent
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
             mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage using Part Number: {:s} For before run_l1.sh".format(n_vmarg, pn), level=0)
 
-        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg, stage, joo, loopback, offload, esecure, simplified, ite, ddr)
+        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg, stage, joo, loopback, offload, esecure, simplified, ite, ddr, lt)
 
     if force_sequential:
         fail_j2c_list = run_j2c_test_sequentially(mtp_mgmt_ctrl, nic_list, test, vmarg)
@@ -715,7 +715,7 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_nic_salina_edma(nic_list, vmarg=test_kwargs["vmarg"], seconds2run=test_kwargs["seconds2run"])
                 elif test in ("SALINA_DPU_SNAKE_MAX_PWR", "SALINA_DPU_SNAKE_DDR_BURST"):
                     rlist = mtp_mgmt_ctrl.mtp_nic_snake_mtp_salina(nic_list, snake_type=test_kwargs["snake_type"], vmarg=test_kwargs["vmarg"], dura=test_kwargs["dura"], timeout=test_kwargs["timeout"], asic_dir_path=test_kwargs["asic_dir_path"], int_lpbk=test_kwargs["int_lpbk"])
-                elif test == "SNAKE_SALINA_AINIC_SNAKE_MAX_PWR_MTP":
+                elif test in ("SNAKE_SALINA_AINIC_SNAKE_MAX_PWR_MTP", "SNAKE_SALINA_AINIC_SNAKE_P4NET_MTP"):
                     rlist = mtp_mgmt_ctrl.mtp_ainic_snake_mtp_salina(nic_list, snake_type=test_kwargs["snake_type"], vmarg=test_kwargs["vmarg"], dura=test_kwargs["dura"], timeout=test_kwargs["timeout"], asic_dir_path=test_kwargs["asic_dir_path"], int_lpbk=test_kwargs["int_lpbk"])
                 elif test == "SNAKE_SALINA_NIC_PCIE_PRBS":
                     rlist = mtp_mgmt_ctrl.mtp_nic_pcie_prbs_salina(nic_list, vmarg=test_kwargs["vmarg"], asic_dir_path=test_kwargs["asic_dir_path"])
@@ -1390,6 +1390,7 @@ def main():
                             dir_path = '/home/diag/diag/asic' + str(slot)
                         slot2asicdir[slot] = dir_path
                     run_regression_test(salina_ai_max_power_snake, "SNAKE_SALINA_AINIC_SNAKE_MAX_PWR_MTP", snake_type="esam_pktgen_pollara_max_power_pcie_arm", asic_dir_path=slot2asicdir, vmarg=vmarg, dura=900, timeout=3600, int_lpbk='0')
+                    run_regression_test(salina_ai_max_power_snake, "SNAKE_SALINA_AINIC_SNAKE_P4NET_MTP", snake_type="esam_pktgen_max_power_2p4net_ainic", asic_dir_path=slot2asicdir, vmarg=vmarg, dura=900, timeout=3600, int_lpbk='0')
 
                     # recovery, prog normal qspi images
                     # run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
