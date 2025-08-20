@@ -1771,6 +1771,9 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
+        if MFG_DIAG_SIG.NIC_CLEAR_UBOOT_FAIL_SIG in self.nic_get_cmd_buf():
+            return False
+
         return True
 
     def nic_boot_info_init(self, smode=False):

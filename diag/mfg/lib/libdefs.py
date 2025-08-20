@@ -813,6 +813,7 @@ class MFG_DIAG_SIG:
     NIC_OCP_CON_OK_SIG = "Adapter Test PASSED"
     NIC_ESEC_HW_UNLOCK_OK_SIG = "Verification passed"
     NIC_PRP_TEST_SIG = "PRP TEST PASSED"
+    NIC_CLEAR_UBOOT_FAIL_SIG = "Verification failed"
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"
