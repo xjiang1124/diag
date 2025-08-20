@@ -860,8 +860,8 @@ class nic_ctrl():
             self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
 
         # just run ALGO22 jtag mbist with cold
-        cmd = "turn_on_slot.sh off {:s}; sleep 10; turn_on_slot.sh on {:s}".format(str(self._slot+1), str(self._slot+1))
-        self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+        # cmd = "turn_on_slot.sh off {:s}; sleep 10; turn_on_slot.sh on {:s}".format(str(self._slot+1), str(self._slot+1))
+        # self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_JTAG_MBIST_WITH_TEST_LIST.format(self._sn, str(self._slot+1), vmarg, "cold", "ALGO22")
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             return False
