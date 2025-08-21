@@ -33,7 +33,12 @@ then
         data=$(( $data | $uart_id ))
         i2cset -y $(($slot + 2)) 0x4a 0x21 $data
     fi
-    taskset -c $slot fpga_uart $((slot - 1))
+    if [[ $CARD_TYPE == "MTP_MATERA" ]]
+    then
+        taskset -c $slot fpga_uart $((slot - 1))
+    else
+        taskset -c $slot fpga_uart_panarea $((slot - 1))
+    fi
 else
     cpldutil -cpld-wr -addr=0x18 -data=0
     cpldutil -cpld-wr -addr=0x18 -data=$1
