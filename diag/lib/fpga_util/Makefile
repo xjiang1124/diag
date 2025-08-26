@@ -7,7 +7,7 @@ CFLAGS = -Wall -Wextra $(DEPENDENCIES) $(LINKER_OPTIONS) -L/usr/local/lib
 
 .PHONY: all
 
-all: libaccpcie.a libaccpcie_salina.a fpga_uart jtag_accpcie jtag_accpcie_salina
+all: libaccpcie.a libaccpcie_salina.a fpga_uart fpga_uart_panarea jtag_accpcie jtag_accpcie_salina
 
 libaccpcie.a: accpcie.c
 	@mkdir -p ${GOPATH}/bin/linux_$(ARCH)/clib/
@@ -29,6 +29,12 @@ fpga_uart: fpga_uart.c
 	#mv fpga_uart ${GOPATH}/bin/linux_$(ARCH)/cbin/fpga_uart
 	cp fpga_uart ${GOPATH}/bin/linux_$(ARCH)/cbin/fpga_uart
 	
+fpga_uart_panarea: fpga_uart_panarea.c
+	@mkdir -p ${GOPATH}/bin/linux_$(ARCH)/clib/
+	$(CC) fpga_uart_panarea.c -I.. -L. -o fpga_uart_panarea $(CFLAGS)
+	#mv fpga_uart_panarea ${GOPATH}/bin/linux_$(ARCH)/cbin/fpga_uart_panarea
+	cp fpga_uart_panarea ${GOPATH}/bin/linux_$(ARCH)/cbin/fpga_uart_panarea
+
 jtag_accpcie: jtag_accpcie.c
 	@mkdir -p ${GOPATH}/bin/linux_$(ARCH)/clib/
 	$(CC) jtag_accpcie.c accpcie.c -I.. -L. -o jtag_accpcie $(CFLAGS)
