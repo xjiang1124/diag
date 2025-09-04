@@ -68,15 +68,17 @@ def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
     return ret, output
 
 
-def enter_a35_uboot(slot, session, *args, **kwargs):
+def kill_consoles(slot, session, *args, **kwargs):
     common.session_cmd(session, "con_cleanup.sh {}".format(slot), ending=["Killed uart","\$ "])
     session.sendline("") # to get out of "Terminated message" and prevent it confusing the prompt
     session.sendline("")
 
+def enter_a35_uboot(slot, session, *args, **kwargs):
     if kwargs.get('skip_a35_uboot', False):
         return 0
 
     con_ctrl = nic_con()
+    kill_consoles(slot, session)
     if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["Autoboot "], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False), pc_delay=kwargs.get('pc_delay', 10)) != 0:
         print("==== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
@@ -87,6 +89,7 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
 
 def enter_a35_zephyr(slot, session, *args, **kwargs):
     con_ctrl = nic_con()
+    kill_consoles(slot, session)
 
     if kwargs.get('skip_a35_uboot', False):
         con_ctrl.uart_session_connect(session, slot, uart_id=0)
