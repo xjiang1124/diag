@@ -696,6 +696,11 @@ func init() {
     deschutesDispStaList = make(map[string]DispStaFunc)
     deschutesDispStaList["CORE"] = tps53688.DispStatus
     deschutesDispStaList["ARM"]  = tps53688.DispStatus
+    deschutesDispStaList["VDD_DDR_DPU0"] = tps53688.DispStatus
+    deschutesDispStaList["VDD_DDR_DPU1"] = tps53688.DispStatus
+    deschutesDispStaList["DDR_VDD"]  = pmic.DispStatus
+    deschutesDispStaList["DDR_VDDQ"]  = pmic.DispStatus
+    deschutesDispStaList["DDR_VPP"]  = pmic.DispStatus
 
     //Just decalred.. not used on Lipari
     lipariElbaI2cHubMap = make(map[string]I2cHubInfo)

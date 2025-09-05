@@ -487,7 +487,17 @@ var DeschutesTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"CORE",           "TPS53689",  0x0,   0x60,    0x0,    "HUB_NONE", 0,    0},
     I2cInfo {"ARM",            "TPS53689",  0x0,   0x60,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE", 0,    0},   //Cisco uses 8-bit FRU 
+    I2cInfo {"DDR_VDD",        "PMIC",      0x0,   0x4F,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VDDQ",       "PMIC",      0x0,   0x4F,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VPP",        "PMIC",      0x0,   0x4F,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE", 0,    0},   //Cisco uses 8-bit FRU
+}
+
+// Some devices on Deschutes are only accessible from one DPU due to space-saving design
+var DeschutesTblDpu0 = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"VDD_DDR_DPU0",   "TPS53689",  0x0,   0x62,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_DDR_DPU1",   "TPS53689",  0x0,   0x62,    0x1,    "HUB_NONE", 0,    0},
 }
 
 var LaconaMtpTbl = []I2cInfo {
@@ -1028,6 +1038,10 @@ func init() {
         I2cTbl = CapaciElbaTbl
     } else if CardType == "DESCHUTES" {
         I2cTbl = DeschutesTbl
+        dpuSlot := os.Getenv("DPU_SLOT")
+        if dpuSlot == "0" {
+            I2cTbl = append(I2cTbl, DeschutesTblDpu0...)
+        }
     } else {
         cli.Println("f", "Unsupported card:", CardType)
         return
