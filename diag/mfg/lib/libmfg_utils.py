@@ -1766,7 +1766,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                             if rs in FLEX_ERR_CODE_MAP.err_code:
                                 cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [Database Server Access Error: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs), FLEX_ERR_CODE_MAP.err_code[rs]))
                             elif rs in http.client.responses:
-                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [HTTP Response ERROR: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs)), http.client.responses[rs])
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [HTTP Response ERROR: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs), http.client.responses[rs]))
                             elif rs == 88888888:
                                 cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [Sending HTTP Request Error: error code ({:s}) --> Please check server avaiblity and network connectivity]".format((post_cnt + 1), sn, str(rs)))
                             elif rs == 58888888:
