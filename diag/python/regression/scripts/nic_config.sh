@@ -242,6 +242,13 @@ export CARD_TYPE=$type
 export ITP_TYPE=$itp_type
 export CARD_ENV="ARM"
 
+if [[ $CARD_TYPE == "DESCHUTES" ]]
+then
+    dpu_slot="$(cpldapp -r 0xa)"
+    echo "export DPU_SLOT=\"$dpu_slot\"" >> /etc/profile
+    export DPU_SLOT=$dpu_slot
+fi
+
 ASIC_LIB_BUNDLE="/data/nic_arm/nic"
 ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src
 ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib
