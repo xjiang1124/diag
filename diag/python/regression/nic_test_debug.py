@@ -459,6 +459,52 @@ class nic_test_debug:
 
         return 0
 
+    def emmc_tuning(self, args):
+        print("eMMC tuning")
+        for i in range(args.iteration):
+            print("=== Ite {} ===".format(i))
+
+            session = common.session_start()
+            if sal_con.enter_n1_uboot(int(args.slot), session, warm_reset=False):
+                print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+                ret = -1
+                return ret
+            else:
+                print "In N1 Uboot now"
+            
+            self.nic_con.clear_expect(session)
+    
+            self.nic_con.uart_session_start(session, args.slot, uart_id=1)
+            cmd = "env set bootargs cdns.mmc_phy={} earlycon=ns16550a,mmio32,0x100000 console=ttyS1,115200n8 softdog.soft_panic=1 FW_NAME=goldfw".format(args.cdns)
+            self.nic_con.uart_session_cmd(session, cmd) 
+    
+            session.sendline("bootm 82700000")
+            self.nic_con.clear_expect(session)
+    
+            self.nic_con.uart_session_stop(session)
+            self.nic_con.uart_session_start_login(session, args.slot, 120)
+            self.nic_con.clear_expect(session)
+            self.nic_con.uart_session_stop(session)
+    
+            print("=== Sleep 10s ===")
+            sleep(10)
+            self.nic_con.clear_expect(session)
+    
+            self.nic_con.uart_session_start(session, args.slot, uart_id=1)
+            self.nic_con.uart_session_cmd(session, "umount /data")
+            self.nic_con.uart_session_cmd(session, "fdisk -l", 10)
+            [val, buf]=self.nic_con.uart_session_cmd_w_ot(session, "dmesg", 120, ending="root#")
+            self.nic_con.uart_session_stop(session)
+    
+            common.session_stop(session)
+    
+            if "O error" in buf:
+                print("=== emmc_tuning FAILED {} ==".format(i))
+                break
+            else:
+                print("=== emmc_tuning PASSED {} ==".format(i))
+        return
+
 if __name__ == "__main__":
 
     test = nic_test_debug()
@@ -534,6 +580,13 @@ if __name__ == "__main__":
     parser_qspi_erase_write_read = subparsers.add_parser('qspi_erase_write_read', help='QSPI erase/write/read test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_qspi_erase_write_read.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
     parser_qspi_erase_write_read.set_defaults(func=test.sal_qspi_erase_write_read)
+
+    # eMMC tuning II
+    parser_emmc_tuning = subparsers.add_parser('emmc_tuning', help='eMMC tuning', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_emmc_tuning.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_emmc_tuning.add_argument("-cdns", "--cdns", help="eMMC CDNS setting", type=str, default="-1,-1,-1")
+    parser_emmc_tuning.add_argument("-ite", "--iteration", help="Iteratin", type=int, default=1)
+    parser_emmc_tuning.set_defaults(func=test.emmc_tuning)
 
     try:
         args = parser.parse_args()
