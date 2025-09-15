@@ -68,10 +68,10 @@ func init () {
         }
         datawriter := bufio.NewWriter(file)
         _, _ = datawriter.WriteString(fmt.Sprintf("0x%x\n", bar))
-
+ 
         datawriter.Flush()
         file.Close() 
-        
+         
     }
     Glob_mmap0, Glob_fd0, _ = MMAP_Device(int64(bar), MAP_SIZE)
     }
