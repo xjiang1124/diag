@@ -365,8 +365,10 @@ if { $check_vrm != 0 } {
     } elseif {$ASIC_TYPE == "SALINA"} {
         sal_print_voltage_temp_from_j2c
         if {[ssi_cpld_read 0x32] == "0x08"} {
-            plog_msg "VDD_CORE status registers:"; sal_tps53688_explain_status 2 0x60 0
-            plog_msg "VDD_ARM  status registers:"; sal_tps53688_explain_status 2 0x60 1
+            plog_msg "VDD_CORE status registers:"; set vdd_err [sal_get_myerr_cnt {sal_tps53688_explain_status 2 0x60 0} 0 0 1]
+            plog_msg "VDD_ARM  status registers:"; set arm_err [sal_get_myerr_cnt {sal_tps53688_explain_status 2 0x60 1} 0 0 1]
+            if {$vdd_err != 0} { plog_err "VRD FAULT from VDD_CORE" }
+            if {$arm_err != 0} { plog_err "VRD FAULT from VDD_ARM"  }
         }
     } else {
         elb_assert_arm_rst 0 0xf
