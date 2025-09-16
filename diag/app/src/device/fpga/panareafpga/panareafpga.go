@@ -32,6 +32,9 @@ const MAP_SIZE int = 1048576
 
 
 func init () {
+    var cardType string
+    cardType = os.Getenv("CARD_TYPE")
+    if cardType == "MTP_PANAREA" {
     var bar uint64 =0
     exists, _ := Path_exists("/tmp/fpgabars")
 
@@ -71,6 +74,7 @@ func init () {
          
     }
     Glob_mmap0, Glob_fd0, _ = MMAP_Device(int64(bar), MAP_SIZE)
+    }
 }
  
  
