@@ -235,7 +235,9 @@ def get_nic_ip_addr(slot):
 # remove the special character mixed with output:
 # eg: SMP Tue Ma^@r 19 11:14:41 PT 2019
 def special_char_removal(buf):
-    return re.sub(r"[\x00-\x09\x0B-\x0C\x0E-\x1F]", "", buf)
+    # Strip ANSI manually with regex
+    tmp = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', "", buf)
+    return re.sub(r"[\x00-\x09\x0B-\x0C\x0E-\x1F]", "", tmp)
 
 def extract_sn_from_dell_ppid(tmp):
     """ 
@@ -1630,6 +1632,7 @@ def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, du
         ret = soap_post_report(xml, factory)
         if int(ret) != 0:
             print("{:d}th post uut status failed.".format((retry + 1)))
+            print(xml)
             retry += 1
             time.sleep(2)
         else:
