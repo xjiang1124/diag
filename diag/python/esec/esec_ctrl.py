@@ -707,7 +707,7 @@ PRIVEK <ek.sk>"""
             cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0x00 0x00".format(slot)
             common.session_cmd(session, cmd)
             common.session_stop(session)
-            return ret
+            return [ret, md5sum_cert]
 
         # Find md5sum
         ret = self.nic_con.uart_session_start(session, slot, uart_id=0)
@@ -717,7 +717,7 @@ PRIVEK <ek.sk>"""
             cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0x00 0x00".format(slot)
             common.session_cmd(session, cmd)
             common.session_stop(session)
-            return ret
+            return [ret, md5sum_cert]
 
         try:
             session.expect(["uart:", "MTP:\$"], 1)
@@ -764,7 +764,7 @@ PRIVEK <ek.sk>"""
                 print("md5sum check failed; Caculated:", md5sum_cert, "Uboot:", md5sum_uboot)
                 print("=== DICE VALIDATION FAILED ===")
                 common.session_stop(session)
-                return -1
+                return [-1, md5sum_cert]
 
         index = src_str.find("Raw Cert data (Hex):", 1)
         if index == -1 or index == len(src_str) - len("Raw Cert data (Hex):"):
@@ -845,7 +845,7 @@ PRIVEK <ek.sk>"""
         else:
             print("=== DICE PROG FAILED ===")
 
-        return ret
+        return [ret, md5sum_cert]
 
     def cleanup (self):
         ret = 0
