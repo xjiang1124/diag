@@ -955,23 +955,23 @@ class mtp_ctrl():
         current_process_cores = len(os.sched_getaffinity(0))
         # Toggle comment or uncomment this snippet with above depends on the need of David's Matera UART new driver implement
         # #####-->
-        # # using enviroment variable CARD_TYPE as a indicator to create a remote ssh session or a local bash session
-        # running_on_mtp = True if os.getenv('CARD_TYPE') and 'MTP' in os.getenv('CARD_TYPE') else False
-        # if running_on_mtp:
-        #     # assign task sshd to cpu core 0
-        #     pid_cmd = 'ppid=$(ps -o ppid= -p $$) && ps -elf | grep " $ppid " | grep sshd'
-        #     if not self.mtp_mgmt_exec_cmd(pid_cmd):
-        #         self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
-        #         return False
-        #     sshd_pid = self.mtp_get_cmd_buf().split('\n')[1].split()[3]
-        #     pid_cmd = 'taskset -pc 0 {:s}'.format(sshd_pid)
-        #     if not self.mtp_mgmt_exec_cmd(pid_cmd):
-        #         self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
-        #         return False
-        #     pid_cmd = 'ps -o pid,psr,comm -p {:s}'.format(sshd_pid)
-        #     if not self.mtp_mgmt_exec_cmd(pid_cmd):
-        #         self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
-        #         return False
+        # using enviroment variable CARD_TYPE as a indicator to create a remote ssh session or a local bash session
+        running_on_mtp = True if os.getenv('CARD_TYPE') and 'MTP' in os.getenv('CARD_TYPE') else False
+        if running_on_mtp:
+            # assign task sshd to cpu core 0
+            pid_cmd = 'ppid=$(ps -o ppid= -p $$) && ps -elf | grep " $ppid " | grep sshd'
+            if not self.mtp_mgmt_exec_cmd(pid_cmd):
+                self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
+                return False
+            sshd_pid = self.mtp_get_cmd_buf().split('\n')[1].split()[3]
+            pid_cmd = 'taskset -pc 0 {:s}'.format(sshd_pid)
+            if not self.mtp_mgmt_exec_cmd(pid_cmd):
+                self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
+                return False
+            pid_cmd = 'ps -o pid,psr,comm -p {:s}'.format(sshd_pid)
+            if not self.mtp_mgmt_exec_cmd(pid_cmd):
+                self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
+                return False
         # <--#####
 
         for index, slot in enumerate(slot_list):

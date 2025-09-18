@@ -496,6 +496,7 @@ class MFG_DIAG_CMDS:
     SET_IBM_BOARD_CONFIG_FMT = "board_config -C {:s}{:s}"
     ZEPHYR_BOARD_CONFIG_WRITE_FMT =  "board_config write {:s}"
     ZEPHYR_BOARD_CONFIG_DUMP_FMT =  "board_config dump"
+    ZEPHYR_BOARD_ID_READ_FMT =  "board_config board_id"
     ZEPHYR_BOARD_CONFIG_ERASE_FMT =  "board_config erase"
     ZEPHYR_FW_SELECT_FMT =  "debug update firmware --next-boot {:s}"
     ZEPHYR_SHOW_VERSION_FMT =  "show version"

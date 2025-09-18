@@ -5915,6 +5915,17 @@ class nic_ctrl():
                 return False
         cmd_buf = self.nic_get_cmd_buf()
         if boardId.lower() not in cmd_buf.lower():
+            # Board ID not found in "board_config dump" command response
+            # may because that there are ANSI escape code that resets text formatting (colors, bold, etc.) in terminal output
+            # retry with "board_config board_id" command
+            if not self.nic_exec_cmd_from_zephyr_console(MFG_DIAG_CMDS().ZEPHYR_BOARD_ID_READ_FMT):
+                time.sleep(27)
+                if not self.nic_exec_cmd_from_zephyr_console(MFG_DIAG_CMDS().ZEPHYR_BOARD_ID_READ_FMT):
+                    self.nic_set_err_msg("Zephyr Borad ID READ Command '{:s}' Failed Even with Retry".format(MFG_DIAG_CMDS().ZEPHYR_BOARD_ID_READ_FMT))
+                    return False
+            cmd_buf = self.nic_get_cmd_buf()
+
+        if boardId.lower() not in cmd_buf.lower():
             self.nic_set_err_msg("Zephr Read Back and Compare Board ID Failed")
             self.nic_set_err_msg(cmd_buf)
             return False
