@@ -414,6 +414,10 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
         product_name = NIC_Type.ORTANO2SOLOMSFT
     elif "POLLARA-1Q400P-OCP" in pn:
         product_name = NIC_Type.LINGUA
+    elif "102-P11500-" in pn:
+        product_name = NIC_Type.LINGUA
+    elif "102-P11100-" in pn:
+        product_name = NIC_Type.POLLARA
     elif "POLLARA-1Q400P" in pn:
         product_name = NIC_Type.POLLARA
     elif "AI-NIC400-1Q400-P" in pn:
