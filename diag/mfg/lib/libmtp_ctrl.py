@@ -6447,7 +6447,8 @@ class mtp_ctrl():
 
         if len(bus_list_match) == 0:
             self.cli_log_err("No devices found")
-            return False
+            if not scanned_fru:
+                return False
 
         if scanned_fru:
             # build scanned serial number to scanned nic slot id mapping table
@@ -6485,6 +6486,7 @@ class mtp_ctrl():
                     key = libmfg_utils.nic_key(sn2slot[sn])
                     self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, May Because Card Not Bootup, Fail This Card Out and Continue Test".format(key, sn), level=0)
                     self.mtp_set_nic_status_fail(sn2slot[sn], skip_fa=True)
+                    self._nic_prsnt_list[sn2slot[sn]] = True
             if not phy_present_slot_list:
                 phy_present_slot_list = list(range(len(bus_list_match)))
         else:

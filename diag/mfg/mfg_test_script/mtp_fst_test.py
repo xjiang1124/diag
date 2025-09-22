@@ -34,6 +34,7 @@ import test_utils
 import testlog
 import scanning
 import barcode_field as bf
+from libsku_utils import *
 
 def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
     usb_serial = []
@@ -238,6 +239,10 @@ def main():
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot) and slot not in fail_nic_list:
                 fail_nic_list.append(slot)
+                mtp_mgmt_ctrl.mtp_set_nic_sn(slot, mtp_mgmt_ctrl.get_scanned_sn(slot))
+                mtp_mgmt_ctrl.mtp_set_nic_pn(slot, mtp_mgmt_ctrl.get_scanned_pn(slot))
+                nic_type = get_product_name_from_pn_and_sn(mtp_mgmt_ctrl.mtp_get_nic_pn(slot), mtp_mgmt_ctrl.mtp_get_nic_sn(slot))
+                mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
                 continue
             pass_nic_list.append(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
