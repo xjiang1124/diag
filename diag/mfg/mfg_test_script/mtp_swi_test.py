@@ -586,8 +586,8 @@ def main():
 
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
 
-            run_swi_test(get_slots_of_type(NIC_Type.POLLARA), "SALINA_QSPI_PROG", secure_img=False)
-            run_swi_test(get_slots_of_type(NIC_Type.POLLARA), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
+            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_PROG", secure_img=False)
+            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")

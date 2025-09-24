@@ -4473,7 +4473,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "Program NIC check Uboot failed")
                 return False
 
-            if nic_type in NIC_Type.POLLARA:
+            if nic_type in SALINA_AI_NIC_TYPE_LIST:
                 image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_prog_secure_sh_img(self, slot, FF_Stage.FF_SWI)["filename"]
                 if not self.matera_mtp_program_nic_qspi(slot, image_path, img_type="secure"):
                     self.cli_log_slot_err(slot, "Program NIC secure qspi imgage failed")

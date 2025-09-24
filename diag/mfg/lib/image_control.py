@@ -467,7 +467,6 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(firmware_config_dtb)
                 images_needed.append(arm_a_zephyr)
                 images_needed.append(fwsel)
-            if nic_type == NIC_Type.POLLARA:
                 images_needed.append(bl1_img)
                 images_needed.append(pentrust_img)
                 images_needed.append(fipa_img)
