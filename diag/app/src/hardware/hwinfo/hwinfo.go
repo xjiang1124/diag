@@ -2,7 +2,13 @@ package hwinfo
 
 import (
     "os"
+    "os/exec"
     "fmt"
+    "runtime"
+    "strconv"
+    "strings"
+    "common/cli"
+    "common/errType"
 
     "device/boardinfo"
     "device/fanctrl/adt7462"
@@ -234,6 +240,7 @@ var lipariElbaDispStaList map[string]DispStaFunc
 
 // mtfuji (Cisco)
 var mtfujiElbaDispStaList map[string]DispStaFunc
+var mtfujiV2ElbaDispStaList map[string]DispStaFunc
 
 // capaci (HPE)
 var capaciElbaDispStaList map[string]DispStaFunc
@@ -687,6 +694,12 @@ func init() {
     mtfujiElbaDispStaList["ELB0_CORE2"] = ltc3882.DispStatus
     mtfujiElbaDispStaList["ELB0_ARM"]   = ltc3882.DispStatus
 
+    mtfujiV2ElbaDispStaList = make(map[string]DispStaFunc)
+    mtfujiV2ElbaDispStaList["VDD_DDR"]    = tps53659.DispStatus
+    mtfujiV2ElbaDispStaList["VDDQ_DDR"]   = tps53659.DispStatus
+    mtfujiV2ElbaDispStaList["ELB0_CORE"]  = tps53659.DispStatus
+    mtfujiV2ElbaDispStaList["ELB0_ARM"]   = tps53659.DispStatus
+
     // Capaci ELBA
     capaciElbaDispStaList = make(map[string]DispStaFunc)
     capaciElbaDispStaList["ELB0_CORE"] = tps53688.DispStatus
@@ -1032,6 +1045,19 @@ func init() {
     // Platform specified list
     // Remark: map may not support all platforms
     cardType = os.Getenv("CARD_TYPE")
+    if cardType == "MTFUJI" {
+        if runtime.GOARCH == "arm64" {
+            reg, err := ArmReadCPLDreg(0x0A)
+            if err != errType.SUCCESS {
+                fmt.Printf("ERROR reading MTFUJI REVISION\n")
+            }
+            fmt.Printf("**ARM64 MTFUJI: CHECKING REV. CPLD REG 0x0A=0x%x\n", reg)
+            reg = ((reg >> 4) & 0xF)
+            if reg > 0x00 {
+                dispMap["MTFUJI"] = mtfujiV2ElbaDispStaList
+            }
+        }
+    }
     DispStaList, _   = dispMap[cardType]
     //PmbusTestList, _ = pmbusTestMap[cardType]
     EepromList, _    = eepromMap[cardType]
@@ -1070,3 +1096,31 @@ func init() {
     }
 }
 
+
+/** 
+ *  
+ * Mtfuji put their board rev in CPLD Register 0x0A 
+ * Need to read it when running on the ARM side to determine 
+ * which dispstalist table to load. They changed their voltage 
+ * regulator on the Rev 02 Mtfuji which needs a new table 
+ *  
+ */
+func ArmReadCPLDreg(register uint32) (data32 uint32, err int) {
+    var readReg uint64
+    cmdStr := fmt.Sprintf("cpldapp -r 0x%x", register)
+    output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+    if errGo != nil {
+        cli.Println("e", "executing command", cmdStr," returned error ->", errGo)
+        err = errType.FAIL
+        return
+    }
+    tmp := strings.TrimSuffix(string(output), "\n")
+    readReg, errGo = strconv.ParseUint(tmp, 0, 64)
+    if errGo != nil {
+        cli.Println("e", "Error ArmReadCPLDreg parsing cpld read data failed ->", errGo)
+        err = errType.FAIL
+        return
+    }
+    data32 = uint32(readReg)
+    return
+}

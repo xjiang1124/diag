@@ -20,7 +20,7 @@ import (
 
 
 var fpga_misc_ctrl_reg_filename = "/tmp/fpga_misc_ctrl_reg.txt"
-var jtag_bus_spi = []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+var jtag_bus_spi = []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 var fpga_misc_ctrl_reg_lock = flock.New(fpga_misc_ctrl_reg_filename)
 
 const (
@@ -547,7 +547,7 @@ func SetJTAGbusToSPI(slot uint32) (err error) {
     }
     readArray, err_r := readArrayFromFile(fpga_misc_ctrl_reg_filename)
     if err_r == nil {
-        if len(readArray) == 10 {
+        if len(readArray) == 11 {
             jtag_bus_spi = readArray
             if readArray[slot] == 1 {
                 fpga_misc_ctrl_reg_lock.Unlock()
@@ -605,7 +605,7 @@ func SetJTAGbusToJTAG(slot uint32) (err error) {
     }
     readArray, err_r := readArrayFromFile(fpga_misc_ctrl_reg_filename)
     if err_r == nil {
-        if len(readArray) == 10 {
+        if len(readArray) == 11 {
             jtag_bus_spi = readArray
             if readArray[slot] == 0 {
                 fpga_misc_ctrl_reg_lock.Unlock()

@@ -105,6 +105,11 @@ func taormina_switch_cli() {
     if os.Args[1] == "tpmcheck" {
         taormina.TPM_CHECK(1)
     }
+    if os.Args[1] == "getpca" {
+        pcaRev, _ := taormina.GetFRU_PCA()
+        fmt.Printf("PCA REV=%d\n", pcaRev)
+        return
+    }
     //"switch test fan/i2c/qsfp/sfp/sfp_laser/dramsize/resistor/presence  (example -> 'switch test fan')\n" +
     if os.Args[1] == "test" {
         if argc < 3 {

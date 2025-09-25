@@ -1416,6 +1416,33 @@ func ElbaPing(elba uint32) (err int) {
 }
 
 
+func ElbaGetConsoleScriptToExecute(elbaNumber uint32) (elbaScript string, err int) {
+    var ResistorStrapping uint32 = 4
+    var errGo error
+
+    ResistorStrapping, errGo =  taorfpga.GetResistorStrapping()
+    if errGo != nil {
+        dcli.Printf("e","FAILED TO READ FRU PCA REVISION\n")
+    }
+    //Board is using FPGA based uart.  Not super I/O
+    //Need to call different script to execute commands over the console
+    if ResistorStrapping >= 4 {
+        if  elbaNumber == ELBA0 {
+            elbaScript = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_fpgaconsole.sh"
+        } else if elbaNumber == ELBA1 {
+            elbaScript = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_fpgaconsole.sh"
+        }
+    } else {
+        if  elbaNumber == ELBA0 {
+            elbaScript = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+        } else if elbaNumber == ELBA1 {
+            elbaScript = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        } 
+    }
+    return
+}
+
+
 /********************************************************************************* 
 *
 * 
@@ -1506,11 +1533,11 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
                 continue
             }
             testStarted=1
-            if  i == ELBA0 {
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-            } else if i == ELBA1 {
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-            } 
+            cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+            if err != errType.SUCCESS {
+                dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                return
+            }  
             _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
             if errGo != nil {
                 dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
@@ -1545,11 +1572,11 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
         }
         dcli.Printf("i", "Elba-%d Starting Test\n", i)
         testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        } 
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        }  
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
@@ -1584,7 +1611,6 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
                 err = errType.FAIL
                 return
             }
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
         } else if i == ELBA1 {
             errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
             if errGo != nil {
@@ -1592,8 +1618,12 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
                 err = errType.FAIL
                 return
             }
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
         }
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        } 
         output , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -1617,7 +1647,6 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
             } else if i == ELBA1 {
                 errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
                 if errGo != nil {
@@ -1625,8 +1654,12 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
             }
+            cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+            if err != errType.SUCCESS {
+                dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                return
+            } 
             output , errGo := exec.Command("sh", "-c", cmdStr).Output()
             if errGo != nil {
                 dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -1644,7 +1677,6 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
             } else if i == ELBA1 {
                 errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
                 if errGo != nil {
@@ -1652,8 +1684,12 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
             }
+            cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+            if err != errType.SUCCESS {
+                dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                return
+            } 
             output , errGo = exec.Command("sh", "-c", cmdStr).Output()
             if errGo != nil {
                 dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -1678,11 +1714,11 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
         _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
         for i=forStart; i < forEnd; i++ {
             testStarted=1
-            if  i == ELBA0 {
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-            } else if i == ELBA1 {
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-            } 
+            cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+            if err != errType.SUCCESS {
+                dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                return
+            }  
             _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
             if errGo != nil {
                 dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
@@ -1812,7 +1848,6 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
             } else if i == ELBA1 {
                 errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
                 if errGo != nil {
@@ -1820,8 +1855,12 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
             }
+            cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+            if err != errType.SUCCESS {
+                dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                return
+            } 
             output , errGo := exec.Command("sh", "-c", cmdStr).Output()
             if errGo != nil {
                 dcli.Printf("e","Cmd %s failed! %v\n\n  output='%s'", cmdStr, errGo, string(output))
@@ -1843,7 +1882,6 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
                 err = errType.FAIL
                 return
             }
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
         } else if i == ELBA1 {
             errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
             if errGo != nil {
@@ -1851,8 +1889,12 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
                 err = errType.FAIL
                 return
             }
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
         }
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        } 
         output , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("e","Cmd %s failed! %v\n\n  output='%s'", cmdStr, errGo, string(output))
@@ -1883,10 +1925,10 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
             continue
         }
         testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
         } 
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
@@ -1922,11 +1964,11 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
         }
         dcli.Printf("i", "Elba-%d Starting Test\n", i)
         testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        } 
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        }  
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
@@ -1961,7 +2003,6 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
                 err = errType.FAIL
                 return
             }
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
         } else if i == ELBA1 {
             errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
             if errGo != nil {
@@ -1969,8 +2010,12 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
                 err = errType.FAIL
                 return
             }
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
         }
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        } 
         output , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -1994,7 +2039,6 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
             } else if i == ELBA1 {
                 errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
                 if errGo != nil {
@@ -2002,8 +2046,12 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
             }
+            cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+            if err != errType.SUCCESS {
+                dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                return
+            } 
             output , errGo := exec.Command("sh", "-c", cmdStr).Output()
             if errGo != nil {
                 dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -2021,7 +2069,6 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
             } else if i == ELBA1 {
                 errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
                 if errGo != nil {
@@ -2029,8 +2076,12 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
             }
+            cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+            if err != errType.SUCCESS {
+                dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                return
+            } 
             output , errGo = exec.Command("sh", "-c", cmdStr).Output()
             if errGo != nil {
                 dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -2054,10 +2105,10 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
     _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
     for i=forStart; i < forEnd; i++ {
         testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
         } 
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
@@ -2215,10 +2266,10 @@ func ElbaEDMA_Test(elbaMask uint32, calledFromCLI int, rdpad_max int) (err int) 
         }
         dcli.Printf("i", "Elba-%d Starting Test\n", i)
         testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
         } 
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
@@ -2475,7 +2526,6 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
             } else if i == ELBA1 {
                 errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
                 if errGo != nil {
@@ -2483,8 +2533,12 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
             }
+            cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+            if err != errType.SUCCESS {
+                dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                return
+            } 
             output , errGo := exec.Command("sh", "-c", cmdStr).Output()
             if errGo != nil {
                 dcli.Printf("e","Cmd %s failed! %v\n\n  output='%s'", cmdStr, errGo, string(output))
@@ -2506,7 +2560,6 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
                 err = errType.FAIL
                 return
             }
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
         } else if i == ELBA1 {
             errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
             if errGo != nil {
@@ -2514,8 +2567,12 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
                 err = errType.FAIL
                 return
             }
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
         }
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        } 
         output , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("e","Cmd %s failed! %v\n\n  output='%s'", cmdStr, errGo, string(output))
@@ -2546,10 +2603,10 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
             continue
         }
         testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
         } 
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
@@ -2585,11 +2642,11 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
         }
         dcli.Printf("i", "Elba-%d Starting Test\n", i)
         testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        } 
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        }  
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
@@ -2624,7 +2681,6 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
                 err = errType.FAIL
                 return
             }
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
         } else if i == ELBA1 {
             errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
             if errGo != nil {
@@ -2632,8 +2688,12 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
                 err = errType.FAIL
                 return
             }
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
         }
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        } 
         output , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -2657,7 +2717,6 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
             } else if i == ELBA1 {
                 errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
                 if errGo != nil {
@@ -2665,8 +2724,12 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
             }
+            cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+            if err != errType.SUCCESS {
+                dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                return
+            } 
             output , errGo := exec.Command("sh", "-c", cmdStr).Output()
             if errGo != nil {
                 dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -2684,7 +2747,6 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
             } else if i == ELBA1 {
                 errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
                 if errGo != nil {
@@ -2692,8 +2754,12 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
                     err = errType.FAIL
                     return
                 }
-                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
             }
+            cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+            if err != errType.SUCCESS {
+                dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                return
+            } 
             output , errGo = exec.Command("sh", "-c", cmdStr).Output()
             if errGo != nil {
                 dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -2718,10 +2784,10 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
     _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
     for i=forStart; i < forEnd; i++ {
         testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
         } 
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
@@ -2879,11 +2945,11 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
         }
         dcli.Printf("i", "Elba-%d Starting Test\n", i)
         testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        } 
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        }  
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
@@ -3138,11 +3204,11 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, percent uint32, calledFromCLI 
             continue
         }
         dcli.Printf("i", "Elba-%d Starting Test\n", i)
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        } 
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        }  
         _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
@@ -3480,10 +3546,10 @@ func ElbaCheckECC(elba uint32, SkipPing int, calledFromCLI int, InjectError int)
         return
     }
 
-    if  elba == ELBA0 {
-        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-    } else if elba == ELBA1 {
-        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+    cmdStr, err = ElbaGetConsoleScriptToExecute(elba)
+    if err != errType.SUCCESS {
+        dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+        return
     } 
     output , errGo1 := exec.Command("sh", "-c", cmdStr).Output()
     if errGo1 != nil {
@@ -3583,7 +3649,26 @@ func ElbaCheckECC(elba uint32, SkipPing int, calledFromCLI int, InjectError int)
     return
 }
 
+/*****************************************************************
+#!/bin/bash
 
+/nic/bin/capview << EOF
+secure on
+read 0x30520020
+read 0x305a0020
+read 0x30530464
+read 0x30530468
+read 0x3053046C
+read 0x30530470
+read 0x30530474
+read 0x305B0464
+read 0x305B0468
+read 0x305B046C
+read 0x305B0470
+read 0x305B0474
+
+EOF
+******************************************************************/ 
 func ElbaCheckECC_via_console(elba uint32, calledFromCLI int, InjectError int) (err int) {
     var cmdStr string
     var line_number int 
@@ -3675,11 +3760,18 @@ func ElbaCheckECC_via_console(elba uint32, calledFromCLI int, InjectError int) (
     file.WriteString(string(createscript[:]))
     file.Close()
     os.Chmod(cmdStr, 0777)
-    if  elba == ELBA0 {
-        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-    } else if elba == ELBA1 {
-        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+/*
+    cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+    if err != errType.SUCCESS {
+        dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+        return
     } 
+*/    
+    cmdStr, err = ElbaGetConsoleScriptToExecute(elba) 
+    if err != errType.SUCCESS {
+        dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+        return
+    }
     output , errGo1 := exec.Command("sh", "-c", cmdStr).Output()
     if errGo1 != nil {
         cli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo1)
@@ -3704,12 +3796,18 @@ func ElbaCheckECC_via_console(elba uint32, calledFromCLI int, InjectError int) (
         err = errType.FAIL
         return
     }
-
-    if  elba == ELBA0 {
-        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-    } else if elba == ELBA1 {
-        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+/*
+    cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+    if err != errType.SUCCESS {
+        dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+        return
     } 
+*/
+    cmdStr, err = ElbaGetConsoleScriptToExecute(elba)
+    if err != errType.SUCCESS {
+        dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+        return
+    }     
     output , errGo1 = exec.Command("sh", "-c", cmdStr).Output()
     if errGo1 != nil {
         cli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo1)
@@ -4616,6 +4714,46 @@ func Elba_Show_Firmware(elba int, useCLI int) (err int) {
 }
 
 
+/********************************************************************************* 
+* 
+* Get the main board PCA Rev. 
+* Needed to see if the board switched from SuperIO UART to FPGA based uart system 
+* Example --> pca_rev: '0x07' 
+* 
+*********************************************************************************/ 
+func GetFRU_PCA() (pcaRev int, err int) {
+    var cmdStr string
+    cmdStr = " vtysh -c \"diag\" -c \"diag mfgread chassis_ul 1\" | grep pca_rev"
+    output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+    if errGo != nil {
+        dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+        err = errType.FAIL
+        return
+    }
+    
+    //Check if there is a pca_rev.  This will tell us the command executed properly
+    //Some older test systems may have a blank pca rev.  i.e. not programmed yet
+    //Need to handle that scenario
+    if i := strings.Index(string(output), "pca_rev"); i>0 {
+        //Check for 0x in the pca rev to get the offset for converting string to an uint
+        if i := strings.Index(string(output), "0x"); i>0 {
+            pcaRev_s := output[i:i+4]
+            pcaRev_t, _ := strconv.ParseUint(string(pcaRev_s), 0, 32)
+            pcaRev = int(pcaRev_t)
+        } else {
+          //Unprogrammed PCA Rev
+        dcli.Printf("e","Cmd %s failed! Found PCA Rev, but it appears to be blank.  The chassis FRU needs a valid programmed PCA Rev. --> %s ", cmdStr, output)
+        err = errType.FAIL
+        }
+    } else {
+        dcli.Printf("e","Cmd %s failed! Could not find valid PCA Revision in output --> %s ", cmdStr, output)
+        err = errType.FAIL
+    }
+    
+    return
+} 
+
+
 func FPGA_Strapping_Test(expected_rev int) (err int) {
     var strapping uint32
     err = errType.SUCCESS
@@ -4725,11 +4863,11 @@ retrysettingVRM:
             continue
         }
         dcli.Printf("i", "Elba-%d Executing Script to Set Registers in VRM\n", i)
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        }
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        } 
         output , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -4762,11 +4900,11 @@ retrysettingVRM:
             continue
         }
         dcli.Printf("i", "Elba-%d Check VRM\n", i)
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        } 
+        cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+        if err != errType.SUCCESS {
+            dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+            return
+        }  
         output , errGo := exec.Command("sh", "-c", cmdStr).Output()
         if errGo != nil {
             dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -4826,11 +4964,11 @@ retrysettingVRM:
                     continue
                 }
                 
-                if  i == ELBA0 {
-                    cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-                } else if i == ELBA1 {
-                    cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-                }
+                cmdStr, err = ElbaGetConsoleScriptToExecute(i)
+                if err != errType.SUCCESS {
+                    dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+                    return
+                } 
                 output , errGo := exec.Command("sh", "-c", cmdStr).Output()
                 if errGo != nil {
                     dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
@@ -5652,10 +5790,10 @@ func Elba_Check_Eye_Height(elba int, serdes_lane int, useCLI int) (err int, mv0 
     file.WriteString(string(scriptStr[:]))
     file.Close()
     os.Chmod(cmdStr, 0777)
-    if  elba == ELBA0 {
-        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-    } else if elba == ELBA1 {
-        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+    cmdStr, err = ElbaGetConsoleScriptToExecute(uint32(elba))
+    if err != errType.SUCCESS {
+        dcli.Printf("e","FAILED TO DETERMINE IF BOARD CONSOLE IS SUPER I/O OR FPGA BASED\n")
+        return
     } 
     output , errGo1 := exec.Command("sh", "-c", cmdStr).Output()
     if errGo1 != nil {

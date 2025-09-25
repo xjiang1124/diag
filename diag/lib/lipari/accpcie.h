@@ -62,11 +62,29 @@ enum {
 #define J2C_0_RXDATA_REG 0x014
 #define J2C_0_SEM_REG    0x018
 #define J2C_0_MAGIC_REG  0x01C
+//ONLY VALID ON PALERMO?
+#define J2C_0_CONF_REG   0x020
+#define J2C_0_RST_REG    0x024
+#define J2C_0_MUX_REG    0x028
 
 //CSCO 0x10020, 0x11020, 0x12020, 0x13020
 #define MTFUJI_JTAG0_BASE       0x10020
 #define MTFUJI_JTAG_STRIDE       0x1000
 
+#define PALERMO_JTAG0_BASE      0xCC0
+//SPI MAILBOX OFFSET FOR PALERMO TO TALK TO FPGA ON CAPACI
+#define PALMERO_SLOT0_SPI_MB    0x680 
+#define PALMERO_SLOT1_SPI_MB    0x6C0 
+#define PALMERO_SLOT2_SPI_MB    0x700 
+#define PALMERO_SLOT3_SPI_MB    0x740 
+#define PALMERO_SLOT4_SPI_MB    0x780 
+#define PALMERO_SLOT5_SPI_MB    0x7C0 
+#define PALMERO_SPI_MB_STRIDE   0x40
+//SPI MAILBOX DEFINES FOR PALERMO
+#define PALMERO_SPI_MB_CTRL_OFFSET 0x00
+#define PALMERO_SPI_MB_ADDR_OFFSET 0x04
+#define PALMERO_SPI_MB_WR_OFFSET   0x08
+#define PALMERO_SPI_MB_RD_OFFSET   0x0C
 
 #define UART_0_OFFSET     0x1000
 #define UART_INST_OFFSET  0x0100
@@ -109,6 +127,9 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
 FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag);
 FT_STATUS jtag_wg(ULONGLONG address, DWORD data);
 FT_STATUS jtag_rg(ULONGLONG address, DWORD* data);
+FT_STATUS palermo_platform_spi_write(ULONGLONG address, DWORD data);
+FT_STATUS palermo_platform_spi_read(ULONGLONG address, DWORD *data);
+int PalermoVspiMBPoll(uint32_t address, uint32_t * data, uint32_t iterations);
 FT_STATUS jtag_reset(DWORD inst);
 FT_STATUS jtag_enable(DWORD inst);
 void set_verbosity(int);

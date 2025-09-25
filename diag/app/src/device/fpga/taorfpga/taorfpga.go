@@ -104,7 +104,9 @@ var Glob_fd3 *os.File = nil
 var Glob_mmap0 []byte
 var Glob_mmap1 []byte
 var Glob_mmap2 []byte
-var Glob_mmap3 []byte 
+var Glob_mmap3 []byte
+ 
+const FPGAstrappingOverrideFile = "/tmp/fpga_rev_override.txt" 
 
 
 func init () {
@@ -556,10 +558,55 @@ func SetI2Cmux(channel uint32, mux uint32) (err error) {
     return
 }
 
-
+/*************************************************************** 
+* Strapping options for the spin 
+*  
+* 0x4: GB refclk spin 
+* 0x5: GB refclk  spin + TPM2.0 
+* 
+****************************************************************/ 
 func GetResistorStrapping() (value uint32, err error) {
+    //Check if the strapping override file is there.  If it is take the strapping from the file
+    //This is used for test purposes only
+    //If no file read it directly from the fpga
+    exists, _ := Path_exists(FPGAstrappingOverrideFile)
+    if exists == true {
+        file, errGo := os.Open(FPGAstrappingOverrideFile)
+        if errGo != nil {
+            cli.Println("e", "ERROR: Failed to Open", FPGAstrappingOverrideFile, " GO ERROR=%v", errGo)
+            return
+        }
+        scanner := bufio.NewScanner(file)
+        for scanner.Scan() {
+            data64, _ := strconv.ParseUint(strings.TrimSuffix(scanner.Text(), "\n"), 0, 64)
+            value = uint32(data64)
+        }
+        file.Close()
+    } else {
+        value, err = TaorReadU32(DEVREGION0, D0_BOARD_REV_ID_REG)
+    } 
+    return
+}
 
-    value, err = TaorReadU32(DEVREGION0, D0_BOARD_REV_ID_REG)
+
+/*************************************************************** 
+*  
+*  Set the resistor strapping in a tmp file
+*  This is used for testing to mimic different resistor
+*  strapping settings
+*  
+****************************************************************/ 
+func SetResistorStrapping() (value uint32, err error) {
+    file, errGo := os.OpenFile(FPGAstrappingOverrideFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+    if errGo != nil {
+        cli.Println("e", "ERROR: Failed to Open ", FPGAstrappingOverrideFile, " GO ERROR=%v", errGo)
+        return
+    }
+    datawriter := bufio.NewWriter(file)
+    _, _ = datawriter.WriteString(fmt.Sprintf("0x%x\n", value))
+    datawriter.Flush()
+    file.Close()
+    fmt.Printf("Wrote 0x%x to file %s\n", FPGAstrappingOverrideFile);
     return
 }
 
@@ -915,6 +962,7 @@ func GetTemperature(devName string) (temperatures []float64, err int) {
         addr = D1_ELBA1_STAT_REG
     }
     data32, _ = TaorReadU32(DEVREGION1, addr)
+    data32 = data32 & 0xFF
 
     temperatures = append(temperatures, float64(data32))
     return

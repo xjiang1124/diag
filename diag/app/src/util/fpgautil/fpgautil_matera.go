@@ -811,7 +811,9 @@ func matera_fpga_cli() {
                 if os.Args[5] == "all" {
                     fmt.Printf(" Erasing the entire flash\n")
                     // enable SPI Mode only once
-                    materafpga.SetJTAGbusToSPI(flashID)
+                    if flashID != materafpga.SPI_DBG_SLOT {
+                        materafpga.SetJTAGbusToSPI(flashID)
+                    }
                     materafpga.SpiBusEnableIOexpander(flashID)
                     err = materafpga.Spi_salina_flash_erase_all_sectors(flashID, qspiNumber) 
                 } else {
@@ -884,7 +886,9 @@ func matera_fpga_cli() {
                 filename := os.Args[6]
                 // enable SPI Mode only once
                 materafpga.SetJTAGbusToSPI(flashID)
-                materafpga.SpiBusEnableIOexpander(flashID)
+                if flashID != materafpga.SPI_DBG_SLOT {
+                    materafpga.SpiBusEnableIOexpander(flashID)
+                }
                 if os.Args[4] == "writefile" {
                     err = materafpga.Spi_salina_flash_WriteFile(flashID, qspiNumber, uint32(addr), filename) 
                     if err != nil {

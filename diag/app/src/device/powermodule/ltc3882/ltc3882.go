@@ -368,7 +368,7 @@ func DispStatus(devName string) (err int) {
 
     status, _ := ReadStatus(devName)
     outStrTemp = fmt.Sprintf("0x%X", status)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp) + "\n"
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp) 
 
     fwRevision, _ := ReadFirmwareRevision(devName)
     outStrTemp = fmt.Sprintf("0x%X", fwRevision)

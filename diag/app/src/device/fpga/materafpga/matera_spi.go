@@ -744,10 +744,12 @@ func matera_spi_generic_transaction_w_spiBus_enable(spiNumber uint32, spiDevice 
                 goto SPI_TRANSACTION_END2
             }
 
-            //Enable spi bus on the iob card via the mcp23008 i/o expander
-            err = SpiBusEnableIOexpander(spiNumber)
-            if err != nil {
-                goto SPI_TRANSACTION_END2
+            //Enable spi bus on the iob card via the mcp23008 i/o expander for slot 1-10.  The Debug slot does not need this
+            if spiNumber != SPI_DBG_SLOT {
+                err = SpiBusEnableIOexpander(spiNumber)
+                if err != nil {
+                    goto SPI_TRANSACTION_END2
+                }
             }
         }
 
@@ -759,27 +761,10 @@ func matera_spi_generic_transaction_w_spiBus_enable(spiNumber uint32, spiDevice 
             }
         }
 
-        //Enable the SPI CS on THE CPLD.  i.e. THE SPI TARGET DEVICE / IP
-        //if (CPLD_OLD_OR_NEW & 0x40000000) == 0 {
-        //    data8, err_i := ReadByteSmbus("CPLD", 0x92, spiNumber) 
-        //    if err_i != errType.SUCCESS {
-        //        err = fmt.Errorf("ERROR: Slot-%d CPLD i2c access failed at offset 0x92 to check date code\n", spiNumber+1);
-        //        fmt.Printf("%v", err)
-        //        goto SPI_TRANSACTION_END2
-        //    }
-        //    CPLD_OLD_OR_NEW = 0x40000000 | uint32(data8)
-        //}
-        //if (CPLD_OLD_OR_NEW & 0xFF) == 0 {
-        //    err = CpldEnableSPI_old(spiNumber, spiDevice)
-        //    if err != nil {
-        //        goto SPI_TRANSACTION_END2
-        //    }
-        //} else {
-            err = CpldEnableSPI(spiNumber, spiDevice)
-            if err != nil {
-                goto SPI_TRANSACTION_END2
-            }
-        //}
+        err = CpldEnableSPI(spiNumber, spiDevice)
+        if err != nil {
+            goto SPI_TRANSACTION_END2
+        }
         
         if SPIDEBUGENABLE > 0 {
             fmt.Printf("\nSPI -->")

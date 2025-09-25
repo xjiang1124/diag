@@ -320,6 +320,17 @@ func ReadDeviceID(devName string) (devID byte, err int) {
     return devID, err
 }
 
+func ReadMfrRevision(devName string) (MfrRevision uint16, err int) {
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    MfrRevision, err = pmbus.ReadWord(devName, pmbus.MFR_REVISION)
+    return
+}
+
 func findVid(devName string, voutMv uint64) (vid byte, err int) {
     var dacStepRegVal byte
     var dacStep uint64
@@ -545,10 +556,12 @@ func SetVMargin(devName string, pct int) (err int) {
     voltMvTgt := voltMvTemp / 100
 
     cli.Printf("d", "VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
-    if (voltMv < 650 || voltMv > 1000) {
-        cli.Printf("e", "Invalid VOUT!! VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
-        err = errType.FAIL
-        return
+    if (devName=="ELB0_CORE" || devName=="ELB0_ARM") { 
+        if (voltMv < 650 || voltMv > 1000) {
+            cli.Printf("e", "Invalid VOUT!! VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
+            err = errType.FAIL
+            return
+        }
     }
 
     // Update VOUT_MARGIN_HIGH/HOW with target VID
@@ -645,6 +658,11 @@ func DispStatus(devName string) (err int) {
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
 
+    //For cisco MtFuji, they want to display their firmware revision as well which is stored in the mfg revision register 9Bh
+    if i2cinfo.CardType == "MTFUJI" {
+        vrmTitle = append(vrmTitle, "FW REV")
+    }
+
     var outStr string
     var outStrTemp string
     outStr = fmt.Sprintf(fmtNameStr, "NAME")
@@ -691,7 +709,15 @@ func DispStatus(devName string) (err int) {
 
     status, _ := ReadStatus(devName)
     outStrTemp = fmt.Sprintf("0x%X", status)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp) + "\n"
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    if i2cinfo.CardType == "MTFUJI" {
+        MfrRev, _ := ReadMfrRevision(devName)
+        outStrTemp = fmt.Sprintf("0x%X", MfrRev)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp) + "\n"
+    } else {
+        outStr = outStr + fmt.Sprintf("\n")
+    }
 
     cli.Println("i", outStr)
 
