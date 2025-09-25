@@ -453,9 +453,11 @@ class nic_ctrl():
         return True
 
 
-    def nic_power_cycle(self):
+    def nic_power_cycle(self, delay=0):
         if not self.nic_power_off():
             return False
+        if delay > 0:
+            libmfg_utils.count_down(delay)
         if not self.nic_power_on():
             return False
         return True
@@ -836,37 +838,30 @@ class nic_ctrl():
         self.mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT)
         self._cmd_buf = cmd_buf             #reset the cmd_buf to failure buffer
 
-    def nic_salina_jtag_mbist(self, vmarg="normal"):
+    def nic_salina_jtag_mbist(self, vmarg="normal", test_type="warm"):
         '''
         run mbist from jtag, salina cards only
         '''
 
-        if not self.mbist_nic_power_on():
+        if not self.nic_power_cycle(extra_time=10):
             return False
 
         # goto the asic dir
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         if not self.mtp_exec_cmd(cmd):
             return False
-        for i in range(2):
-            reset_type = "cold" if i % 2 == 0 else "warm"
-            cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg, reset_type)
+
+        if test_type in ("warm", "cold"):
+            cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg, test_type)
             if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
                 return False
             if MFG_DIAG_SIG.MATERA_NIC_SALINA_JTAG_MBIST_SIG not in self.nic_get_cmd_buf():
                 return False
-            # power cycle before run next iteration
-            cmd = "turn_on_slot.sh off {:s}; sleep 10; turn_on_slot.sh on {:s}".format(str(self._slot+1), str(self._slot+1))
-            self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+        else:
+            cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_JTAG_MBIST_WITH_TEST_LIST.format(self._sn, str(self._slot+1), vmarg, "cold", "ALGO22")
+            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+                return False
 
-        # just run ALGO22 jtag mbist with cold
-        # cmd = "turn_on_slot.sh off {:s}; sleep 10; turn_on_slot.sh on {:s}".format(str(self._slot+1), str(self._slot+1))
-        # self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
-        cmd = MFG_DIAG_CMDS().MATERA_MTP_SALINA_NIC_JTAG_MBIST_WITH_TEST_LIST.format(self._sn, str(self._slot+1), vmarg, "cold", "ALGO22")
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
-            return False
-        # if MFG_DIAG_SIG.MATERA_NIC_SALINA_JTAG_MBIST_SIG not in self.nic_get_cmd_buf():
-        #     return False
         return True
 
     def nic_snake_mtp_salina(self, snake_type='esam_pktgen_max_power_sor', vmarg="normal", dura=120, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
