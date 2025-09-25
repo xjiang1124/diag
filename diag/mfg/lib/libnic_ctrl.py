@@ -3067,7 +3067,7 @@ class nic_ctrl():
 
         # call qspi_prog.sh to program qspi flash
         if not prog_cmd:
-            if self._nic_type == NIC_Type.POLLARA:
+            if self._nic_type in SALINA_AI_NIC_TYPE_LIST:
                 if img_type == "secure":
                     cmd = "chmod +x {:s}".format("./qspi_prog_secure.v2.sh")
                 elif img_type == "nonsecure":
@@ -3080,7 +3080,7 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 return False
 
-            if self._nic_type == NIC_Type.POLLARA:
+            if self._nic_type in SALINA_AI_NIC_TYPE_LIST:
                 if img_type == "secure":
                     cmd = MFG_DIAG_CMDS().MTP_MATERA_POLLARA_QSPI_PROG_SECURE_SH_CMD_FMT.format(str(self._slot + 1))
                 elif img_type == "nonsecure":
@@ -3099,6 +3099,9 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
         if 'FAILED' in self.nic_get_cmd_buf():
+            return False
+
+        if 'No such file' in self.nic_get_cmd_buf():
             return False
 
         self.nic_boot_info_reset()
