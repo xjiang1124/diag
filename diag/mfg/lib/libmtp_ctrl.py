@@ -5927,7 +5927,7 @@ class mtp_ctrl():
     @parallelize.parallel_nic_using_ssh
     def mtp_nic_salina_jtag_mbist(self, slot, vmarg="normal", test_type="warm"):
 
-        if not self._nic_ctrl_list[slot].nic_salina_jtag_mbist(vmarg test_type):
+        if not self._nic_ctrl_list[slot].nic_salina_jtag_mbist(vmarg, test_type):
             self.cli_log_slot_err(slot, "NIC JTAG MBIST FAILED")
             self.mtp_get_nic_err_msg(slot)
             return False
