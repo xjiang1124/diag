@@ -843,7 +843,7 @@ class nic_ctrl():
         run mbist from jtag, salina cards only
         '''
 
-        if not self.nic_power_cycle(extra_time=10):
+        if not self.nic_power_cycle(delay=10):
             return False
 
         # goto the asic dir
