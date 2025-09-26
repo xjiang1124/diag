@@ -708,8 +708,12 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs['bootstage'])
                 elif test == "SALINA_NIC_WARM_RESET":
                     rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs['bootstage'], warm_reset=test_kwargs['warm_reset'])
-                elif test == "SALINA_JTAG_MBIST":
-                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"])
+                elif test == "SALINA_JTAG_MBIST_WARM_RESET":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"], test_type="warm")
+                elif test == "SALINA_JTAG_MBIST_COLD_RESET":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"], test_type="cold")
+                elif test == "SALINA_JTAG_MBIST_ALGO22":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"], test_type="algo22")
                 elif test == "SALINA_CONSOLE_GOOGLE_STRESS_MEM":
                     rlist = mtp_mgmt_ctrl.mtp_nic_salina_console_google_stress_mem(nic_list, vmarg=test_kwargs["vmarg"], mem_copy_thread=test_kwargs["mem_copy_thread"], seconds2run=test_kwargs["seconds2run"])
                 elif test == "SALINA_CONSOLE_GOOGLE_STRESS_EMMC":
@@ -1258,7 +1262,9 @@ def main():
                     run_test(erase_boot0_list, "SALINA_BOOT0_ERASE")
 
                     jtag_mbist_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-                    run_regression_test(jtag_mbist_list, "SALINA_JTAG_MBIST", vmarg=vmarg)
+                    run_regression_test(jtag_mbist_list, "SALINA_JTAG_MBIST_WARM_RESET", vmarg=vmarg)
+                    run_regression_test(jtag_mbist_list, "SALINA_JTAG_MBIST_COLD_RESET", vmarg=vmarg)
+                    run_regression_test(jtag_mbist_list, "SALINA_JTAG_MBIST_ALGO22", vmarg=vmarg)
 
                     # prog_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_test(prog_boot0_list, "SALINA_BOOT0_PROG")
