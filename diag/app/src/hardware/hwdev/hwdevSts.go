@@ -84,7 +84,10 @@ func dispStatusDev(devName string, lockFlag bool) (err int){
     var lockName string
 
     //LIPARI and MATERA CURRENTLY DO NOT LOCK USING DIAG
-    if i2cinfo.CardType != "LIPARI" && i2cinfo.CardType != "MTP_MATERA" && i2cinfo.CardType != "MTP_PANAREA" {
+    if i2cinfo.CardType != "LIPARI" && 
+       i2cinfo.CardType != "MTFUJI" && 
+       i2cinfo.CardType != "MTP_MATERA" && 
+       i2cinfo.CardType != "MTP_PANAREA" {
         if lockFlag == true {
             lockName, _, err = hwinfo.LockDev(devName)
             if err != errType.SUCCESS {

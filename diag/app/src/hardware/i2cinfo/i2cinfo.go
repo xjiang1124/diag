@@ -3,7 +3,10 @@ package i2cinfo
 import (
     "fmt"
     "os"
+    "os/exec"
+    "runtime"
     "strconv"
+    "strings"
     "common/cli"
     "common/errType"
 )
@@ -466,7 +469,7 @@ var LipariElbaTbl = []I2cInfo {
     I2cInfo {"ELB0_ARM",       "MP2975",    0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
 }
 
-var MtFujiElbaTbl = []I2cInfo {
+var MtFujiElbaV1Tbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    0},   //Cisco uses 8-bit FRU 
     I2cInfo {"VDD_DDR",        "LTC3882",   0x0,   0x44,    0x0,    "HUB_NONE",  0,    0},
@@ -476,6 +479,16 @@ var MtFujiElbaTbl = []I2cInfo {
     I2cInfo {"ELB0_CORE2",     "LTC3882",   0x0,   0x66,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"ELB0_ARM",       "LTC3882",   0x0,   0x66,    0x1,    "HUB_NONE",  0,    0},
 }
+
+var MtFujiElbaV2Tbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    0},   
+    I2cInfo {"VDD_DDR",        "TPS53659",  0x0,   0x72,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDDQ_DDR",       "TPS53659",  0x0,   0x72,    0x1,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_CORE",      "TPS53659",  0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_ARM",       "TPS53659",  0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
+}
+
 
 var CapaciElbaTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
@@ -1033,7 +1046,17 @@ func init() {
     } else if CardType == "LIPARIELBA" {
         I2cTbl = LipariElbaTbl
     } else if CardType == "MTFUJI" {
-        I2cTbl = MtFujiElbaTbl
+        I2cTbl = MtFujiElbaV2Tbl
+        if runtime.GOARCH == "arm64" {
+            reg, err := ArmReadCPLDreg(0x0A)
+            if err != errType.SUCCESS {
+                fmt.Printf("ERROR reading MTFUJI REVISION\n")
+            }
+            reg = ((reg >> 4) & 0xF)
+            if reg == 0x00 {
+                I2cTbl = MtFujiElbaV1Tbl
+            }
+        }
     } else if CardType == "CAPACI" {
         I2cTbl = CapaciElbaTbl
     } else if CardType == "DESCHUTES" {
@@ -1049,6 +1072,35 @@ func init() {
     CurI2cTbl = I2cTbl
     CurSensorTbl = SensorTbl
 }
+
+/** 
+ *  
+ * Mtfuji put their board rev in CPLD Register 0x0A 
+ * Need to read it when running on the ARM side to determine 
+ * which i2c table to load. They changed their voltage regulator 
+ * on the Rev 02 Mtfuji 
+ *  
+ */
+func ArmReadCPLDreg(register uint32) (data32 uint32, err int) {
+    var readReg uint64
+    cmdStr := fmt.Sprintf("cpldapp -r 0x%x", register)
+    output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+    if errGo != nil {
+        cli.Println("e", "executing command", cmdStr," returned error ->", errGo)
+        err = errType.FAIL
+        return
+    }
+    tmp := strings.TrimSuffix(string(output), "\n")
+    readReg, errGo = strconv.ParseUint(tmp, 0, 64)
+    if errGo != nil {
+        cli.Println("e", "Error ArmReadCPLDreg parsing cpld read data failed ->", errGo)
+        err = errType.FAIL
+        return
+    }
+    data32 = uint32(readReg)
+    return
+}
+
 
 /**
  * Find UUT type based on environment variable

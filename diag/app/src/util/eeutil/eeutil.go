@@ -43,6 +43,7 @@ const NAPLES200_TAOR      string  = "68-0018-01 01"   //TAORMINA ORTANO Pensando
 const NAPLES200_TAOR2     string  = "73-0040-03 A2"   //TAORMINA ORTANO Pensando (newer part number)
 const NAPLES200_LIPARI    string  = "68-0032-01 01"   //LIPARI SWITCH ELBA
 const NAPLES200_MTFUJI    string  = "73-21403-01"     //MTFUJI SWITCH ELBA
+const NAPLES200_MTFUJIV2  string  = "73-21667-01"     //MTFUJI V2 SWITCH ELBA
 
 
 const LACONA16GB_HPE     string  = "P47927-001"
@@ -233,7 +234,7 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
                 } else if pn[0:7] == NAPLES200_LIPARI[0:7] {      
                     eeprom.EepromTbl = eeprom.OrtanoLipariTbl
                     eeprom.CustType = "PENORTANO"
-                } else if pn[0:7] == NAPLES200_MTFUJI[0:7] {      
+                } else if pn[0:7] == NAPLES200_MTFUJI[0:7] || pn[0:7] == NAPLES200_MTFUJIV2[0:7] {      
                     eeprom.EepromTbl = eeprom.MtFujiElba
                     eeprom.CustType = "PENORTANO"
                 } else {
@@ -500,6 +501,12 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
         }
     } else if (cardType == "MTFUJI") {
         rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_MTFUJI[0:7])  //MtFuji switch with Elba's
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.MtFujiElba
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_MTFUJIV2[0:7])  //MtFuji switch with Elba's
         if rc == errType.SUCCESS {
             eeprom.EepromTbl = eeprom.MtFujiElba
             eeprom.CustType = "PENORTANO"

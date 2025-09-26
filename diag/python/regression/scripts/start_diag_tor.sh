@@ -130,7 +130,12 @@ if [[ $Lipari == "0" ]]
 then
     echo "Setting CXOS to no reboot and disble CXOS holding Elba consoles"
     ovs-appctl -t hpe-cardd park_chassis 1
+    systemctl stop dsm-uart-log.path
     systemctl stop dsm-uart-log
+
+    echo "Stopping netagent services"
+    systemctl stop netagent.path
+    systemctl stop netagent.service
 
     echo "Setting tmp451 to extended mode"
     /fs/nos/home_diag/diag/util/fpgautil i2c 2 1 0x4c w 0x09 0x4
