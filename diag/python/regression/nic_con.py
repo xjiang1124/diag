@@ -1762,6 +1762,17 @@ class nic_con:
         common.session_stop(session)
         return ret
 
+    def clear_expect(self, session, expstr=["\#"], ite=20, timeout=1):
+        for i in range(ite):
+            try:
+                session.timeout = timeout
+                session.expect(expstr)
+            except pexpect.TIMEOUT:
+                print("No more expect", i)
+                break
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group()

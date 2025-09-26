@@ -299,6 +299,7 @@ PRIVEK <ek.sk>"""
                pn == "68-0074-01" or \
                pn == "68-0075-01" or \
                pn == "68-0075-02" or \
+               pn == "68-0095-01" or \
                pn == "68-0077-01":
                 output1 = list(output)
                 print("Adding Oracle signature")

@@ -73,6 +73,7 @@ const (
     PN_SOLO_ORACLE   string = "68-0077"
     PN_ADICR_ORACLE  string = "68-0049"
     PN_SR4T_ORACLE   string = "68-0089"
+    PN_SR4L_ORACLE   string = "68-0095"
     PN_LIPARI_ELBA   string = "68-0032"
     PN_LIPARI        string = "68-0032-01"
     PN_LIPARI_SWITCH string = "73-0067-01"
@@ -125,6 +126,7 @@ const (
     SKU_SOLO_SSDK       string = "DSC2-2Q200-32R32F64P-S4"
     SKU_NETAPP_R2       string = "NA"
     SKU_SOLO_ORACLE     string = "DSC2-2Q200-32R32F64P-R4"
+    SKU_SR4L_ORACLE     string = "DSC2-2Q200-32R32F64P-R4-L"
     SKU_ADICR_ORACLE    string = "DSC2-2Q200-32R32F64P-R5"
     SKU_SR4T_ORACLE     string = "DSC2-2Q200-32R32F64P-R4-T"
     SKU_LIPARI_ELBA     string = "DSS-28800"
@@ -159,6 +161,7 @@ const (
     FRU_ID_ADICR_ORACLE  string = "11/18/22"
     FRU_ID_SOLO_ORACLE   string = "11/18/22"
     FRU_ID_SR4T_ORACLE   string = "05/02/23"
+    FRU_ID_SR4L_ORACLE   string = "09/24/25"
     FRU_ID_LIPARI_ELBA   string = "12/01/22"
     FRU_ID_GIN_D4        string = "01/24/23"
     FRU_ID_GIN_D5        string = "01/24/23"
@@ -390,6 +393,37 @@ var CardDataInfo = map[string]updateInfo {
         PROD_NAME_ORACLE,
         SKU_SOLO_ORACLE,
         FRU_ID_SOLO_ORACLE,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_NONE,
+                },
+            progInfo {
+                FIELD_TYPE_BYTE,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
+        },
+        soloOracleExt,
+    },
+    PN_SR4L_ORACLE: updateInfo {
+        OrtanoOracleTbl,
+        PROD_NAME_ORACLE,
+        SKU_SR4L_ORACLE,
+        FRU_ID_SR4L_ORACLE,
         []progInfo {
             progInfo {
                 FIELD_TYPE_NUM,
@@ -1284,6 +1318,7 @@ var CardTypes = []card{
     card{"ORTANO-SOLO_ORACLE",      PN_SOLO_ORACLE},
     card{"ORTANO-ADICR_ORACLE",     PN_ADICR_ORACLE},
     card{"ORTANO-SOLOR4T_ORACLE",   PN_SR4T_ORACLE},
+    card{"ORTANO-SOLOR4T_ORACLE",   PN_SR4L_ORACLE},
     card{"ORTANO-SOLO_SSDK",        PN_SOLO_SSDK},
     //card{"ORTANO-GIN_D4_ORACLE",    PN_GIN_D4_ORACLE},
     card{"ORTANO-GIN_D5_ORACLE",    PN_GIN_D5_ORACLE},
