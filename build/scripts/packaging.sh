@@ -254,12 +254,8 @@ do
             echo "Copying stable ASIC lib for $asic"
             for j2cd in ${j2cd_list[@]}
             do
-                # do not bundle asic lib for vulcano yet
-                if [[ $asic == "salina" ]]
-                then
-                    ASIC_IMG="/vol/hw/diag/diag_repo/asic_lib_rel_stable/nic_${arch}_${asic}_${j2cd}.tar.gz"
-                    cp $ASIC_IMG $TEMP_DIR_TOP/
-                fi
+                ASIC_IMG="/vol/hw/diag/diag_repo/asic_lib_rel_stable/nic_${arch}_${asic}_${j2cd}.tar.gz"
+                cp $ASIC_IMG $TEMP_DIR_TOP/
             done
         fi
         if [[ $asiclib == "latest" ]]
