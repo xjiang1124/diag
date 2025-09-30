@@ -13,7 +13,7 @@ ret=$?
 if [[ $ret != 0 ]]
 then
     echo "Programming failed. Dumping UFM2 to compare"
-    fpgautil cpld $1 generate $fn $fn.compare
+    fpgautil cpld $1 generate ufm2 $fn.compare
     od -tx1 -v $fn > $fn.hex
     od -tx1 -v $fn.compare > $fn.compare.hex
     diff $fn.hex $fn.compare.hex
