@@ -86,6 +86,7 @@ class PART_NUMBERS_MATCH:
     ORTANO2ADI_MSFT_PN_FMT = r"68-0034-0[1-9]{1} [A-Z0-9]{2}"                                       #68-0034-01 01    ORTANO2ADI MICROSOFT
     ORTANO2INTERP_ORC_PN_FMT = r"68-0029-0[1-9]{1} [A-Z0-9]{2}"                                     #68-0029-01 02    ORTANO2INTERP_ORC_PN_FMT ORACLE
     ORTANO2SOLO_ORC_PN_FMT = r"68-0077-0[1-9]{1} [A-Z0-9]{2}"                                       #68-0077-01 A0    ORTANO2SOLO_ORC_PN_FMT ORACLE
+    ORTANO2SOLO_ORC_L_PN_FMT = r"68-0095-0[1-9]{1} [A-Z0-9]{2}"                                     #68-0095-01 A0    ORTANO2SOLO_ORC_PN_L_FMT ORACLE
     ORTANO2SOLO_ORC_THS_PN_FMT = r"68-0089-0[1-9]{1} [A-Z0-9]{2}"                                   #68-0089-01 A0    ORTANO2SOLO ORACLE Tall Heat Sink
     ORTANO2SOLO_MSFT_PN_FMT = r"68-0090-0[1-9]{1} [A-Z0-9]{2}"                                      #68-0090-01 A0    ORTANO2SOLO MICROSOFT
     ORTANO2SOLO_S4_PN_FMT = r"68-0092-0[1-9]{1} [A-Z0-9]{2}"                                        #68-0092-01 A0    ORTANO2SOLO S4
@@ -136,6 +137,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT:      "FPJ" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT:         "FPF" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT:          "FPF" + FLX_SN_SUFFIX_FMT + "|" + "FPJ" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_L_PN_FMT:        "FPP" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.ORTANO2ADI_CR_S4_PN_FMT:         "FPF" + FLX_SN_SUFFIX_FMT + "|" + "FPG" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT:       "FPG" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT:              "FPH" + FLX_SN_SUFFIX_FMT,
@@ -272,7 +274,8 @@ PN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT            #68-0091-01 XX    ORTANO2ADI CR MICROSOFT
         ],
     NIC_Type.ORTANO2SOLO: [
-        PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT               #68-0077-01 A0    ORTANO2 SOLO
+        PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT,              #68-0077-01 A0    ORTANO2 SOLO
+        PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_L_PN_FMT             #68-0095-01 A0    ORTANO2 SOLO-L
         ],
     NIC_Type.ORTANO2SOLOORCTHS: [
         PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT           #68-0089-01 A0    ORTANO2 SOLO Oracle Tall Heat Sink
@@ -326,6 +329,8 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
         product_name = NIC_Type.ORTANO2SOLO
         if "DSC2-2Q200-32R32F64P-R4-T" in pn:
             product_name = NIC_Type.ORTANO2SOLOORCTHS
+        if "DSC2-2Q200-32R32F64P-R4-L" in pn:
+            product_name = NIC_Type.ORTANO2SOLO
     elif "DSC2-2Q200-32R32F64P-R5" in pn:
         product_name = NIC_Type.ORTANO2ADICR
     elif "DSC2-2Q200-32R32F64P-R" in pn:
@@ -379,6 +384,8 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
     elif "DSC2A-2Q200-32S32F64P-S4" in pn:
         product_name = NIC_Type.GINESTRA_S4
     elif "68-0077-01" in pn:
+        product_name = NIC_Type.ORTANO2SOLO
+    elif "68-0095-01" in pn:
         product_name = NIC_Type.ORTANO2SOLO
     elif "68-0013-01" in pn:
         product_name = NIC_Type.NAPLES100IBM

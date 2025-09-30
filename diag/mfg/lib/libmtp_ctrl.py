@@ -3859,6 +3859,9 @@ class mtp_ctrl():
         elif naples_pn[0:7] == "68-0077":  # ORTANO2 SOLO
             return "90-0021-0002"
 
+        elif naples_pn[0:7] == "68-0095":  # ORTANO2 SOLO-L
+            return "90-0021-0002"
+
         elif naples_pn[0:7] == "68-0089":  # ORTANO2 SOLO Tall Heat Sink
             return "90-0021-0002"
 
@@ -6364,6 +6367,8 @@ class mtp_ctrl():
                 pn = self.mtp_get_nic_pn(slot)
                 final_nic_type = None
                 if re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2SOLO
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_L_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2SOLO
                 elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2SOLOORCTHS
