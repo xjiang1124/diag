@@ -35,7 +35,7 @@ then
     fi
     if [[ $CARD_TYPE == "MTP_MATERA" ]]
     then
-        fpga_uart $((slot - 1))
+        taskset -c $slot fpga_uart $((slot - 1))
     else
         fpga_uart_panarea $((slot - 1))
     fi
