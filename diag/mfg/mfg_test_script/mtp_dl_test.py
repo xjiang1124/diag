@@ -841,7 +841,7 @@ def main():
             run_dl_test(pass_nic_list, "FRU_PROG")
             erase_brdcfg_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST)
             run_dl_test(erase_brdcfg_list, "ERASE_BOARD_CONFIG")
-            assign_boardid_list = get_slots_of_type(GIGLIO_NIC_TYPE_LIST + [NIC_Type.ORTANO2ADICRS4])
+            assign_boardid_list = get_slots_of_type(GIGLIO_NIC_TYPE_LIST + [NIC_Type.ORTANO2ADICRS4, NIC_Type.ORTANO2SOLO])
             run_dl_test(assign_boardid_list, "ASSIGN_BOARD_ID")
             brd_config_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
             run_dl_test(brd_config_list, "BOARD_CONFIG")

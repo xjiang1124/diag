@@ -20,6 +20,7 @@ test2args = {
         "68-0028"                    : "hod",                   #68-0028-01 XX    ORTANO2ADI IBM
         "68-0029"                    : "hod",                   #68-0029-01 XX    ORTANO2 Interposer
         "68-0077"                    : "hod",                   #68-0077-01 XX    ORTANO2 SOLO
+        "68-0095"                    : "hod",                   #68-0095-01 XX    ORTANO2 SOLO-L
         "68-0090"                    : "hod_1100",              #68-0090-01 XX    ORTANO2 SOLO MICROSOFT
         "68-0091"                    : "hod_1100",              #68-0091-01 XX    ORTANO2ADI CR MICROSOFT
         "68-0049"                    : "hod",                   #68-0049-03 XX    ORTANO2ADI CR
