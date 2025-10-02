@@ -51,16 +51,13 @@ if [[ -n $skip_untar ]]
 then
     echo "Using existing ASIC lib"
 else
-    if [[ $asic != "vulcano" ]]
-    then
-        echo "Untar ASIC lib"
-        chmod -R 755 $DIAG_DIR/asic_all/$asic/
-        rm -rf  $DIAG_DIR/asic_all/$asic/*
-        tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
-        cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
-        cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
-        rm -rf $DIAG_DIR/asic_all/$asic/nic
-    fi
+    echo "Untar ASIC lib"
+    chmod -R 755 $DIAG_DIR/asic_all/$asic/
+    rm -rf  $DIAG_DIR/asic_all/$asic/*
+    tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
+    cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
+    cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
+    rm -rf $DIAG_DIR/asic_all/$asic/nic
 fi
 
 mkdir -p $DIAG_DIR/log/
@@ -194,8 +191,6 @@ else
     echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
 fi
-if [[ $asic != "vulcano" ]]
-then
 ASIC_LIB_BUNDLE=$DIAG_DIR/asic
 rm -rf $ASIC_LIB_BUNDLE
 ln -sf $ASIC_DIR_SUB_TOP $ASIC_LIB_BUNDLE
@@ -206,7 +201,6 @@ echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> temp_profile
 echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> temp_profile
 echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
 echo "source \$ASIC_LIB/source_env_path" >> temp_profile
-fi
 
 #==================================
 if [[ $mtp_id == "0x000b" ]]
@@ -229,10 +223,7 @@ cp temp_profile ~/.bash_profile
 source ~/.bash_profile
 if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" || $mtp_id == "0x000b" || $mtp_id == "0x000d" ]]
 then
-    if [[ $asic != "vulcano" ]]
-    then
     hack_asic_elba.sh
-    fi
 else
     hack_asic.sh
 fi
