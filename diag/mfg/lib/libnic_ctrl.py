@@ -6321,6 +6321,29 @@ class nic_ctrl():
         self.nic_stop_test()
         return True
 
+    def nic_qspi_verify_test(self, stage="", test=""):
+        nic_type = self._nic_type
+        if test in ["SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY"]:
+            if nic_type == NIC_Type.POLLARA:
+                img_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.qspi_verify_sh_img["POLLARA-1Q400P"]
+            elif nic_type == NIC_Type.LINGUA:
+                img_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.qspi_verify_sh_img["POLLARA-1Q400P-OCP"]
+        else:
+            img_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.qspi_verify_sh_img[nic_type]
+
+        path = os.path.split(img_path)[0]
+        script = os.path.split(img_path)[1]
+
+        cmd = "cd {}".format(path)
+        if not self.mtp_exec_cmd(cmd, timeout=10):
+            return False
+
+        cmd = "./" + script + " " + str(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=120):
+            return False
+
+        return True
+
     def nic_dump_reg(self):
         # dump all registers for information
         cmd = MFG_DIAG_CMDS().MTP_FPGA_UTIL_REGDUMP_FMT

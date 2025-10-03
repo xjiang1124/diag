@@ -870,6 +870,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
             image_list.append(NIC_IMAGES.device_config_dtb["POLLARA-1Q400P"])
             image_list.append(NIC_IMAGES.firmware_config_dtb["POLLARA-1Q400P"])
             image_list.append(NIC_IMAGES.qspi_prog_sh_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.qspi_verify_sh_img["POLLARA-1Q400P"])
         if lingua_family:
             image_list.append(NIC_IMAGES.arm_a_boot0_img["POLLARA-1Q400P-OCP"])
             image_list.append(NIC_IMAGES.arm_a_uboota_img["POLLARA-1Q400P-OCP"])
@@ -883,6 +884,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
             image_list.append(NIC_IMAGES.device_config_dtb["POLLARA-1Q400P-OCP"])
             image_list.append(NIC_IMAGES.firmware_config_dtb["POLLARA-1Q400P-OCP"])
             image_list.append(NIC_IMAGES.qspi_prog_sh_img["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.qspi_verify_sh_img["POLLARA-1Q400P-OCP"])
 
     return image_list
 
@@ -1246,7 +1248,7 @@ def fail_all_slots(mtp_mgmt_ctrl):
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
-def post_fail_steps(mtp_mgmt_ctrl, slot, testname=""):
+def post_fail_steps(mtp_mgmt_ctrl, slot, testname="", stage=""):
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Init new connection for failed NIC")
     ret = mtp_mgmt_ctrl.mtp_nic_para_session_init(slot_list=[slot], fpo=False)
     if not ret:
@@ -1278,7 +1280,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname=""):
                 mtp_mgmt_ctrl.mtp_nic_l1_health_check(slot) # for a CONSOLE_BOOT failure ONLY: do a mini L1
             mtp_mgmt_ctrl.mtp_single_j2c_unlock()
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in SALINA_NIC_TYPE_LIST: mtp_mgmt_ctrl.mtp_nic_prp_test(slot)
-    
+            mtp_mgmt_ctrl.mtp_nic_qspi_verify_test(slot, test=testname, stage=stage)
 
     # in case nic hung up the bus:
     # turn off card only if when not stop_on_err

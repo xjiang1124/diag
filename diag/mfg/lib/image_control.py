@@ -28,6 +28,8 @@ arm_n_ubootg = "arm_n_ubootg"
 arm_n_kernel_goldfw = "arm_n_kernel_goldfw"
 qspi_prog_sh_img = "qspi_prog_sh_img"
 qspi_prog_secure_sh_img = "qspi_prog_secure_sh_img"
+qspi_verify_sh_img = "qspi_verify_sh_img"
+qspi_verify_secure_sh_img = "qspi_verify_secure_sh_img"
 qspi_snake_img = "qspi_snake_img"
 arm_a_zephyr = "arm_a_zephyr"
 arm_a_zephyr_gold = "arm_a_zephyr_gold"
@@ -261,6 +263,18 @@ def get_qspi_prog_secure_sh_img(mtp_mgmt_ctrl, slot, stage):
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.qspi_prog_secure_sh_img, nic_type)
     }
 
+def get_qspi_verify_sh_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, qspi_verify_sh_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.qspi_verify_sh_img, nic_type)
+    }
+
+def get_qspi_verify_secure_sh_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, qspi_verify_secure_sh_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.qspi_verify_secure_sh_img, nic_type)
+    }
+
 def get_qspi_snake_img(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, qspi_snake_img)
     return {
@@ -340,6 +354,8 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         arm_n_kernel_goldfw: get_arm_n_kernel_goldfw_img,
         qspi_prog_sh_img: get_qspi_prog_sh_img,
         qspi_prog_secure_sh_img: get_qspi_prog_secure_sh_img,
+        qspi_verify_sh_img: get_qspi_verify_sh_img,
+        qspi_verify_secure_sh_img: get_qspi_verify_secure_sh_img,
         qspi_snake_img: get_qspi_snake_img,
         mbist_boot0_img: get_mbist_boot0_img,
         bl1_img: get_bl1_img,
@@ -376,6 +392,8 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(arm_n_ubootg)
                 images_needed.append(arm_n_kernel_goldfw)
                 images_needed.append(device_config_dtb)
+            if nic_type in SALINA_AI_NIC_TYPE_LIST:
+                images_needed.append(qspi_verify_sh_img)
 
         if nic_type in FPGA_TYPE_LIST:
             images_needed.append(fail_cpld)
@@ -421,6 +439,8 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(arm_n_ubootb)
                 images_needed.append(arm_n_ubootg)
                 images_needed.append(arm_n_kernel_goldfw)
+            if nic_type in SALINA_AI_NIC_TYPE_LIST:
+                images_needed.append(qspi_verify_sh_img)
 
     elif stage == FF_Stage.FF_SWI:
         images_needed.append(cpld)
@@ -473,6 +493,8 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(fipb_img)
                 images_needed.append(fipg_img)
                 images_needed.append(qspi_prog_secure_sh_img)
+                images_needed.append(qspi_verify_sh_img)
+                images_needed.append(qspi_verify_secure_sh_img)
 
     # return dict with {"Image display name": filepath}
     ret_dict = dict()
