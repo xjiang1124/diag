@@ -1486,15 +1486,15 @@ class mtp_ctrl():
                     self._swmtestmode[slot] = Swm_Test_Mode.SWM
         return True
 
-    def mtp_set_nic_status_fail(self, slot, skip_fa=False, testname=""):
+    def mtp_set_nic_status_fail(self, slot, skip_fa=False, testname="", stage=""):
         if self._nic_ctrl_list:
             # was previously OK, this is first failure
             if self.mtp_check_nic_status(slot) and not skip_fa:
-                libmfg_utils.post_fail_steps(self, slot, testname)
+                libmfg_utils.post_fail_steps(self, slot, testname, stage)
 
             # failed inside libnic_ctrl, didnt trigger post_fail_steps
             elif self.mtp_check_nic_missed_fa(slot) and not skip_fa:
-                libmfg_utils.post_fail_steps(self, slot, testname)
+                libmfg_utils.post_fail_steps(self, slot, testname, stage)
             self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
 
     def mtp_clear_nic_status(self, slot):
@@ -4903,7 +4903,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_post_dsp_fail_steps(self, slot, test, rslt, rslt_cmd_buf, err_msg_list, skip_vrm_check=None):
+    def mtp_post_dsp_fail_steps(self, slot, test, rslt, rslt_cmd_buf, err_msg_list, skip_vrm_check=None, stage=""):
         """
         1. ping slot with 10 packets        <= whether management port is down
         2. connect console and do "env"     <= Check if card rebooted
@@ -4973,6 +4973,7 @@ class mtp_ctrl():
             self.mtp_single_j2c_unlock()
             self.mtp_nic_prp_test(slot)
             self.mtp_clear_nic_uart(slot)
+            self.mtp_nic_qspi_verify_test(slot, test=test, stage=stage)
 
         self.mtp_mgmt_nic_diag_sys_clean()
 
@@ -6443,7 +6444,6 @@ class mtp_ctrl():
         self.mtp_mgmt_exec_cmd(cmd)
         result = self.mtp_get_cmd_buf()
         bus_list_match = re.findall(r"([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]+) ", result)
-
         bus_list_match = list(set(bus_list_match))
 
         # extra info dump
@@ -6455,17 +6455,19 @@ class mtp_ctrl():
             if not scanned_fru:
                 return False
 
+        # Map to Scaned slot id by card serial number
+        sn2slot = dict()
+        phy_present_bus_list = []
+        phy_present_slot_list = []
+        phy_present_sn_list = []
+        fail_slot = list()
         if scanned_fru:
             # build scanned serial number to scanned nic slot id mapping table
-            sn2slot = dict()
             for slot in range(self._slots):
                 key = libmfg_utils.nic_key(slot)
                 if scanned_fru[key]["VALID"]:
                     sn2slot[scanned_fru[key][bf.SN]] = slot
 
-            # Map to Scaned slot id by card serial number
-            phy_present_slot_list = []
-            phy_present_sn_list = []
             rc = True
             for bus in bus_list_match:
                 cmd = "lspci -vvv -s {:s} | grep \"Serial number\" --color=never".format(bus)
@@ -6481,6 +6483,7 @@ class mtp_ctrl():
                         continue
                     phy_slot = sn2slot[sn]
                     phy_present_slot_list.append(phy_slot)
+                    phy_present_bus_list.append(bus)
                     phy_present_sn_list.append(sn)
             if not rc:
                 return rc
@@ -6492,14 +6495,14 @@ class mtp_ctrl():
                     self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, May Because Card Not Bootup, Fail This Card Out and Continue Test".format(key, sn), level=0)
                     self.mtp_set_nic_status_fail(sn2slot[sn], skip_fa=True)
                     self._nic_prsnt_list[sn2slot[sn]] = True
-            if not phy_present_slot_list:
-                phy_present_slot_list = list(range(len(bus_list_match)))
+                    fail_slot.append(sn2slot[sn])
         else:
             phy_present_slot_list = list(range(len(bus_list_match)))
+            phy_present_bus_list = bus_list_match[:]
 
         self.cli_log_inf("Found {:d} devices".format(len(bus_list_match)))
         self.cli_log_inf("Init NIC SN, PN")
-        for slot, bus in zip(phy_present_slot_list, bus_list_match):
+        for slot, bus in zip(phy_present_slot_list, phy_present_bus_list):
             if not self._slots_to_skip[slot]:
                 self._nic_prsnt_list[slot] = True
                 self._nic_ctrl_list[slot]._fst_pcie_bus = bus
@@ -6527,12 +6530,24 @@ class mtp_ctrl():
                     if nic_type in SALINA_NIC_TYPE_LIST:
                         self._nic_ctrl_list[slot]._asic_type = "salina"
 
-                if not sn_match:
-                    self.cli_log_slot_inf(slot, "Could not read SN from PCIe properties...will resort to penctl")
-                if not pn_match or nic_type == NIC_Type.UNKNOWN:
-                    self.cli_log_slot_inf(slot, "Could not determine NIC SKU from PCIe properties...will resort to penctl")
-                    self.mtp_set_nic_type(slot, NIC_Type.NAPLES100)  # default to naples100 setup steps
-                    self._nic_ctrl_list[slot]._asic_type = "capri"
+                if scanned_fru:
+                    if not sn_match:
+                        self.cli_log_slot_inf(slot, "Could not read SN from PCIe properties...will resort to penctl")
+                        self.mtp_set_nic_status_fail(slot, skip_fa=True)
+                    if not pn_match or nic_type == NIC_Type.UNKNOWN:
+                        self.cli_log_slot_inf(slot, "Could not determine NIC SKU from PCIe properties...will resort to penctl")
+                        self.mtp_set_nic_type(slot, NIC_Type.NAPLES100)  # default to naples100 setup steps
+                        self._nic_ctrl_list[slot]._asic_type = "capri"
+                        self.mtp_set_nic_status_fail(slot, skip_fa=True)
+                else:
+                    if not sn_match:
+                        self.cli_log_slot_inf(slot, "Could not read SN from PCIe properties...will resort to penctl")
+                        self.mtp_set_nic_status_fail(slot, skip_fa=True)
+                    if not pn_match or nic_type == NIC_Type.UNKNOWN:
+                        self.cli_log_slot_inf(slot, "Could not determine NIC SKU from PCIe properties...will resort to penctl")
+                        self.mtp_set_nic_type(slot, NIC_Type.NAPLES100)  # default to naples100 setup steps
+                        self._nic_ctrl_list[slot]._asic_type = "capri"
+                        self.mtp_set_nic_status_fail(slot, skip_fa=True)
         return True
 
     @parallelize.parallel_nic_using_ssh
@@ -7954,6 +7969,20 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Unable to run PRP test")
             self.mtp_dump_nic_err_msg(slot)
             self.mtp_nic_stop_tclsh(slot)
+            return False
+
+    def mtp_nic_qspi_verify_test(self, slot, stage="", test=""):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_AI_NIC_TYPE_LIST:
+            return True
+        if test not in ["SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY","SALINA_NIC_BOOT_STAGE","SALINA_QSPI_VERIFY"]:
+            return True
+        if stage not in [FF_Stage.FF_DL, FF_Stage.FF_P2C, FF_Stage.FF_4C_H, FF_Stage.FF_4C_L]:
+            return True
+
+        if not self._nic_ctrl_list[slot].nic_qspi_verify_test(stage=stage, test=test):
+            self.cli_log_slot_err(slot, "Unable to run qspi verify test")
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
     def mtp_nic_dump_reg(self, slot):

@@ -597,7 +597,7 @@ def main():
                         mtp_mgmt_ctrl.mtp_set_nic_failed_boot(slot)
 
             for slot in rlist:
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, testname=test)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, testname=test, stage=stage)
                 # update input list, could be pass_nic_list or a subset
                 if slot in nic_list_orig:
                     nic_list_orig.remove(slot)

@@ -811,9 +811,9 @@ def main():
                     # post-failure analysis
                     if test in ("SNAKE_ELBA", "ETH_PRBS", "PCIE_PRBS", "ARM_L1", "L1"):
                         mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-                        mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, "FAIL", mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list, skip_vrm_check=False)
+                        mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, "FAIL", mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list, skip_vrm_check=False, stage=stage)
                     else:
-                        mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, "FAIL", mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
+                        mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, "FAIL", mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list, stage=stage)
 
                 pass_test_list = [slot for slot in nic_list_orig if slot not in rlist]
                 duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
@@ -1398,7 +1398,6 @@ def main():
                         else:
                             dir_path = '/home/diag/diag/asic' + str(slot)
                         slot2asicdir[slot] = dir_path
-                    run_regression_test(salina_ai_max_power_snake, "SNAKE_SALINA_AINIC_SNAKE_MAX_PWR_MTP", snake_type="esam_pktgen_pollara_max_power_pcie_arm", asic_dir_path=slot2asicdir, vmarg=vmarg, dura=900, timeout=3600, int_lpbk='0')
                     run_regression_test(salina_ai_max_power_snake, "SNAKE_SALINA_AINIC_SNAKE_P4NET_MTP", snake_type="esam_pktgen_max_power_2p4net_ainic", asic_dir_path=slot2asicdir, vmarg=vmarg, dura=900, timeout=3600, int_lpbk='0')
 
                     # recovery, prog normal qspi images
