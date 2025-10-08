@@ -237,7 +237,7 @@ control_slot_panarea() {
             wValue=$(( $wValue | 0x1 ))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
         done
-        sleep 2
+        # sleep 2
         for slot_one_based in $slot_list
         do
             slot_zero_based=$(( $slot_one_based - 1 ))
