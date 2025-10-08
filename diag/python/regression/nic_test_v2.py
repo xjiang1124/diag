@@ -1762,7 +1762,8 @@ class nic_test_v2:
         for ite in range(args.iteration):
             print("=== Ite:", ite, "===")
             session = common.session_start()
-            if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False, new_memory_layout=args.new_memory_layout):
+            #if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False, new_memory_layout=args.new_memory_layout):
+            if self.sal_boot_to_vmarg(session, args):
                 print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                 ret = -1
                 return ret
@@ -1831,7 +1832,7 @@ class nic_test_v2:
             if 'error' in uart_session.before:
                 print("EMMC Test Failed with demsg I/O Error!!")
                 return False
-            self.nic_con.uart_session_cmd(uart_session, "dmesg | grep -i mmc | grep -i error > test.txt", 12)
+            self.nic_con.uart_session_cmd(uart_session, "dmesg | sed '/power class selection to bus width 8 ddr 4 failed/{N;d;}' | grep -i mmc | grep -i error > test.txt", 12)
             self.nic_con.uart_session_cmd(uart_session, "cat test.txt", 12)
             if 'error' in uart_session.before:
                 print("EMMC Test Failed with demsg MMC Error!!")
@@ -2257,9 +2258,11 @@ if __name__ == "__main__":
 
     # salina emmc test
     parser_sal_emmc = sal_misc_subp.add_parser('emmc_test', help='power cycle EMMC test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser_sal_emmc.add_argument("-slot", "--slot", help="NIC slot", type=int, default=1)
-    parser_sal_emmc.add_argument("-dura", "--dura", help="number of seconds to run", type=int, default=60)
-    parser_sal_emmc.add_argument("-ite", "--iteration", help="Number of iteration", type=int, default=1)
+    parser_sal_emmc.add_argument("-slot",       "--slot",       help="NIC slot", type=int, default=1)
+    parser_sal_emmc.add_argument("-dura",       "--dura",       help="number of seconds to run", type=int, default=60)
+    parser_sal_emmc.add_argument("-ite",        "--iteration",  help="Number of iteration", type=int, default=1)
+    parser_sal_emmc.add_argument("-vmarg",      "--vmarg",      help="vmarg", type=str, default='normal')
+    parser_sal_emmc.add_argument("-tcl_path",   "--tcl_path",   help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
     group_sal_emmc = parser_sal_emmc.add_mutually_exclusive_group(required=False)
     group_sal_emmc.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
     group_sal_emmc.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
