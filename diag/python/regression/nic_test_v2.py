@@ -1000,12 +1000,12 @@ class nic_test_v2:
                 #mtp_rev = self.nic_test.get_mtp_rev()
                 mtp_rev = "REV_04"
                 print("MTP_REV: ", mtp_rev)
-                self.nic_con.uart_session_cmd(session_uart, "umount /data")
-                self.nic_con.uart_session_cmd(session_uart, "fwupdate --init-emmc")
-                self.nic_con.uart_session_cmd(session_uart, "fsck -y /dev/mmcblk0p10")
-                self.nic_con.uart_session_cmd(session_uart, "mount /dev/mmcblk0p10 /data")
-                self.nic_con.uart_session_cmd(session_uart, "source /data/nic_arm/nic_salina_setup_env.sh " + do_untar, 120)
-                self.nic_con.uart_session_cmd(session_uart, "export MTP_REV="+mtp_rev)
+                if first_pwr_on == False:
+                    self.nic_con.uart_session_cmd(session_uart, "umount /data")
+                    self.nic_con.uart_session_cmd(session_uart, "fsck -y /dev/mmcblk0p10")
+                    self.nic_con.uart_session_cmd(session_uart, "mount /dev/mmcblk0p10 /data")
+                    self.nic_con.uart_session_cmd(session_uart, "source /data/nic_arm/nic_salina_setup_env.sh " + do_untar, 120)
+                    self.nic_con.uart_session_cmd(session_uart, "export MTP_REV="+mtp_rev)
                 # if this file exists, it means the card is not rebooted
                 self.nic_con.uart_session_cmd(session_uart, "touch /root/reboot_check")
 
