@@ -421,14 +421,12 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs["bootstage"], new_layout=True)
             elif test == "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY":
                 rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs["bootstage"], new_mem_layout=True)
-            elif test == "NIC_PARA_MGMT_FPO_INIT":
-                rlist = mtp_mgmt_ctrl.mtp_nic_mgmt_para_init_fpo(nic_list)
+            elif test == "NIC_PARA_MGMT_INIT":
+                rlist = mtp_mgmt_ctrl.mtp_nic_test_setup_multi(nic_list)
             elif test == "NIC_BOOT_INIT":
                 rlist = mtp_mgmt_ctrl.mtp_nic_boot_info_init(nic_list)
             elif test == "NIC_DIAG_INIT":
                 rlist = mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, skip_test_list=args.skip_test, **test_kwargs)
-            elif test == "NIC_FWUPDATE_INIT_EMMC":
-                rlist = mtp_mgmt_ctrl.mtp_nic_fwupdate_init_emmc(nic_list)
             elif test == "MAINFW_STORE":
                 rlist = swi_mainfw_store(mtp_mgmt_ctrl, nic_list)
             elif test == "BOARD_CONFIG_CERT":
@@ -606,9 +604,8 @@ def main():
             # If installing mainfw using sysupdate from goldfw it will always only flash mainfwa by default
             # boot from mainfwa, then re-run sysupdate, it will program mainfwb
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PARA_MGMT_FPO_INIT")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PARA_MGMT_INIT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_BOOT_INIT")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_FWUPDATE_INIT_EMMC")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "MAINFW_STORE")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_MAINFWA_INSTALL", stage=FF_Stage.FF_SWI)
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")

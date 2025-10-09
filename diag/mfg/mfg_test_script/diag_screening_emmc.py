@@ -1260,10 +1260,10 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs['bootstage'], warm_reset=test_kwargs['warm_reset'])
                 elif test == "SALINA_JTAG_MBIST":
                     rlist = mtp_mgmt_ctrl.mtp_nic_salina_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"])
-                elif test == "SALINA_CONSOLE_GOOGLE_STRESS_MEM":
-                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_console_google_stress_mem(nic_list, vmarg=test_kwargs["vmarg"], mem_copy_thread=test_kwargs["mem_copy_thread"], seconds2run=test_kwargs["seconds2run"])
-                elif test == "SALINA_CONSOLE_GOOGLE_STRESS_EMMC":
-                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_console_google_stress_emmc(nic_list, vmarg=test_kwargs["vmarg"], iterations=test_kwargs["iterations"], seconds2run=test_kwargs["seconds2run"])
+                elif test == "SALINA_GOOGLE_STRESS_MEM":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_google_stress_mem(nic_list, vmarg=test_kwargs["vmarg"], mem_copy_thread=test_kwargs["mem_copy_thread"], seconds2run=test_kwargs["seconds2run"])
+                elif test == "SALINA_GOOGLE_STRESS_EMMC":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_google_stress_emmc(nic_list, vmarg=test_kwargs["vmarg"], iterations=test_kwargs["iterations"], seconds2run=test_kwargs["seconds2run"])
                 elif test == "SALINA_EDMA":
                     rlist = mtp_mgmt_ctrl.mtp_nic_salina_edma(nic_list, vmarg=test_kwargs["vmarg"], seconds2run=test_kwargs["seconds2run"])
                 elif test in ("SALINA_DPU_SNAKE_MAX_PWR", "SALINA_DPU_SNAKE_DDR_BURST"):
@@ -1892,12 +1892,12 @@ def main():
                     ######################################################################
                     google_stress_list = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
                     # run_test(google_stress_list, "NIC_DIAG_INIT", nic_util=True)
-                    run_regression_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS_MEM", vmarg=vmarg, mem_copy_thread=16, seconds2run=60)
+                    run_regression_test(google_stress_list, "SALINA_GOOGLE_STRESS_MEM", vmarg=vmarg, mem_copy_thread=16, seconds2run=60)
 
                     ######################################################################
                     #  Salina NIC Google stress emmc test
                     ######################################################################
-                    run_regression_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS_EMMC", vmarg=vmarg, iterations=1, seconds2run=60)
+                    run_regression_test(google_stress_list, "SALINA_GOOGLE_STRESS_EMMC", vmarg=vmarg, iterations=1, seconds2run=60)
 
                 elif test_section == "SALINA_ESEC_IN_P2C":
                     run_regression_test(pass_nic_list, "SEC_KEY_PROG")

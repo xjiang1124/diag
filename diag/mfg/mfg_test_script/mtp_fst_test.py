@@ -28,6 +28,7 @@ from libmfg_cfg import FST_SCAN_ENABLE
 from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmfg_cfg import SALINA_NIC_TYPE_LIST
 from libmfg_cfg import SALINA_AI_NIC_TYPE_LIST
+from libmfg_cfg import SALINA_DPU_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 import test_utils

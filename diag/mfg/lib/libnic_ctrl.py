@@ -1720,7 +1720,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        cmd = MFG_DIAG_CMDS().MATERA_NIC_EMMC_TEST_MTP_FMT.format(str(self._slot + 1), str(seconds2run), str(iterations))
+        cmd = MFG_DIAG_CMDS().MATERA_NIC_EMMC_TEST_MTP_FMT.format(str(self._slot + 1), str(seconds2run), str(iterations), str(vmarg))
         nic_test_v2_sub_cmd = "emmc_test"
         cmd += " | tee {:s}/nic_test_v2_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, nic_test_v2_sub_cmd, str(self._sn), str(self._slot + 1))
         if not self.mtp_exec_cmd(cmd, timeout=int(seconds2run) * int(iterations) + 300):
