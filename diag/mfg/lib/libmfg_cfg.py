@@ -984,7 +984,7 @@ class NIC_IMAGES:
     arm_a_zephyr_b_img["58-0010-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
     arm_a_zephyr_gold_img["58-0010-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
     qspi_prog_sh_img["58-0010-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_prog.sh"
-    qspi_verify_sh_img["58-0004-10"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_verify.sh"
+    qspi_verify_sh_img["58-0010-10"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_verify.sh"
     qspi_snake_img["58-0010-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218.tar.gz"
 
     cpld_img["POLLARA-1Q400P"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"

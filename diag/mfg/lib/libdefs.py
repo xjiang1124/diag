@@ -621,7 +621,7 @@ class MFG_DIAG_CMDS:
     MATERA_NIC_SNAKE_MTP_FMT           = "nic_test_v2.py nic_snake_mtp -slot {:s} -timeout {:d} -dura {:d} -snake_type {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}' -ite {:s} -int_lpbk {:s}"
     MATERA_NIC_MEM_TEST_MTP_FMT        = "nic_test_v2.py mem_test -slot {:s} -tcl_path {:s} -dura {:s} -vmarg {:s} -threads {:s}"
     MATERA_NIC_EDMA_MTP_FMT           = "nic_test_v2.py edma_test -slot {:s} -tcl_path {:s} -dura {:s} -vmarg {:s}"
-    MATERA_NIC_EMMC_TEST_MTP_FMT           = "nic_test_v2.py salina emmc_test -slot {:s} -dura {:s} -ite {:s}"
+    MATERA_NIC_EMMC_TEST_MTP_FMT           = "nic_test_v2.py salina emmc_test -slot {:s} -dura {:s} -ite {:s} -vmarg {:s}"
     MATERA_AINIC_SNAKE_MTP_FMT         = "nic_test_v2.py nic_snake_mtp -slot {:s} -timeout {:d} -dura {:d} -snake_type {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}' -ite {:s} -int_lpbk {:s} -lt {:s} --lpmode 1"
     MATERA_NIC_PCIE_PRBS_FMT         = "nic_test_v2.py pcie_prbs -slot {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}'"
     MATERA_MTP_NIC_BOOT_TO = "python3 sal_con.py --boot_to {:s} --slot {:s}"
