@@ -312,7 +312,7 @@ if __name__ == "__main__":
     parser.add_argument("--skip_a35_uboot", action='store_true', default=False)
     parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
     parser.add_argument("--new_ainic_layout", "-na", help="No effect. Keeping for backward compatability.", action='store_true', default=False)
-    parser.add_argument("--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
+    parser.add_argument("--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=True)
     parser.add_argument("--login_delay", "-ld", help="Wait for X seconds before attempting login to avoid bootup error messages conflicting pexpect", type=int, default=90)
 
     try:

@@ -236,12 +236,12 @@ if {$test_type == "esam_pktgen_max_power_2p4net_ainic"} {
 } else {
     set ainic_mode ainic
 }
-if {$ainic_mode == "ainic_net" && [sal_harvested_asic] == 1} {
-    plog_err "Not allowed to run this test on harvest part"
-    plog_err "SNAKE TEST ABORTED"
-    plog_msg "SNAKE TEST DONE"
-    exit -1
-}
+#if {$ainic_mode == "ainic_net" && [sal_harvested_asic] == 1} {
+#    plog_err "Not allowed to run this test on harvest part"
+#    plog_err "SNAKE TEST ABORTED"
+#    plog_msg "SNAKE TEST DONE"
+#    exit -1
+#}
 
 #===========================
 # Disable PCIe for now
