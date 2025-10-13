@@ -39,6 +39,13 @@ def verify_smbalert_mask(slot, warm_reset=False):
     if sal_con.enter_a35_zephyr(slot, uart_session, warm_reset=warm_reset):
         print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
         ret = -1
+
+    print("\nDisable WDT")
+    cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(slot) + 2)
+    common.session_cmd(uart_session, cmd)
+    cmd = "i2cget -y {} 0x4f 0x1".format(int(slot)+2)
+    common.session_cmd(uart_session, cmd)
+
     nc.uart_session_connect(uart_session, slot, uart_id=0)
     nc.uart_session_cmd(uart_session, "help", ending="uart:~\$")
 
