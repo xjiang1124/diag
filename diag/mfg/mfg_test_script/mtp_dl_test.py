@@ -688,7 +688,7 @@ def main():
             # non_cap_nic_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CAPRI_NIC_TYPE_LIST)
             # run_dl_test(non_cap_nic_list, "ERASE_MAINFW")
             # run_dl_test(pass_nic_list, "QSPI_PROG")   # Not Support diagfw for Leni/Leni48G/Malfa
-            # uboot_prog_nic_list = get_slots_of_type(ELBA_NIC_TYPE_LIST, except_type=[NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT])
+            # uboot_prog_nic_list = get_slots_of_type(ELBA_NIC_TYPE_LIST, except_type=[NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT])
             # run_dl_test(uboot_prog_nic_list, "UBOOT_PROG")
             # run_dl_test(get_slots_of_type(NIC_Type.ORTANO2ADIIBM), "UBOOTA_PROG")
             # run_dl_test(get_slots_of_type(NIC_Type.ORTANO2ADIIBM), "UBOOTB_PROG")
@@ -716,9 +716,9 @@ def main():
 
             ## 3. program fru, board settings
             # run_dl_test(pass_nic_list, "QSPI_VERIFY")
-            vrmfix_list = get_slots_of_type((NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOS4))
+            vrmfix_list = get_slots_of_type((NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOS4))
             run_dl_test(vrmfix_list, "FIX_VRM")
-            # vddrfix_list = get_slots_of_type([NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOS4, NIC_Type.POMONTEDELL] + GIGLIO_NIC_TYPE_LIST)
+            # vddrfix_list = get_slots_of_type([NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOS4, NIC_Type.POMONTEDELL] + GIGLIO_NIC_TYPE_LIST)
             # run_dl_test(vddrfix_list, "VDD_DDR_FIX")
             run_dl_test(get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_NIC_TYPE_LIST), "FRU_PROG")
             # erase_brdcfg_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST)
@@ -818,7 +818,7 @@ def main():
             non_cap_nic_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CAPRI_NIC_TYPE_LIST)
             run_dl_test(non_cap_nic_list, "ERASE_MAINFW")
             run_dl_test(pass_nic_list, "QSPI_PROG")
-            uboot_prog_nic_list = get_slots_of_type(ELBA_NIC_TYPE_LIST, except_type=[NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT])
+            uboot_prog_nic_list = get_slots_of_type(ELBA_NIC_TYPE_LIST, except_type=[NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT])
             run_dl_test(uboot_prog_nic_list, "UBOOT_PROG")
             run_dl_test(get_slots_of_type(NIC_Type.ORTANO2ADIIBM), "UBOOTA_PROG")
             run_dl_test(get_slots_of_type(NIC_Type.ORTANO2ADIIBM), "UBOOTB_PROG")
@@ -834,14 +834,14 @@ def main():
 
             ## 3. program fru, board settings
             run_dl_test(pass_nic_list, "QSPI_VERIFY")
-            vrmfix_list = get_slots_of_type((NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOS4))
+            vrmfix_list = get_slots_of_type((NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOS4))
             run_dl_test(vrmfix_list, "FIX_VRM")
-            vddrfix_list = get_slots_of_type([NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOS4, NIC_Type.POMONTEDELL] + GIGLIO_NIC_TYPE_LIST)
+            vddrfix_list = get_slots_of_type([NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOS4, NIC_Type.POMONTEDELL] + GIGLIO_NIC_TYPE_LIST)
             run_dl_test(vddrfix_list, "VDD_DDR_FIX")
             run_dl_test(pass_nic_list, "FRU_PROG")
             erase_brdcfg_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST)
             run_dl_test(erase_brdcfg_list, "ERASE_BOARD_CONFIG")
-            assign_boardid_list = get_slots_of_type(GIGLIO_NIC_TYPE_LIST + [NIC_Type.ORTANO2ADICRS4, NIC_Type.ORTANO2SOLO])
+            assign_boardid_list = get_slots_of_type(GIGLIO_NIC_TYPE_LIST + [NIC_Type.ORTANO2ADICRS4, NIC_Type.ORTANO2SOLOL])
             run_dl_test(assign_boardid_list, "ASSIGN_BOARD_ID")
             brd_config_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
             run_dl_test(brd_config_list, "BOARD_CONFIG")

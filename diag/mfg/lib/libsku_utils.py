@@ -274,7 +274,9 @@ PN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT            #68-0091-01 XX    ORTANO2ADI CR MICROSOFT
         ],
     NIC_Type.ORTANO2SOLO: [
-        PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT,              #68-0077-01 A0    ORTANO2 SOLO
+        PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT               #68-0077-01 A0    ORTANO2 SOLO
+        ],
+    NIC_Type.ORTANO2SOLOL: [
         PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_L_PN_FMT             #68-0095-01 A0    ORTANO2 SOLO-L
         ],
     NIC_Type.ORTANO2SOLOORCTHS: [
@@ -330,7 +332,7 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
         if "DSC2-2Q200-32R32F64P-R4-T" in pn:
             product_name = NIC_Type.ORTANO2SOLOORCTHS
         if "DSC2-2Q200-32R32F64P-R4-L" in pn:
-            product_name = NIC_Type.ORTANO2SOLO
+            product_name = NIC_Type.ORTANO2SOLOL
     elif "DSC2-2Q200-32R32F64P-R5" in pn:
         product_name = NIC_Type.ORTANO2ADICR
     elif "DSC2-2Q200-32R32F64P-R" in pn:
@@ -386,7 +388,7 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
     elif "68-0077-01" in pn:
         product_name = NIC_Type.ORTANO2SOLO
     elif "68-0095-01" in pn:
-        product_name = NIC_Type.ORTANO2SOLO
+        product_name = NIC_Type.ORTANO2SOLOL
     elif "68-0013-01" in pn:
         product_name = NIC_Type.NAPLES100IBM
     elif "P26968" in pn:

@@ -4288,7 +4288,9 @@ class nic_ctrl():
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
                 ],
             NIC_Type.ORTANO2SOLO: [
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT),              #68-0077-01 XX    ORTANO2 SOLO
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT)               #68-0077-01 XX    ORTANO2 SOLO
+                ],
+            NIC_Type.ORTANO2SOLOL: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_L_PN_FMT)             #68-0095-01 XX    ORTANO2 SOLO-L
                 ],
             NIC_Type.ORTANO2SOLOORCTHS: [
