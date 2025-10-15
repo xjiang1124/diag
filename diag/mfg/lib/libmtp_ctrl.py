@@ -7339,7 +7339,7 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_nic_assign_board_id(self, slot, partNumber=None):
+    def mtp_nic_assign_board_id(self, slot, partNumber=None, verifyOnly=False):
         """
         Assign board id to provided slot, according retrieved CPLD ID and passed in part number.
         """
@@ -7362,7 +7362,7 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Failed find board ID for PN {:s} and CPLD {:s}".format(partNumber, cpldId))
             return False
 
-        if not self._nic_ctrl_list[slot].nic_assign_board_id(boardId):
+        if not self._nic_ctrl_list[slot].nic_assign_board_id(boardId, readOnly=verifyOnly):
             self.cli_log_slot_err_lock(slot, "Assign Board ID Failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)

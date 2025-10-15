@@ -5772,7 +5772,7 @@ class nic_ctrl():
 
         return True
 
-    def nic_assign_board_id(self, boardId=None):
+    def nic_assign_board_id(self, boardId=None, readOnly=False):
         """
         assign passed in Board ID String to this board by utility board_config
         example:
@@ -5790,15 +5790,16 @@ class nic_ctrl():
             self.nic_set_err_msg("Please Specify Board ID with String Format")
             return False
 
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().ASSIGN_BOARD_ID_FMT.format(boardId))
-        if not cmd_buf:
-            self.nic_set_err_msg("Assign Board ID Command 'board_config -B' Failed")
-            return False
-        # test string "Config successfully set" in command return buffer
-        if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
-            self.nic_set_err_msg("Assign Board ID NOT Success")
-            self.nic_set_err_msg(cmd_buf)
-            return False
+        if not readOnly:
+            cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().ASSIGN_BOARD_ID_FMT.format(boardId))
+            if not cmd_buf:
+                self.nic_set_err_msg("Assign Board ID Command 'board_config -B' Failed")
+                return False
+            # test string "Config successfully set" in command return buffer
+            if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
+                self.nic_set_err_msg("Assign Board ID NOT Success")
+                self.nic_set_err_msg(cmd_buf)
+                return False
 
         # Read Board ID back and compare
         cmd_buf = self.nic_get_info(MFG_DIAG_CMDS().GET_BOARD_CONFIG_FMT)
