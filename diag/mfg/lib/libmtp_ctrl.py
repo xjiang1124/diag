@@ -5085,7 +5085,7 @@ class mtp_ctrl():
 
     def mtp_nic_emmc_set_perf_mode(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO,
+        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL,
                         NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4):
             msg = "Set NIC in performance mode"
             if not self._nic_ctrl_list[slot].nic_emmc_set_perf_mode():
@@ -5098,7 +5098,7 @@ class mtp_ctrl():
 
     def mtp_nic_emmc_check_perf_mode(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO,
+        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL,
                         NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4):
             msg = "NIC in performance mode"
             if not self._nic_ctrl_list[slot].nic_emmc_check_perf_mode():
@@ -6370,7 +6370,7 @@ class mtp_ctrl():
                 if re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2SOLO
                 elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_L_PN_FMT, pn):
-                    final_nic_type = NIC_Type.ORTANO2SOLO
+                    final_nic_type = NIC_Type.ORTANO2SOLOL
                 elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2SOLOORCTHS
                 elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT, pn):
@@ -7034,7 +7034,7 @@ class mtp_ctrl():
                 else:
                     cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
                     if matera_mtp: cmd = MFG_DIAG_CMDS().MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
-            elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2ADICR):
+            elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2ADICR):
                 cmd = MFG_DIAG_CMDS().MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
                 if matera_mtp: cmd = MFG_DIAG_CMDS().MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in (NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
@@ -7306,6 +7306,8 @@ class mtp_ctrl():
                 preset_config = "5"
             elif nic_type == NIC_Type.ORTANO2SOLO:
                 preset_config = "5"
+            elif nic_type == NIC_Type.ORTANO2SOLOL:
+                preset_config = "5"
             elif nic_type == NIC_Type.ORTANO2SOLOORCTHS:
                 preset_config = "5"
             elif nic_type == NIC_Type.ORTANO2SOLOMSFT:
@@ -7339,7 +7341,7 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_nic_assign_board_id(self, slot, partNumber=None):
+    def mtp_nic_assign_board_id(self, slot, partNumber=None, verifyOnly=False):
         """
         Assign board id to provided slot, according retrieved CPLD ID and passed in part number.
         """
@@ -7362,7 +7364,7 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Failed find board ID for PN {:s} and CPLD {:s}".format(partNumber, cpldId))
             return False
 
-        if not self._nic_ctrl_list[slot].nic_assign_board_id(boardId):
+        if not self._nic_ctrl_list[slot].nic_assign_board_id(boardId, readOnly=verifyOnly):
             self.cli_log_slot_err_lock(slot, "Assign Board ID Failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
@@ -7531,6 +7533,8 @@ class mtp_ctrl():
             vdd_avs_cmd = MFG_DIAG_CMDS().LACONA32_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO2SOLO:
             vdd_avs_cmd = MFG_DIAG_CMDS().ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.ORTANO2SOLOL:
+            vdd_avs_cmd = MFG_DIAG_CMDS().ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO2SOLOORCTHS:
             vdd_avs_cmd = MFG_DIAG_CMDS().ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO2SOLOMSFT:
@@ -7636,7 +7640,7 @@ class mtp_ctrl():
                     self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS().ORTANO2_VRM_FIX_FMT))
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-        elif nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4):
+        elif nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4):
             if not self._nic_ctrl_list[slot].nic_fix_vrm():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS().ORTANO2_VRM_FIX_FMT))
                 self.mtp_dump_nic_err_msg(slot)
@@ -8465,7 +8469,7 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "This function is not applicable for this card type!")
             return False
 
-        if nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4):
+        if nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4):
             d3_val = "0xb7"
             d4_val = "0x10"
             vddq_prog = True
@@ -8724,7 +8728,7 @@ class mtp_ctrl():
         else:
             expected_speed = "8"
 
-        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO,
+        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL,
                         NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4,
                         NIC_Type.NAPLES100):
             expected_width = "16"

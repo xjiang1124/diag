@@ -214,6 +214,11 @@ def ocp_connect(mtp_mgmt_ctrl, slot):
             failed_slots.append(s)
     return failed_slots
 
+@parallelize.parallel_nic_using_ssh
+def swi_verify_board_id(mtp_mgmt_ctrl, slot):
+    pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
+    return mtp_mgmt_ctrl.mtp_nic_assign_board_id(slot, pn, verifyOnly=True)
+
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
 
@@ -356,6 +361,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_diag_init_fru_init(nic_list, False, False)
             elif test == "SKU_VALIDATE":
                 rlist = mtp_mgmt_ctrl.mtp_nic_validate_sku_dpn_match(nic_list)
+            elif test == "VERIFY_BOARD_ID":
+                rlist = swi_verify_board_id(mtp_mgmt_ctrl, nic_list)
 
             elif test == "CPLD_PROG":
                 rlist = swi_cpld_program(mtp_mgmt_ctrl, nic_list)
@@ -691,6 +698,8 @@ def main():
             run_swi_test(sku_fru_prog_list, "SKU_VALIDATE")
             run_swi_test(sku_fru_prog_list, "FRU_PROG")
             run_swi_test(sku_fru_prog_list, "NIC_FRU_INIT")
+            verify_boardid_list = get_slots_of_type([NIC_Type.ORTANO2SOLOL])
+            run_swi_test(verify_boardid_list, "VERIFY_BOARD_ID")
 
             for slot in pass_nic_list:
                 swi_display_program_matrix(mtp_mgmt_ctrl, slot)
