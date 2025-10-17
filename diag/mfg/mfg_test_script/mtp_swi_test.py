@@ -24,6 +24,7 @@ from libmfg_cfg import FPGA_TYPE_LIST
 from libmfg_cfg import FAILSAFE_CPLD_TYPE_LIST
 from libmfg_cfg import MAINFW_TYPE_LIST
 from libmfg_cfg import CTO_MODEL_TYPE_LIST
+from libmfg_cfg import SWI_UPDATE_FRU_TYPE_LIST
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libmfg_cfg import MTP_HEALTH_MONITOR
 from libmfg_cfg import DRY_RUN
@@ -388,6 +389,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_program_nic_fpga(nic_list)
             elif test == "FPGA_PROG_VERIFY":
                 rlist = mtp_mgmt_ctrl.mtp_verify_nic_fpga(nic_list)
+            elif test == "ERASE_MAINFW":
+                rlist = mtp_mgmt_ctrl.mtp_erase_main_fw_partition(nic_list)
 
             elif test == "DISABLE_ESEC_WP":
                 rlist = mtp_mgmt_ctrl.mtp_nic_esec_write_protect(nic_list, enable=False)
@@ -636,7 +639,7 @@ def main():
             # run_swi_test(sw_cfg_type_list, "CFG_VERIFY")
             # fpga_type_list = get_slots_of_type(FPGA_TYPE_LIST)
             # run_swi_test(fpga_type_list, "SET_EXTDIAGFW")
-            # mainfw_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4])
+            # mainfw_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS])
             # run_swi_test(mainfw_type_list, "SET_MAINFW")
             # run_swi_test(pass_nic_list, "SW_CLEANUP")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_CLEANUP")
@@ -700,6 +703,9 @@ def main():
             run_swi_test(sku_fru_prog_list, "NIC_FRU_INIT")
             verify_boardid_list = get_slots_of_type([NIC_Type.ORTANO2SOLOL])
             run_swi_test(verify_boardid_list, "VERIFY_BOARD_ID")
+
+            swi_update_fru_prog_list = get_slots_of_type(SWI_UPDATE_FRU_TYPE_LIST)
+            run_swi_test(swi_update_fru_prog_list, "ERASE_MAINFW")
 
             for slot in pass_nic_list:
                 swi_display_program_matrix(mtp_mgmt_ctrl, slot)
@@ -765,7 +771,7 @@ def main():
             run_swi_test(sw_cfg_type_list, "CFG_VERIFY")
             fpga_type_list = get_slots_of_type(FPGA_TYPE_LIST)
             run_swi_test(fpga_type_list, "SET_EXTDIAGFW")
-            mainfw_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4])
+            mainfw_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS])
             run_swi_test(mainfw_type_list, "SET_MAINFW")
             run_swi_test(pass_nic_list, "SW_CLEANUP")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")

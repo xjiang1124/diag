@@ -271,6 +271,8 @@ def main():
             testlist = ["SETUP_SSH", "FETCH_SN", "PCIE_LINK", "SSH_DISABLE"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 testlist = ["SETUP_SSH", "FETCH_SN", "SET_BOARD_CONFIG", "PCIE_LINK", "SSH_DISABLE"]
+            if nic_type == NIC_Type.GINESTRA_CIS:
+                testlist = ["SETUP_SSH", "PCIE_LINK", "SSH_DISABLE"]
             if nic_type in SALINA_AI_NIC_TYPE_LIST:
                 testlist = ["PCIE_LINK", "FETCH_FRU_INFO"]
 

@@ -96,6 +96,7 @@ class PART_NUMBERS_MATCH:
     GINESTRA_D4_PN_FMT = r"68-0074-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0074-01 01    GINESTRA_D4
     GINESTRA_D5_PN_FMT = r"68-0075-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0075-01 01    GINESTRA_D5
     GINESTRA_S4_PN_FMT = r"68-0076-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0076-01 01    GINESTRA_S4
+    GINESTRA_CIS_PN_FMT = r"68-0094-0[1-9]{1} [A-Z0-9]{2}"                                          #68-0094-01 01    GINESTRA_CIS
     LENI_PN_FMT = r"102-P10800-0[A-Z0-9]{2}(?:\s[A-Z0-9]{1,2})?"                                    #102-P10800-00B 01  LENI
     LENI48G_PN_FMT = r"102-P10801-0[A-Z0-9]{2}(?:\s[A-Z0-9]{1,2})?"                                 #102-P10801-00B 01  LENI48G
     POLLARA_PN_FMT = r"102-P11100-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                               #102-P11100-00B 01  POLLARA
@@ -142,6 +143,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT:       "FPG" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT:              "FPH" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT:              "FPH" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.GINESTRA_CIS_PN_FMT:             "AFM" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.LENI_PN_FMT:                     "FPK" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.LENI48G_PN_FMT:                  "FPK" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.MALFA_PN_FMT:                    "PFP" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
@@ -300,6 +302,9 @@ PN_FORMAT_TABLE = {
     NIC_Type.GINESTRA_S4: [
         PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT                   #68-0076-01 01    GINESTRA_S4
         ],
+    NIC_Type.GINESTRA_CIS: [
+        PART_NUMBERS_MATCH.GINESTRA_CIS_PN_FMT                  #68-0094-01 01    GINESTRA_CIS
+        ],
     NIC_Type.LENI: [
         PART_NUMBERS_MATCH.LENI_PN_FMT                          #102-P10800-00B   LENI
         ],
@@ -385,6 +390,10 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
         product_name = NIC_Type.GINESTRA_S4
     elif "DSC2A-2Q200-32S32F64P-S4" in pn:
         product_name = NIC_Type.GINESTRA_S4
+    elif "68-0094-" in pn:
+        product_name = NIC_Type.GINESTRA_CIS
+    elif "30-100365-" in pn:
+        product_name = NIC_Type.GINESTRA_CIS
     elif "68-0077-01" in pn:
         product_name = NIC_Type.ORTANO2SOLO
     elif "68-0095-01" in pn:
