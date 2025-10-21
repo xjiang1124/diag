@@ -66,8 +66,9 @@ if {$err_cnt != 0} {
     exit -2
 }
 
+set hvt [sal_harvested_asic]
 if {$test_type == "FULL"} {
-    sal_ms_ring_full_test
+    sal_ms_ring_full_test 0 $hvt
 } elseif {$test_type == "SHORT"} {
     sal_ms_ring_test
 }
