@@ -364,7 +364,7 @@ if { $logEn == "yes" } { plog_stop }
 
 ### Parse and summarize error messages
 if {$ret != 0} {
-    puts [exec $diag_path/scripts/asic/mbist_err_parse.sh $log_file]
+    puts [exec /home/diag/diag/python/regression/parse_mbist_err.py $log_file]
 }
 
 exit $ret
