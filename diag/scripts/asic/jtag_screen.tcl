@@ -361,4 +361,10 @@ if { $final_rslt != 0 } {
 }
 
 if { $logEn == "yes" } { plog_stop }
+
+### Parse and summarize error messages
+if {$ret != 0} {
+    puts [exec /home/diag/diag/python/regression/parse_mbist_err.py $log_file]
+}
+
 exit $ret
