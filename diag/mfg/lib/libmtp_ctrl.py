@@ -3886,6 +3886,9 @@ class mtp_ctrl():
         elif naples_pn[0:7] == "68-0076":     #GINESTRA_S4
             return "90-0023-0003"
 
+        elif naples_pn[0:7] == "68-0094":     #GINESTRA_CIS
+            return "90-0023-0005"
+
         else:
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
             return ""
@@ -6407,6 +6410,8 @@ class mtp_ctrl():
                     final_nic_type = NIC_Type.GINESTRA_D5
                 elif re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, pn):
                     final_nic_type = NIC_Type.GINESTRA_S4
+                elif re.match(PART_NUMBERS_MATCH.GINESTRA_CIS_PN_FMT, pn):
+                    final_nic_type = NIC_Type.GINESTRA_CIS
                 if final_nic_type:
                     self._nic_type_list[slot] = final_nic_type
                     self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
@@ -7324,7 +7329,7 @@ class mtp_ctrl():
                 preset_config = "1"
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
                 preset_config = "18"
-            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4):
+            elif nic_type in GIGLIO_NIC_TYPE_LIST:
                 preset_config = "8"
             else:
                 self.cli_log_slot_err(slot, "Board config not supported on this NIC")
@@ -7547,6 +7552,8 @@ class mtp_ctrl():
             vdd_avs_cmd = MFG_DIAG_CMDS().GINESTRA_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.GINESTRA_S4:
             vdd_avs_cmd = MFG_DIAG_CMDS().GINESTRA_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.GINESTRA_CIS:
+            vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type in SALINA_NIC_TYPE_LIST:
             # salina avs set command will set both vdd and arm
             vdd_avs_cmd = MFG_DIAG_CMDS().SALINA_AVS_SET_FMT.format(slot+1)
@@ -8479,7 +8486,7 @@ class mtp_ctrl():
             d4_val = "0x10"
             vddq_prog = False
 
-        if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4):
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
             d3_val = "0x07"
 
         if console:
@@ -8495,13 +8502,13 @@ class mtp_ctrl():
                     self.mtp_get_nic_err_msg(slot)
                     return False
         else:
-            if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4):
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
                 rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val=d3_val, i2cbus_num="2")
             else:
                 rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog)
             if not rc:
                 self.mtp_clear_nic_err_msg(slot) # clear out the error message
-                if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4):
+                if nic_type in GIGLIO_NIC_TYPE_LIST:
                     rc = self._nic_ctrl_list[slot].gigilo_nic_vdd_ddr_fix(d3_val=d3_val)
                 else:
                     rc = self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val, vddq_prog)
@@ -8510,7 +8517,7 @@ class mtp_ctrl():
                     self.mtp_get_nic_err_msg(slot)
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-                if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4):
+                if nic_type in GIGLIO_NIC_TYPE_LIST:
                     rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val=d3_val, i2cbus_num="2")
                 else:
                     rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog)
@@ -9040,7 +9047,7 @@ class mtp_ctrl():
                         else:
                             self.cli_log_slot_err(slot, "FWLIST missing fip info for ADI IBM")
                             return False
-                    elif nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4) and partition in ["mainfwa", "mainfwb"]:
+                    elif nic_type in GIGLIO_NIC_TYPE_LIST and partition in ["mainfwa", "mainfwb"]:
                         self.cli_log_slot_inf(slot, "NO {:s} needed for {:s}".format(partition, nic_type))
                     else:
                         self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]))
@@ -9074,7 +9081,7 @@ class mtp_ctrl():
             if boot_image != "extdiag":
                 self.cli_log_slot_err(slot, "Booted from {:s}, expecting extdiag".format(boot_image))
                 return False
-        elif nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4):
+        elif nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS):
             if boot_image != "goldfw":
                 self.cli_log_slot_err(slot, "Booted from {:s}, expecting goldfw".format(boot_image))
                 return False

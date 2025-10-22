@@ -1400,15 +1400,25 @@ class nic_ctrl():
         if self._nic_type not in [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT]:
             nic_shutdown_cmd_list.append(emmc_mount_cmd)
 
-        nic_shutdown_cmd_list += [
-                                 MFG_DIAG_CMDS().NIC_IMG_DISP_FMT,
-                                 MFG_DIAG_CMDS().NIC_IMG_DISP1_FMT,
-                                 MFG_DIAG_CMDS().NIC_DIAG_CLEANUP_FMT,
-                                 MFG_DIAG_CMDS().NIC_EMMC_LS_FMT,
-                                 MFG_DIAG_CMDS().NIC_KILL_PROCESS_FMT,
-                                 MFG_DIAG_CMDS().NIC_SYNC_FS_FMT,
-                                 MFG_DIAG_CMDS().NIC_SW_UMOUNT_FMT
-                                 ]
+        if self._nic_type != NIC_Type.GINESTRA_CIS:
+            nic_shutdown_cmd_list += [
+                                     MFG_DIAG_CMDS().NIC_IMG_DISP_FMT,
+                                     MFG_DIAG_CMDS().NIC_IMG_DISP1_FMT,
+                                     MFG_DIAG_CMDS().NIC_DIAG_CLEANUP_FMT,
+                                     MFG_DIAG_CMDS().NIC_EMMC_LS_FMT,
+                                     MFG_DIAG_CMDS().NIC_KILL_PROCESS_FMT,
+                                     MFG_DIAG_CMDS().NIC_SYNC_FS_FMT,
+                                     MFG_DIAG_CMDS().NIC_SW_UMOUNT_FMT
+                                     ]
+        else:
+            nic_shutdown_cmd_list += [
+                                     MFG_DIAG_CMDS().NIC_IMG_DISP_FMT,
+                                     MFG_DIAG_CMDS().NIC_IMG_DISP1_FMT,
+                                     MFG_DIAG_CMDS().NIC_DIAG_CLEANUP_FMT,
+                                     MFG_DIAG_CMDS().NIC_EMMC_LS_FMT,
+                                     MFG_DIAG_CMDS().NIC_SYNC_FS_FMT,
+                                     MFG_DIAG_CMDS().NIC_SW_UMOUNT_FMT
+                                     ]
 
         if self._nic_type in [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT]:
             nic_shutdown_cmd_list.pop()
@@ -1427,7 +1437,19 @@ class nic_ctrl():
             isRelC = True
 
         # poweroff ... Cloud build do not support this command & different command for Rel C
-        if isRelC == True:
+        if self._nic_type == NIC_Type.GINESTRA_CIS:
+            nic_sync_cmd_list = list()
+            nic_sync_cmd_list.append(MFG_DIAG_CMDS().NIC_SYNC_FS_FMT)
+            nic_sync_cmd_list.append(MFG_DIAG_CMDS().NIC_SYNC_FS_FMT)
+            nic_sync_cmd_list.append(MFG_DIAG_CMDS().NIC_SYNC_FS_FMT)
+
+            for nic_cmd in nic_sync_cmd_list:
+                self._nic_handle.sendline(nic_cmd)
+                idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
+                time.sleep(1)
+                if idx < 0:
+                    return False
+        elif isRelC == True:
             self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_OS_SHUTDOWN_PEN_FMT)
             idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
@@ -4286,6 +4308,9 @@ class nic_ctrl():
                 ],
             NIC_Type.GINESTRA_S4: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
+                ],
+            NIC_Type.GINESTRA_CIS: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_CIS_PN_FMT)                  #68-0094-01 XX    GINESTRA_CIS
                 ],
             NIC_Type.ORTANO2SOLO: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT)               #68-0077-01 XX    ORTANO2 SOLO
