@@ -701,6 +701,11 @@ PRIVEK <ek.sk>"""
         cmd = "turn_on_slot.sh on {}".format(slot)
         common.session_cmd(session, cmd, ending="MTP:\$")
         time.sleep(60)
+        print("\nDisable WDT")
+        cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(slot) + 2)
+        common.session_cmd(session, cmd)
+        cmd = "i2cget -y {} 0x4f 0x1".format(int(slot)+2)
+        common.session_cmd(session, cmd)
         #ret = sal_con.enter_a35_zephyr(slot, session, uart_id=0, new_ainic_layout=True, n1_autoboot_delay=30)
         ret = 0
         if ret != 0:

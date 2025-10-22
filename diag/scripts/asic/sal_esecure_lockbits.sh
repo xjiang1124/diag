@@ -5,6 +5,7 @@
 # param 3: value at 0x401; use 0xbd to enable hw lock; program other value to disable
 fn=ufm2_slot$1.bin
 echo "Esecure HW Lock Bits --> Slot-$1 0x400=$2 0x401=$3"
+fpgautil spimode $1 on
 fpgautil cpld $1 generate ufm2 $fn
 printf "$(printf '\\x%02X' $2)" | dd of=$fn bs=1 seek=1024 count=1 conv=notrunc &> /dev/null
 printf "$(printf '\\x%02X' $3)" | dd of=$fn bs=1 seek=1025 count=1 conv=notrunc &> /dev/null

@@ -1143,6 +1143,9 @@ proc esec_dice_all {slot sn
     return 0
 }
 
+exec jtag_accpcie_salina clr $slot
+exec fpgautil spimode $slot off
+
 set stage [string toupper $stage]
 plog_msg "stage: $stage"
 switch $stage {
