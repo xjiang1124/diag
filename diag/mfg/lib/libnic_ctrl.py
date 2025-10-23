@@ -713,13 +713,15 @@ class nic_ctrl():
                 self.nic_console_detach()
                 return False
         # # if zephyr, skip time sync
-        if uart_selecttor is None:
-            if not self.nic_sync_mtp_timestamp():
-                self.nic_console_detach()
-                return False
-            if not self.nic_prompt_cfg():
-                self.nic_console_detach()
-                return False
+        if str(uart_selecttor) == "0":
+            return True
+
+        if not self.nic_sync_mtp_timestamp():
+            self.nic_console_detach()
+            return False
+        if not self.nic_prompt_cfg():
+            self.nic_console_detach()
+            return False
 
         return True
 
@@ -1556,16 +1558,18 @@ class nic_ctrl():
         return True
 
     @nic_console_test()
-    def nic_exec_cmd_from_console(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+    def nic_exec_cmd_from_console(self, cmd, timeout=MTP_Const.OS_CMD_DELAY, cmd_prompt=None):
+        if cmd_prompt is None:
+            cmd_prompt= self._nic_con_prompt
         self._nic_handle.sendline()
-        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [cmd_prompt], cmd_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=timeout)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [cmd_prompt], cmd_prompt, timeout=timeout)
         if idx < 0:
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
@@ -2125,7 +2129,7 @@ class nic_ctrl():
             return False
 
         ssh_pipe_cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
-        nic_cmd = "{} \" sync;sleep5;sync;sync \"".format(ssh_pipe_cmd)
+        nic_cmd = "{} \" sync;sleep 5;sync;sync \"".format(ssh_pipe_cmd)
         self._nic_handle.sendline(nic_cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
@@ -3497,12 +3501,12 @@ class nic_ctrl():
         img_name = os.path.basename(emmc_img)
 
         cmd = MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT
-        if not self.nic_exec_cmd_from_console(cmd):
+        if not self.nic_exec_cmd_from_console(cmd, cmd_prompt=" root# "):
             self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
             return False
 
         cmd = MFG_DIAG_CMDS().NIC_EMMC_PROG_SALINA_FMT.format(img_name)
-        if not self.nic_exec_cmd_from_console(cmd):
+        if not self.nic_exec_cmd_from_console(cmd, cmd_prompt=" root# "):
             self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
             return False
         emmc_mainfw_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
