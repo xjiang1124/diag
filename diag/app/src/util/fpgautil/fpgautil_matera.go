@@ -35,6 +35,7 @@ const errhelpMatera = "\nfpgautil:\n" +
         "\n" +
         "fpgautil cpld <slot#> uc/devid/featurebits/featurerow/statusreg/disable/refresh \n" +
         "fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm0/ufm1/ufm2/ufm3/fea/feabit> <filename>\n" +
+        "fpgautil cpld <dummp_slot#> jed2bin <filename>\n" +
         "\n" +
         "fpgautil mdiord <inst#> <phy> <addr>\n" +
         "fpgautil mdiowr <inst#> <phy> <addr> <data>\n" +
@@ -543,6 +544,13 @@ func matera_fpga_cli() {
             }
             t2 := time.Now()
             fmt.Println(" Function took ", t2.Sub(t1), " time")
+            os.Exit(0)
+        } else if os.Args[3] == "jed2bin" {   
+            err = materafpga.Spi_cpldXO3_convert_jed_file(os.Args[4])
+            if err != nil {
+                os.Exit(-1)
+            }
+            fmt.Println("JED2BIN conversion finished")
             os.Exit(0)
         } else if os.Args[3] == "read" || os.Args[3] == "Read" {
             if argc < 7 {
