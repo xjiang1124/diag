@@ -498,7 +498,7 @@ class nic_test_debug:
     
             common.session_stop(session)
     
-            if "O error" in buf:
+            if "O error" in buf or "error -110" in buf:
                 print("=== emmc_tuning FAILED {} ==".format(i))
                 break
             else:
