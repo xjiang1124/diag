@@ -69,8 +69,11 @@ def check_rot(mtp_mgmt_ctrl, nic_list, s4_family):
     for port in serial_ports:
         if s4_family:
             cmd = "mfg_test_script/rotctrl -b 115200 -d elba-gold -c ortano -p {:s}".format(port)
-        elif nic_type in SALINA_NIC_TYPE_LIST:
+        elif nic_type in SALINA_AI_NIC_TYPE_LIST:
             cmd = "mfg_test_script/rotctrl_salina -b 115200 -d salina -c {:s} -p {:s}".format(nic_type.lower(), port)
+        elif nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            #./rotctrl -b 115200 -d salina -c leni48  -p  ttyUSB0
+            cmd = "mfg_test_script/rotctrl -b 115200 -d salina -c {:s} -p {:s}".format(nic_type.lower(), port)
         else:
             cmd = "mfg_test_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
 

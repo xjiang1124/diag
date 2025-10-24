@@ -600,7 +600,6 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR")
-            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWA")
 
             # run_swi_test(pass_nic_list, "NIC_INIT")
             # run_swi_test(pass_nic_list, "SEC_CPLD_VERIFY")
@@ -621,6 +620,9 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_MAINFWB_INSTALL", stage=FF_Stage.FF_SWI)
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_BOOT")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_EXTOS")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFW")
             # cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
             # run_swi_test(cpld_type_list, "COMPARE_CPLD")
