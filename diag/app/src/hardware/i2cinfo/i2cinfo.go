@@ -929,6 +929,11 @@ var PanareaI2cTbl = []I2cInfo {
     I2cInfo {"FAN",       "FPGA",      0, 0xff,    0x0,  "HUB_NONE",  0,    0},
 }
 
+var GelsopMtpTbl = []I2cInfo {
+    //       name               comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"FRU",            "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+}
+
 // simulate UUT on Lipari using its 8 Elba CPLD
 var MateraHubI2cTbl = []I2cInfo {
 }
@@ -1274,6 +1279,8 @@ func SwitchI2cTbl(uutName string) (err int) {
     } else if uutType == "LENI" || uutType == "LENI48G" {
         CurI2cTbl = LeniMtpTbl
         CurSensorTbl = LeniSensorTbl
+    } else if uutType == "GELSOP" {
+        CurI2cTbl = GelsopMtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM

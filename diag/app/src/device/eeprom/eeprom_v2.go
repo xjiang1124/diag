@@ -99,6 +99,7 @@ const (
     PN_MTP_PANAREA_MB   string = "102-P11700-00"
     PN_MTP_PANAREA_IOB  string = "102-P11800-00"
     PN_MTP_PANAREA_FPIC string = "102-P11900-00"
+    PN_GELSOP           string = "101-P00001-00"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
@@ -117,6 +118,7 @@ const (
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
     PROD_NAME_LINGUA        string = "POLLARA, single QSFP112, OCP 3.0"
     PROD_NAME_OCP_ADPT      string = "OCP ADAPTOR"
+    PROD_NAME_GELSOP        string = "GELSOP 1x800G OSFP224"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -150,6 +152,7 @@ const (
     SKU_LENI48G         string = "DSC3-2Q400-48R64E64P"
     SKU_LINGUA          string = "POLLARA-1Q400P-OCP"
     SKU_OCP_ADPT        string = "DSC3-2Q400-48R64E64P"
+    SKU_GELSOP          string = "GELSOP-1O800P"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -174,6 +177,7 @@ const (
     FRU_ID_LENI          string = "07/18/24"
     FRU_ID_LINGUA        string = "02/04/25"
     FRU_ID_OCP_ADPT      string = "02/24/25"
+    FRU_ID_GELSOP        string = "09/26/25"
 
     // Byte offset
     BYTE_OFFSET_SN_ORACLE      int = 5
@@ -1296,6 +1300,70 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    PN_GELSOP: updateInfo {
+        PenStandardV2GelsoXProdInfoTbl,
+        PROD_NAME_GELSOP,
+        SKU_GELSOP,
+        FRU_ID_GELSOP,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
+    SKU_GELSOP: updateInfo {
+        PenStandardV2GelsoXProdInfoTbl,
+        PROD_NAME_GELSOP,
+        SKU_GELSOP,
+        FRU_ID_GELSOP,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
     //                                                    FIELD_NUM_SN_3, 
@@ -1340,6 +1408,8 @@ var CardTypes = []card{
     card{"LINGUA_SKU",              SKU_LINGUA},
     card{"OCP_ADPT",                PN_OCP_ADPT},
     card{"DESCHUTES",               PN_DESCHUTES},
+    card{"GELSOP",                  PN_GELSOP},
+    card{"GELSOP_SKU",              SKU_GELSOP},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},

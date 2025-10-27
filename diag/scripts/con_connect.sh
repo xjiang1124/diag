@@ -15,7 +15,7 @@ then
         i2cset -y 3 0x4a 0x21 0x61
         picocom -b 115200 -f h /dev/ttyS3
     fi
-elif [[ $CARD_TYPE == "MTP_MATERA" || $CARD_TYPE == "MTP_PANAREA" ]]
+elif [[ $CARD_TYPE == "MTP_MATERA" ]]
 then
     slot=$1
     uart_id=0
@@ -36,12 +36,11 @@ then
             i2cset -y $(($slot + 2)) 0x4a 0x21 $data
         fi
     fi
-    if [[ $CARD_TYPE == "MTP_MATERA" ]]
-    then
-        taskset -c $slot fpga_uart $((slot - 1))
-    else
-        fpga_uart_panarea $((slot - 1))
-    fi
+    taskset -c $slot fpga_uart $((slot - 1))
+elif [[ $CARD_TYPE == "MTP_PANAREA" ]]
+then
+    term="/dev/SUCUART$1"
+    picocom -b 115200 -f h $term
 else
     cpldutil -cpld-wr -addr=0x18 -data=0
     cpldutil -cpld-wr -addr=0x18 -data=$1

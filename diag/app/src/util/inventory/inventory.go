@@ -16,7 +16,10 @@ import (
     "device/cpld/nicCpldCommon"
     "device/cpld/ortanoCpld"
     "device/cpld/salinaCpld"
+    "device/fpga/panareafpga"
     "hardware/hwdev"
+
+
 )
 
 var powerStatName = []string{"capri vdd", "capri avdd", "capri vdd arm", "capri vdd hbm", "capri emmc",
@@ -47,6 +50,18 @@ func uutPresent(uutName string) (data byte, present bool) {
     addr := uint64(naples100Cpld.REG_ID)
 
     present = false
+
+    if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        present, _ = panareafpga.SLOTpresentUUT(uutName)
+        //Currently there is no way to read the CPLD ID on GelsoP.  We need to get USB working in order to do that.
+        //For now on Panarea, just hard code the CPLD ID since GelsoP is our only card right now.
+        if present == true {
+            data = 0x83
+        } else {
+            data = 0x00
+        }
+        return
+    }
 
     cli.DisableVerbose()
     data, err := hwdev.NaplesCpldRdBlind(devName, addr, uutName)
@@ -214,6 +229,8 @@ func present() (err int) {
                 presentStr = "LINGUA"
             case nicCpldCommon.ID_NAPLES_MTP:
                 presentStr = "NAPLES_MTP"
+            case nicCpldCommon.ID_GELSOP:
+                presentStr = "GELSOP"
             default:
                 presentStr = "Unknown"
             }
@@ -493,6 +510,8 @@ func sysDetect() (err int) {
                 presentStr = "LENI48G"
             case nicCpldCommon.ID_LINGUA:
                 presentStr = "LINGUA"
+            case nicCpldCommon.ID_GELSOP:
+                presentStr = "GELSOP"
             default:
                 presentStr = "Unknown"
             }

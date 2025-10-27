@@ -241,9 +241,6 @@ control_slot_panarea() {
         for slot_one_based in $slot_list
         do
             slot_zero_based=$(( $slot_one_based - 1 ))
-            enable_nic_mtp_r3 $slot_one_based
-            elba_enable_jtag $slot_one_based
-            set_prod_mode $slot_one_based $prod_mode
             slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
             # 12V
             wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
