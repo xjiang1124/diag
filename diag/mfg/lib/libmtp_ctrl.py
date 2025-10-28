@@ -1705,17 +1705,19 @@ class mtp_ctrl():
                         self.cli_log_inf(previous_line)
                         self.cli_log_inf(line)
                         psu_lines = [i for i in zip([item.strip() for item in previous_line[36:].split()], [j.strip() for j in line[36:].split()])]
-                        for i in psu_lines:
-                            if i not in psu1_data:
-                                psu1_data.append(i)
+                        if "ERROR" not in line:
+                            for i in psu_lines:
+                                if i not in psu1_data:
+                                    psu1_data.append(i)
                     if 'PSU_2' in line:
                         previous_line = devmgr_status_output[line_num-1]
                         self.cli_log_inf(previous_line)
                         self.cli_log_inf(line)
                         psu_lines = [i for i in zip([item.strip() for item in previous_line[36:].split()], [j.strip() for j in line[36:].split()])]
-                        for i in psu_lines:
-                            if i not in psu2_data:
-                                psu2_data.append(i)
+                        if "ERROR" not in line:
+                            for i in psu_lines:
+                                if i not in psu2_data:
+                                    psu2_data.append(i)
                 psu_data = [i for i in [psu1_data, psu2_data] if i]
 
                 # check PSU related items
