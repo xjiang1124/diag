@@ -118,6 +118,7 @@ def get_goldfw(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, goldfw)
     return {
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.goldfw_img, nic_type),
+    "version":   get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.goldfw_ver, nic_type),
     "timestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.goldfw_dat, nic_type)
     }
 
@@ -125,6 +126,7 @@ def get_mainfw(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, mainfw)
     return {
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.mainfw_img, nic_type),
+    "version":   get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.mainfw_ver, nic_type),
     "timestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.mainfw_dat, nic_type)
     }
 
@@ -445,7 +447,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
     elif stage == FF_Stage.FF_SWI:
         images_needed.append(cpld)
         images_needed.append(sec_cpld)
-        if nic_type not in SALINA_NIC_TYPE_LIST:
+        if nic_type not in SALINA_AI_NIC_TYPE_LIST:
             images_needed.append(goldfw)
 
         if nic_type in FPGA_TYPE_LIST:

@@ -1256,9 +1256,9 @@ class nic_ctrl():
         return True
 
     @nic_console_test()
-    def nic_set_mainfw_boot(self):
-        # set default to mainfw boot
-        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_SW_BOOT_FMT)
+    def nic_set_mainfwa_boot(self):
+        # set default to mainfwa boot
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_MAINFWA_BOOT_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1274,7 +1274,38 @@ class nic_ctrl():
             return False
 
         # show and compare startup image
-        expect_startup_img = MFG_DIAG_CMDS().NIC_SET_SW_BOOT_FMT.replace("fwupdate -s", "").strip()
+        expect_startup_img = MFG_DIAG_CMDS().NIC_SET_MAINFWA_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+        if expect_startup_img not in self._nic_handle.before:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+    @nic_console_test()
+    def nic_set_mainfwb_boot(self):
+        # set default to mainfwb boot
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_MAINFWB_BOOT_FMT)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        self.nic_boot_info_reset()
+
+        # sync
+        self._nic_handle.sendline("sync")
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # show and compare startup image
+        expect_startup_img = MFG_DIAG_CMDS().NIC_SET_MAINFWB_BOOT_FMT.replace("fwupdate -s", "").strip()
         self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
@@ -1288,6 +1319,15 @@ class nic_ctrl():
 
     @nic_console_test()
     def nic_set_goldfw_boot(self):
+
+        if self._nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            # set A35 goldfw 
+            self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_EXTOSGOLDFW_BOOT_FMT)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
+            if idx < 0:
+                self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+                return False
+
         # set default to goldfw boot
         self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_GOLD_BOOT_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
@@ -1318,7 +1358,7 @@ class nic_ctrl():
         return True
 
     @nic_console_test()
-    def nic_set_extos_boot(self):
+    def nic_set_extosa_boot(self):
         # set default to extosa boot
         self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_EXTOSA_BOOT_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
@@ -1337,6 +1377,37 @@ class nic_ctrl():
 
         # show and compare startup image
         expect_startup_img = MFG_DIAG_CMDS().NIC_SET_EXTOSA_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+        if expect_startup_img not in self._nic_handle.before:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+    @nic_console_test()
+    def nic_set_extosb_boot(self):
+        # set default to extosb boot
+        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_SET_EXTOSB_BOOT_FMT)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        self.nic_boot_info_reset()
+
+        # sync
+        self._nic_handle.sendline("sync")
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # show and compare startup image
+        expect_startup_img = MFG_DIAG_CMDS().NIC_SET_EXTOSB_BOOT_FMT.replace("fwupdate -s", "").strip()
         self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
@@ -1716,6 +1787,84 @@ class nic_ctrl():
             except ValueError:
                 self.nic_set_err_msg("Invalid NIC FW kernel version")
                 return False
+
+    @nic_console_test()
+    def salina_nic_verify_a35_boot_fw_version(self, tartbootver):
+        """
+        Verify Salina A35 boot image same as specified.
+        """
+        cmd = MFG_DIAG_CMDS().NIC_BOOT_SHOW_RUNNING_IMG_FMT
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        if idx < 0:
+            self.nic_set_err_msg("Command {:s} failed".format(cmd))
+            return False
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"System\s+firmware\s+:(\w+)", buf)
+        if not match:
+            self.nic_set_err_msg("Failed to parse a35 boot image from {:s}". format(buf))
+            return False
+        a35_boot_image = match[0]
+        if tartbootver.lower() != a35_boot_image.lower():
+            self.nic_set_err_msg("A35 boot to {:s}, while expect it boot to {:s}". format(a35_boot_image, tartbootver))
+            return False
+        return True
+
+    @nic_console_test()
+    def salina_nic_verify_loaded_fw_version(self, goldfw_ver=None, mainfw_ver=None):
+        """
+        run "fwupdate -l command"
+        verify the pass in FW version
+        """
+
+        cmd = cmd = MFG_DIAG_CMDS().NIC_IMG_DISP1_FMT
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        if idx < 0:
+            self.nic_set_err_msg("Command {:s} failed".format(cmd))
+            return False
+        # remove the potential special character
+        fw_info_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if not fw_info_buf:
+            self.nic_set_err_msg("Unable to get 'fwupdate -l' command output")
+            return False
+        try:
+            fw_info = json.loads('\n'.join(fw_info_buf.strip().split('\n')[1:-1]))
+        except:
+            self.nic_set_err_msg("'fwupdate -l' command output is not formatted as JSON")
+            return False
+
+        verify_rc = True
+        if goldfw_ver:
+            for k, v in fw_info["n1-goldfw"].items():
+                if v["software_version"] != goldfw_ver:
+                    self.nic_set_err_msg("n1-goldfw {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                    verify_rc = False
+            for k, v in fw_info["extosgoldfw"].items():
+                if v["software_version"] != goldfw_ver:
+                    self.nic_set_err_msg("extosgoldfw {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                    verify_rc = False
+
+        if mainfw_ver:
+            for k, v in fw_info["mainfwa"].items():
+                if v["software_version"] != mainfw_ver:
+                    self.nic_set_err_msg("mainfwa {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                    verify_rc = False
+            for k, v in fw_info["extosa"].items():
+                if v["software_version"] != mainfw_ver:
+                    self.nic_set_err_msg("extosa {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                    verify_rc = False
+            for k, v in fw_info["mainfwb"].items():
+                if v["software_version"] != mainfw_ver:
+                    self.nic_set_err_msg("mainfwb {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                    verify_rc = False
+            for k, v in fw_info["extosb"].items():
+                if v["software_version"] != mainfw_ver:
+                    self.nic_set_err_msg("extosb {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                    verify_rc = False
+
+        return verify_rc
 
     def nic_google_stress_test(self, vmarg='normal',  mem_copy_thread=16, seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
         '''
@@ -3496,9 +3645,13 @@ class nic_ctrl():
 
         return True
 
-    def nic_program_emmc_salina(self, emmc_img):
+    def salina_nic_call_sysypdate_prog_fw(self, fw_img):
+        """
+        for salina DPU, call sysupdate.sh -p <img> to update mainfw or goldfw
+        make sure image file in emmc /data before update
+        """
 
-        img_name = os.path.basename(emmc_img)
+        img_name = os.path.basename(fw_img)
 
         cmd = MFG_DIAG_CMDS().NIC_MOUNT_EMMC_FMT
         if not self.nic_exec_cmd_from_console(cmd, cmd_prompt=" root# "):
@@ -3509,15 +3662,15 @@ class nic_ctrl():
         if not self.nic_exec_cmd_from_console(cmd, cmd_prompt=" root# "):
             self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
             return False
-        emmc_mainfw_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
+        update_fw_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         cmd_buf = self.nic_get_cmd_buf()
-        if emmc_mainfw_fail_sig in cmd_buf:
-            self.nic_set_err_msg("Salina mainfw emmc program failed")
+        if update_fw_fail_sig in cmd_buf:
+            self.nic_set_err_msg("Salina sysupdate.sh program image failed")
             self.nic_set_err_msg(cmd_buf)
             return False
-        emmc_mainfw_pass_sig = MFG_DIAG_SIG.NIC_SYSUPDATE_MAINFW_PASS_SIG
-        if emmc_mainfw_pass_sig not in cmd_buf:
-            self.nic_set_err_msg("Salina mainfw emmc program not complete")
+        update_fw_pass_sig = MFG_DIAG_SIG.NIC_SYSUPDATE_PASS_SIG
+        if cmd_buf.count(update_fw_pass_sig) != 2:
+            self.nic_set_err_msg("Salina sysupdate.sh failed to see SUCCESS twice")
             self.nic_set_err_msg(cmd_buf)
             return False
 
@@ -3910,7 +4063,7 @@ class nic_ctrl():
 
     def nic_set_sw_boot(self):
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS().NIC_SET_SW_BOOT_FMT
+        nic_cmd = MFG_DIAG_CMDS().NIC_SET_MAINFWA_BOOT_FMT
         nic_cmd_list.append(nic_cmd)
         nic_cmd_list.append(MFG_DIAG_CMDS().NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         if not self.nic_exec_cmds(nic_cmd_list):

@@ -36,6 +36,7 @@ class NIC_IMAGES:
     diagfw_md5 = dict()
     goldfw_img = dict()
     goldfw_dat = dict()
+    goldfw_ver = dict()
     goldfw_md5 = dict()
     mainfw_img = dict()
     mainfw_dat = dict()
@@ -676,15 +677,15 @@ class NIC_IMAGES:
     goldfw_md5["DSC2A-2Q200-32S32F64P-S4"] = "03eddbf464d4f65a5fb1dbfb8f66c910"
 
     # LENI mean default Leni 64G DDR
-    cpld_img["LENI"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_img["LENI"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     cpld_ver["LENI"] = "0x03"
-    cpld_dat["LENI"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    sec_cpld_img["LENI"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_dat["LENI"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    sec_cpld_img["LENI"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     sec_cpld_ver["LENI"] = "0x03"
-    sec_cpld_dat["LENI"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    fail_cpld_img["LENI"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    sec_cpld_dat["LENI"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    fail_cpld_img["LENI"] = "salina_cfg1-rev3_10_0822-1120_fix_rot.bin"
     fail_cpld_ver["LENI"] = "0x03"
-    fail_cpld_dat["LENI"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    fail_cpld_dat["LENI"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
     fea_cpld_img["LENI"] = "salina.fea"
     ufm1_img["LENI"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     mainfw_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
@@ -706,15 +707,15 @@ class NIC_IMAGES:
     qspi_snake_img["LENI"] = "salina/leni/leni_snake.tar.gz"
     mbist_boot0_img["LENI"] = "salina/leni/dpu_boot0.tar.gz"
     # LENI DPN
-    cpld_img["58-0007-01"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_img["58-0007-01"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     cpld_ver["58-0007-01"] = "0x03"
-    cpld_dat["58-0007-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0007-01"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_dat["58-0007-01"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    sec_cpld_img["58-0007-01"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     sec_cpld_ver["58-0007-01"] = "0x03"
-    sec_cpld_dat["58-0007-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0007-01"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    sec_cpld_dat["58-0007-01"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    fail_cpld_img["58-0007-01"] = "salina_cfg1-rev3_10_0822-1120_fix_rot.bin"
     fail_cpld_ver["58-0007-01"] = "0x03"
-    fail_cpld_dat["58-0007-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    fail_cpld_dat["58-0007-01"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
     fea_cpld_img["58-0007-01"] = "salina.fea"
     ufm1_img["58-0007-01"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     mainfw_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
@@ -735,15 +736,15 @@ class NIC_IMAGES:
     qspi_prog_sh_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/qspi_prog.sh"
     qspi_snake_img["58-0007-01"] = "salina/leni/leni_snake.tar.gz"
     # Leni Standard SKU
-    cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     cpld_ver["DSC3-2Q400-64S64E64P"] = "0x03"
-    cpld_dat["DSC3-2Q400-64S64E64P"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    sec_cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_dat["DSC3-2Q400-64S64E64P"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    sec_cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     sec_cpld_ver["DSC3-2Q400-64S64E64P"] = "0x03"
-    sec_cpld_dat["DSC3-2Q400-64S64E64P"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    fail_cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    sec_cpld_dat["DSC3-2Q400-64S64E64P"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    fail_cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg1-rev3_10_0822-1120_fix_rot.bin"
     fail_cpld_ver["DSC3-2Q400-64S64E64P"] = "0x03"
-    fail_cpld_dat["DSC3-2Q400-64S64E64P"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    fail_cpld_dat["DSC3-2Q400-64S64E64P"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
     fea_cpld_img["DSC3-2Q400-64S64E64P"] = "salina.fea"
     ufm1_img["DSC3-2Q400-64S64E64P"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     mainfw_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
@@ -763,15 +764,15 @@ class NIC_IMAGES:
     device_config_dtb["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/device_config.dtb"
     qspi_prog_sh_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/qspi_prog.sh"
     # Leni Oracle SKU
-    cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     cpld_ver["DSC3-2Q400-64R64E64P-O"] = "0x03"
-    cpld_dat["DSC3-2Q400-64R64E64P-O"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    sec_cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_dat["DSC3-2Q400-64R64E64P-O"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    sec_cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     sec_cpld_ver["DSC3-2Q400-64R64E64P-O"] = "0x03"
-    sec_cpld_dat["DSC3-2Q400-64R64E64P-O"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    fail_cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    sec_cpld_dat["DSC3-2Q400-64R64E64P-O"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    fail_cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina_cfg1-rev3_10_0822-1120_fix_rot.bin"
     fail_cpld_ver["DSC3-2Q400-64R64E64P-O"] = "0x03"
-    fail_cpld_dat["DSC3-2Q400-64R64E64P-O"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    fail_cpld_dat["DSC3-2Q400-64R64E64P-O"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
     fea_cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina.fea"
     ufm1_img["DSC3-2Q400-64R64E64P-O"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     mainfw_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18_OCI/main_bundle/dpu_fw_salina_mfg.tar"
@@ -792,7 +793,7 @@ class NIC_IMAGES:
     qspi_prog_sh_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18_OCI/qspi_prog.sh"
 
     # LENI48G different card type which is Leni with 48G DDR
-    cpld_img["LENI48G"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_img["LENI48G"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     cpld_ver["LENI48G"] = "0x03"
     cpld_dat["LENI48G"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
     sec_cpld_img["LENI48G"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
@@ -822,15 +823,15 @@ class NIC_IMAGES:
     qspi_snake_img["LENI48G"] = "salina/leni48/leni_snake.tar.gz"
     mbist_boot0_img["LENI48G"] = "salina/leni48/dpu_boot0.tar.gz"
     # LENI48G DPN
-    cpld_img["58-0003-01"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_img["58-0003-01"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     cpld_ver["58-0003-01"] = "0x03"
-    cpld_dat["58-0003-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0003-01"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_dat["58-0003-01"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    sec_cpld_img["58-0003-01"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     sec_cpld_ver["58-0003-01"] = "0x03"
-    sec_cpld_dat["58-0003-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0003-01"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    sec_cpld_dat["58-0003-01"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    fail_cpld_img["58-0003-01"] = "salina_cfg1-rev3_10_0822-1120_fix_rot.bin"
     fail_cpld_ver["58-0003-01"] = "0x03"
-    fail_cpld_dat["58-0003-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    fail_cpld_dat["58-0003-01"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
     fea_cpld_img["58-0003-01"] = "salina.fea"
     ufm1_img["58-0003-01"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     mainfw_img["58-0003-01"] = "salina/leni48/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
@@ -851,15 +852,15 @@ class NIC_IMAGES:
     qspi_prog_sh_img["58-0003-01"] = "salina/leni48/dpu_1.108.0-C-18/qspi_prog.sh"
     qspi_snake_img["58-0003-01"] = "salina/leni48/leni_snake.tar.gz"
     # Leni48G SKU
-    cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     cpld_ver["DSC3-2Q400-48R64E64P"] = "0x03"
-    cpld_dat["DSC3-2Q400-48R64E64P"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    sec_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_dat["DSC3-2Q400-48R64E64P"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    sec_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev3_10_0822-1120_fix_rot.bin"
     sec_cpld_ver["DSC3-2Q400-48R64E64P"] = "0x03"
-    sec_cpld_dat["DSC3-2Q400-48R64E64P"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    fail_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    sec_cpld_dat["DSC3-2Q400-48R64E64P"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
+    fail_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg1-rev3_10_0822-1120_fix_rot.bin"
     fail_cpld_ver["DSC3-2Q400-48R64E64P"] = "0x03"
-    fail_cpld_dat["DSC3-2Q400-48R64E64P"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    fail_cpld_dat["DSC3-2Q400-48R64E64P"] = "08-22-25_11:20"  # mm-dd-YY_HH:MM
     fea_cpld_img["DSC3-2Q400-48R64E64P"] = "salina.fea"
     ufm1_img["DSC3-2Q400-48R64E64P"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     mainfw_img["DSC3-2Q400-48R64E64P"] = "salina/leni48/dpu_1.108.0-C-18_OCI/main_bundle/dpu_fw_salina_mfg.tar"
@@ -1509,7 +1510,7 @@ MFG_VALID_NIC_TYPE_LIST = [
     NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
     NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS,
     NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA
-    ]
+]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.ORTANO]
 
 MTP_REV02_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.VOMERO2]
@@ -1517,32 +1518,35 @@ MTP_REV03_CAPABLE_NIC_TYPE_LIST = [
     NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32,
     NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4,
     NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS
-    ]
+]
 MTP_REV04_CAPABLE_NIC_TYPE_LIST = [
     NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32,
     NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4,
     NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS
-    ]
+]
 
 MTP_MATERA_CAPABLE_NIC_TYPE_LIST = [
     NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA
-    ]
+]
 
-CAPRI_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.VOMERO2, NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP]
+CAPRI_NIC_TYPE_LIST = [
+    NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.VOMERO2,
+    NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP
+]
 ELBA_NIC_TYPE_LIST = [
     NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS,
     NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4
-    ]
+]
 GIGLIO_NIC_TYPE_LIST = [
     NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS
-    ]
+]
 
 SALINA_DPU_NIC_TYPE_LIST = [
     NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA
-    ]
+]
 SALINA_AI_NIC_TYPE_LIST = [
     NIC_Type.POLLARA, NIC_Type.LINGUA
-    ]
+]
 
 SALINA_NIC_TYPE_LIST = SALINA_DPU_NIC_TYPE_LIST + SALINA_AI_NIC_TYPE_LIST
 
@@ -1550,49 +1554,51 @@ PSLC_MODE_TYPE_LIST = [
     NIC_Type.VOMERO2, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
     NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS,
     NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA
-    ]
+]
 FPGA_TYPE_LIST = [NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 FAILSAFE_CPLD_TYPE_LIST = [
     NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
     NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4,
     NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4,
     NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS, NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA
-    ]
+]
 ADI_VRM_TYPE_LIST = [
     NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4
-    ]
+]
 TWO_OOB_MGMT_PORT_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL]
 NO_OOB_MGMT_PORT_TYPE_LIST = [
     NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4,
     NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4,
     NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS
-    ]
+]
 ETH_25G_TYPE_LIST = [
     NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25OCP,
     NIC_Type.LACONA32, NIC_Type.LACONA32DELL
-    ]
+]
 CONSOLE_DDR_BIST_NIC_LIST = [
     NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT,
     NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4
-    ] #temporary list to hold nic types while gradually offloading ddr_bist from L1 test
+]  # temporary list to hold nic types while gradually offloading ddr_bist from L1 test
 DDR_HARCODED_TRAINING_NIC_LIST = []
-NEED_UBOOT_IMG_CARD_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.ORTANO2SOLOS4]
+NEED_UBOOT_IMG_CARD_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI,
+                                 NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.ORTANO2SOLOS4]
 MAINFW_TYPE_LIST = [
     NIC_Type.NAPLES100, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25OCP,
     NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2ADICR,
     NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT,
     NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5
-    ]
+]
 
-#ARM_L1 test set mode hod_1100
-ARM_L1_MODE_HOD_1100 = [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.ORTANO2SOLOS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS]
+# ARM_L1 test set mode hod_1100
+ARM_L1_MODE_HOD_1100 = [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4,
+                        NIC_Type.ORTANO2SOLOS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS]
 CTO_MODEL_TYPE_LIST = [NIC_Type.GINESTRA_S4] + SALINA_NIC_TYPE_LIST
 SWI_UPDATE_FRU_TYPE_LIST = [NIC_Type.GINESTRA_CIS]
 # Card Type List Which need attash ROT cable when run FST test
 ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST = [
     NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2SOLOORCTHS,
     NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.POLLARA
-    ]
+]
 
 # Part Number Pattern List Which need attash ROT cable when run FST test
 ROT_CABLE_REQUIRED_FOR_FST_PN_LIST = [
