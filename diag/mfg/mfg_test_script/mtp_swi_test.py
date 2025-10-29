@@ -798,7 +798,7 @@ def main():
             fpga_type_list = get_slots_of_type(FPGA_TYPE_LIST)
             run_swi_test(fpga_type_list, "SET_EXTDIAGFW")
             mainfw_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS])
-            run_swi_test(mainfw_type_list, "SET_MAINFW")
+            run_swi_test(mainfw_type_list, "SET_MAINFWA")
             run_swi_test(pass_nic_list, "SW_CLEANUP")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
