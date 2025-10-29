@@ -44,7 +44,8 @@ const (
     ID_TAORMINA_ELBA   = 0x80
     ID_LIPARI_ELBA     = 0x81
     ID_MTFUJI_ELBA     = 0x82
-    ID_CAPACI_ELBA     = 0x83
+    //ID_CAPACI_ELBA   = 0x83    //0x83 is used by HPE for Elba on Capaci
+    ID_GELSOP          = 0x83    //Currently we have 0x83 also assigned to Gelso-P Bringup board for Vulcano
 )
 
 const (

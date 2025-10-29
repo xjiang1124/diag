@@ -22,7 +22,8 @@ const (
     FAN4 = 4
     MAXFAN = 5
     DUALFAN = 1
-    MAXSLOT = 10 //Panarea MTP has 10 + 1 debug slot.  0 - 10 are valid slots
+    MAXSLOTS = 10       //10 NORMAL SLOTS
+    DEBUGSLOTS = 1      //AND A DEBUG SLOT FOR 10+1 SLOTS
 )
 
 var Glob_fd0 *os.File = nil
@@ -160,6 +161,7 @@ func FpgaDumpRegionRegisters() (err error) {
     return
 }
 
+
 func PSU_present(PSUnumber uint32) (present bool, err error) {
     var data32 uint32
     present = false
@@ -180,5 +182,56 @@ func PSU_present(PSUnumber uint32) (present bool, err error) {
     if PSUnumber == PSU1 && ( (data32 &  FPGA_PSU_STAT_PRSNT1) == FPGA_PSU_STAT_PRSNT1) {
         present = true
     }
+    return
+}
+
+
+/*************************************************************
+* Check NIC slot present
+**************************************************************/
+func SLOTpresent(slotNumber uint32) (present bool, err error) {
+    var data32 uint32
+    present = false
+
+    if slotNumber > ((MAXSLOTS + DEBUGSLOTS) - 1) {
+        err = fmt.Errorf(" Error: SLOT_present.  SLOT NUMBER PASSED (%d) IS NOT VALID!", slotNumber)
+        cli.Printf("e", "%s", err)
+        return
+    }
+    data32, err = ReadU32(FPGA_MISC_STAT_REG)
+    if err != nil {
+        return
+    }
+    data32 = (data32 & FPGA_MISC_STAT_SLOT_MASK) >> FPGA_MISC_STAT_SLOT_SHIFT;
+
+    //Present is Zero based, not 1 based for this one
+    if ( (data32 & (1<<slotNumber)) == 0 ) {
+        present = true
+    }
+
+    return
+}
+
+
+/*************************************************************
+* Check NIC slot present based on UUT_SLOT# format. 
+* Example:   UUT_10 
+**************************************************************/
+func SLOTpresentUUT(uutName string) (present bool, err error) {
+    strLength := len(uutName)
+    if strLength < 5 {
+        err = fmt.Errorf(" Error: SLOTpresentUUT.  String passed is less than 5 characters.  Expectings something like UUT_5")
+        cli.Printf("e", "%s", err)
+        return
+    }
+    slotNumber, err := strconv.ParseUint(uutName[4:strLength], 0, 32)
+    //Zero based
+    slotNumber = slotNumber - 1 
+    if err != nil {
+        fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %v", err)
+        return
+    }
+
+    present, err = SLOTpresent(uint32(slotNumber))
     return
 }

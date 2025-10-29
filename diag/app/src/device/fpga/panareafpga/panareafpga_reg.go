@@ -100,6 +100,9 @@ const FPGA_S8_CONTROL_REG          uint64 = 0x1A0
 const FPGA_S9_CONTROL_REG          uint64 = 0x1A4
 const FPGA_MISC_CTRL_REG           uint64 = 0x300
 const FPGA_MISC_STAT_REG           uint64 = 0x304
+    const FPGA_MISC_STAT_SLOT_MASK              uint32 = 0x7FF00
+    const FPGA_MISC_STAT_SLOT_SHIFT             uint32 = 8
+    
 const FPGA_CPU_CTRL_REG            uint64 = 0x308
 const FPGA_CPU_STAT_REG            uint64 = 0x30C
 const FPGA_WDOG_CTRL_REG           uint64 = 0x310
