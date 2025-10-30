@@ -122,7 +122,7 @@ def dl_diagfw_store(mtp_mgmt_ctrl, slot):
     # not put DL results to fail even if the copy image to emmc failed.
     dsp = FF_Stage.FF_DL
     qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_diagfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
-    return mtp_mgmt_ctrl.mtp_copy_nic_copy_file(slot, qspi_img_file)
+    return mtp_mgmt_ctrl.mtp_copy_nic_file(slot, qspi_img_file)
 
 @parallelize.parallel_nic_using_ssh
 def dl_diagfw_program(mtp_mgmt_ctrl, slot):

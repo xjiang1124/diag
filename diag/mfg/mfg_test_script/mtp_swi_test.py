@@ -172,11 +172,14 @@ def swi_mainfw_install(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
 
 @parallelize.parallel_nic_using_ssh
-def swi_mainfw_store(mtp_mgmt_ctrl, slot):
-    # since the SWI QSPI image OOB may not enable, so we save the mainfw binary file to emmc with an OOB QSPI image before SWI official test
+def swi_fw_img_store_to_emmc(mtp_mgmt_ctrl, slot):
+    # since the SWI QSPI image OOB may not enable, so we save the mainfw and goldfw binary file to emmc with an OOB QSPI image before SWI official test
     dsp = FF_Stage.FF_SWI
     emmc_mainfw_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_mainfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
-    return mtp_mgmt_ctrl.mtp_copy_nic_copy_file(slot, emmc_mainfw_img_file)
+    goldfw_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    rc1 = mtp_mgmt_ctrl.mtp_copy_nic_file(slot, goldfw_img_file)
+    rc2 = mtp_mgmt_ctrl.mtp_copy_nic_file(slot, emmc_mainfw_img_file)
+    return rc1 and rc2
 
 @parallelize.parallel_nic_using_ssh
 def swi_salina_qspi_program(mtp_mgmt_ctrl, slot, secure_img=False):
@@ -320,20 +323,22 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_check_prsnt(nic_list)
             elif test == "NIC_INIT":
                 rlist = mtp_mgmt_ctrl.mtp_check_nic_list_status(nic_list)
-
             elif test == "CONSOLE_BOOT":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(nic_list)
-            elif test == "SET_MAINFW":
-                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(nic_list)
+            elif test == "SET_MAINFWA":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfwa_boot(nic_list)
+            elif test == "SET_MAINFWB":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfwb_boot(nic_list)
             elif test == "SET_DIAGFW":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(nic_list)
             elif test == "SET_EXTDIAGFW":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extdiag_boot(nic_list)
             elif test == "SET_GOLDFW":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(nic_list)
-            elif test == "SET_EXTOS":
-                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extos_boot(nic_list)
-
+            elif test == "SET_EXTOSA":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extosa_boot(nic_list)
+            elif test == "SET_EXTOSB":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extosb_boot(nic_list)
             elif test == "NIC_DIAG_BOOT":
                 rlist = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(nic_list)
             elif test == "GOLDFW_BOOT":
@@ -342,6 +347,12 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_verify_nic_diag_boot(nic_list)
             elif test == "SW_BOOT":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(nic_list)
+            elif test == "SW_A_BOOT":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(nic_list, targetfw="mainfwa")
+            elif test == "SW_B_BOOT":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(nic_list, targetfw="mainfwb")
+            elif test == "LOADED_FW_VERSION_CHECK":
+                rlist = mtp_mgmt_ctrl.mtp_salina_nic_verify_loaded_fw_version(nic_list)
             elif test == "EXTDIAG_BOOT":
                 rlist = mtp_mgmt_ctrl.mtp_verify_nic_extdiag_boot(nic_list)
             elif test == "EXTDIAG_BOOT_SMODE":
@@ -419,8 +430,10 @@ def main():
                 rlist = swi_cert_copy(mtp_mgmt_ctrl, nic_list)
             elif test == "SW_INSTALL":
                 rlist = swi_mainfw_install(mtp_mgmt_ctrl, nic_list)
+            elif test == "SALINA_GOLDFW_INSTALL":
+                rlist = mtp_mgmt_ctrl.mtp_program_nic_goldfw_salina(nic_list, stage=test_kwargs["stage"])
             elif test == "SALINA_MAINFWA_INSTALL" or test == "SALINA_MAINFWB_INSTALL":
-                rlist = mtp_mgmt_ctrl.mtp_program_nic_emmc_salina(nic_list, stage=test_kwargs["stage"])
+                rlist = mtp_mgmt_ctrl.mtp_program_nic_mainfw_salina(nic_list, stage=test_kwargs["stage"])
             elif test == "GOLDFW_PROG":
                 rlist = swi_goldfw_program(mtp_mgmt_ctrl, nic_list)
             elif test == "SALINA_QSPI_PROG":
@@ -437,8 +450,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_boot_info_init(nic_list)
             elif test == "NIC_DIAG_INIT":
                 rlist = mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, skip_test_list=args.skip_test, **test_kwargs)
-            elif test == "MAINFW_STORE":
-                rlist = swi_mainfw_store(mtp_mgmt_ctrl, nic_list)
+            elif test == "FW_IMG_STORE2EMMC":
+                rlist = swi_fw_img_store_to_emmc(mtp_mgmt_ctrl, nic_list)
             elif test == "BOARD_CONFIG_CERT":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_set_board_config_cert(nic_list, test_kwargs["cert_img_file"], directory="/data/")
             elif test == "SW_PROFILE":
@@ -615,15 +628,26 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PARA_MGMT_INIT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_BOOT_INIT")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "MAINFW_STORE")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "FW_IMG_STORE2EMMC")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_GOLDFW_INSTALL", stage=FF_Stage.FF_SWI)
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_GOLDFW")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "GOLDFW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_MAINFWA_INSTALL", stage=FF_Stage.FF_SWI)
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_EXTOSA")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFWA")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_BOOT")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_A_BOOT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_MAINFWB_INSTALL", stage=FF_Stage.FF_SWI)
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_EXTOSB")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFWB")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_BOOT")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_EXTOS")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFW")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_B_BOOT")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "LOADED_FW_VERSION_CHECK")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_EXTOSA")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFWA")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_A_BOOT")
             # cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
             # run_swi_test(cpld_type_list, "COMPARE_CPLD")
             # run_swi_test(cpld_type_list, "COMPARE_FAILSAFE_CPLD")
@@ -774,7 +798,7 @@ def main():
             fpga_type_list = get_slots_of_type(FPGA_TYPE_LIST)
             run_swi_test(fpga_type_list, "SET_EXTDIAGFW")
             mainfw_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS])
-            run_swi_test(mainfw_type_list, "SET_MAINFW")
+            run_swi_test(mainfw_type_list, "SET_MAINFWA")
             run_swi_test(pass_nic_list, "SW_CLEANUP")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)

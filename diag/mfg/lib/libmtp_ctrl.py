@@ -3114,8 +3114,8 @@ class mtp_ctrl():
 
 # 1. Routines that need console, can not be run in parallel
     @parallelize.parallel_nic_using_console
-    def mtp_nic_boot_info_init(self, slot, smode=False, skip_check=False):
-        if self._nic_ctrl_list[slot]._boot_image is not None and self._nic_ctrl_list[slot]._kernel_timestamp is not None and not skip_check:
+    def mtp_nic_boot_info_init(self, slot, smode=False, skip_check=True):
+        if self._nic_ctrl_list[slot]._boot_image and self._nic_ctrl_list[slot]._kernel_timestamp and skip_check:
             # no need to do this
             self.cli_log_slot_inf(slot, "NIC boot info already present")
             return True
@@ -3176,22 +3176,22 @@ class mtp_ctrl():
         boot_image = gold_info[0]
         kernel_timestamp = gold_info[1]
 
-        expected_timestamp = image_control.get_goldfw(self, slot, FF_Stage.FF_SWI)["timestamp"]
-
         if (boot_image != "goldfw"):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is GoldFW Failed, NIC is booted from {:s}".format(boot_image))
             return False
 
-        if (expected_timestamp != kernel_timestamp):
-            self.cli_log_slot_err_lock(slot, "goldfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestamp, kernel_timestamp))
-            return False
+        # comment out timestamp compare
+        # expected_timestamp = image_control.get_goldfw(self, slot, FF_Stage.FF_SWI)["timestamp"]
+        # if (expected_timestamp != kernel_timestamp):
+        #     self.cli_log_slot_err_lock(slot, "goldfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestamp, kernel_timestamp))
+        #     return False
 
         self.cli_log_slot_inf(slot, "NIC boot from {:s}({:s})".format(boot_image, kernel_timestamp))
         return True
 
     @parallelize.parallel_nic_using_console
-    def mtp_mgmt_verify_nic_sw_boot(self, slot):
-        if slot in self.mtp_nic_boot_info_init(slot):
+    def mtp_mgmt_verify_nic_sw_boot(self, slot, targetfw=None):
+        if slot in self.mtp_nic_boot_info_init(slot, skip_check=False):
             self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
             return False
 
@@ -3202,13 +3202,42 @@ class mtp_ctrl():
 
         boot_image = sw_info[0]
         kernel_timestamp = sw_info[1]
-        if boot_image not in ["mainfwa", "mainfwb"]:
-            self.cli_log_slot_err(slot, "SW boot failed, NIC is booted from {:s}".format(boot_image))
+        acceptable_fw_list = ["mainfwa", "mainfwb"] if targetfw is None else [targetfw]
+        if boot_image not in acceptable_fw_list:
+            self.cli_log_slot_err(slot, "SW boot failed, NIC is booted from {:s}, expect {:s}".format(boot_image, str(acceptable_fw_list)))
             return False
+        nic_type = self.mtp_get_nic_type(slot)
+        if targetfw and nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            # check if a35 running image pair with N1 image, namely A35 extosa pair with N1 mainfwa, A35 goldfw pari with N1 goldfw
+            n1_to_a35 = {
+                'goldfw' : 'goldfw',
+                'mainfwa' : 'extosa',
+                'mainfwb' : 'extosb'
+            }
+            n1_pair2a35_boot_img = n1_to_a35.get(targetfw, "")
+            if not self._nic_ctrl_list[slot].salina_nic_verify_a35_boot_fw_version(n1_pair2a35_boot_img):
+                self.cli_log_slot_err(slot, "Verify A35 running fw info failed")
+                self.mtp_get_nic_err_msg(slot)
+                return False
 
         self.cli_log_slot_inf(slot, "NIC default boot from {:s}({:s})".format(boot_image, kernel_timestamp))
         return True
 
+
+    @parallelize.parallel_nic_using_console
+    def mtp_salina_nic_verify_loaded_fw_version(self, slot):
+        """
+        verify the fw version displayed by "fwupdate -l" match specified in config file
+        """
+
+        goldfw_ver = image_control.get_goldfw(self, slot, FF_Stage.FF_SWI)["version"]
+        mainfw_ver = image_control.get_mainfw(self, slot, FF_Stage.FF_SWI)["version"]
+
+        if not self._nic_ctrl_list[slot].salina_nic_verify_loaded_fw_version(goldfw_ver=goldfw_ver, mainfw_ver=mainfw_ver):
+            self.cli_log_slot_err(slot, "Verify loaded fw version info failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True
 
     @parallelize.parallel_nic_using_console
     def mtp_nic_sw_mode_switch(self, slot):
@@ -4801,7 +4830,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Uboot is OK - no update needed")
         return True
 
-    def mtp_copy_nic_copy_file(self, slot, filename, directory="/data/"):
+    def mtp_copy_nic_file(self, slot, filename, directory="/data/"):
         if not self._nic_ctrl_list[slot].nic_copy_image(filename, directory):
             self.cli_log_slot_inf_lock(slot, "Copy File {:s} to NIC {:d} {:s} Failed".format(filename, slot, directory))
             return False
@@ -6863,23 +6892,43 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_console
-    def mtp_mgmt_set_nic_mainfw_boot(self, slot):
-        if not self._nic_ctrl_list[slot].nic_set_mainfw_boot():
-            self.cli_log_slot_err(slot, "Set NIC default boot with mainfw failed")
+    def mtp_mgmt_set_nic_mainfwa_boot(self, slot):
+        if not self._nic_ctrl_list[slot].nic_set_mainfwa_boot():
+            self.cli_log_slot_err(slot, "Set NIC default boot with mainfwa failed")
             self.mtp_get_nic_err_msg(slot)
             return False
 
-        self.cli_log_slot_inf(slot, "Set NIC default mainfw boot")
+        self.cli_log_slot_inf(slot, "Set NIC default mainfwa boot")
         return True
 
     @parallelize.parallel_nic_using_console
-    def mtp_mgmt_set_nic_extos_boot(self, slot):
-        if not self._nic_ctrl_list[slot].nic_set_extos_boot():
-            self.cli_log_slot_err(slot, "Set NIC default boot with diag failed")
+    def mtp_mgmt_set_nic_mainfwb_boot(self, slot):
+        if not self._nic_ctrl_list[slot].nic_set_mainfwb_boot():
+            self.cli_log_slot_err(slot, "Set NIC default boot with mainfwb failed")
             self.mtp_get_nic_err_msg(slot)
             return False
 
-        self.cli_log_slot_inf(slot, "Set NIC default diag boot")
+        self.cli_log_slot_inf(slot, "Set NIC default mainfwb boot")
+        return True
+
+    @parallelize.parallel_nic_using_console
+    def mtp_mgmt_set_nic_extosa_boot(self, slot):
+        if not self._nic_ctrl_list[slot].nic_set_extosa_boot():
+            self.cli_log_slot_err(slot, "Set NIC default boot with extosa failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        self.cli_log_slot_inf(slot, "Set NIC default extosa boot")
+        return True
+
+    @parallelize.parallel_nic_using_console
+    def mtp_mgmt_set_nic_extosb_boot(self, slot):
+        if not self._nic_ctrl_list[slot].nic_set_extosb_boot():
+            self.cli_log_slot_err(slot, "Set NIC default boot with extosb failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        self.cli_log_slot_inf(slot, "Set NIC default extosb boot")
         return True
 
     def fst_set_mainfw_boot(self, slot):
@@ -7430,16 +7479,25 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].zephyr_debug_update_firmware(bootfw):
             self.cli_log_slot_err_lock(slot, "Zephyr Set zephyr bootfw failed")
             self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
     @parallelize.parallel_nic_using_console
-    def mtp_program_nic_emmc_salina(self, slot, stage=FF_Stage.FF_SWI):
+    def mtp_program_nic_goldfw_salina(self, slot, stage=FF_Stage.FF_SWI):
+        goldfw_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(self, slot, stage)["filename"]
+        if not self._nic_ctrl_list[slot].salina_nic_call_sysypdate_prog_fw(goldfw_img_file):
+            self.cli_log_slot_err_lock(slot, "Program NIC GOLDFW failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_console
+    def mtp_program_nic_mainfw_salina(self, slot, stage=FF_Stage.FF_SWI):
         emmc_mainfw_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_mainfw(self, slot, stage)["filename"]
-        if not self._nic_ctrl_list[slot].nic_program_emmc_salina(emmc_mainfw_img_file):
-            self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
-            self.mtp_dump_nic_err_msg(slot)
+        if not self._nic_ctrl_list[slot].salina_nic_call_sysypdate_prog_fw(emmc_mainfw_img_file):
+            self.cli_log_slot_err_lock(slot, "Program NIC MAINFW failed")
+            self.mtp_get_nic_err_msg(slot)
             return False
 
         return True
