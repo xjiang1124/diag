@@ -195,11 +195,13 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_sc
         return False
     # remove the test script pkg
     cmd = "rm -f {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+mtp_script_pkg)
-    os.system(cmd)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
+        return False
+
     # remove the MTP-specific test script folder
     cmd = "rm -rf {:s}".format(mtp_script_dir)
     os.system(cmd)
-
     # remove created tar file
     cmd = "rm -rf {:s}".format(mtp_script_pkg)
     os.system(cmd)
