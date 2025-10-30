@@ -37,7 +37,7 @@ func main() {
 
     //Get the fan controller number
     data64, _ := strconv.ParseUint(os.Args[1], 0, 32)
-    devName, err := get_fan_device_name(int(data64))
+    devName, err := hwdev.FanGetDeviceName(int(data64))
     if err != errType.SUCCESS {
         cli.Printf("e", "Check Your fan device Number.  Exiting CLI\n") 
         return
@@ -142,20 +142,6 @@ func main() {
     return
 }
 
-func get_fan_device_name(devNumber int) (device string, err int) {
-    if i2cinfo.CardType == "MTP" {
-        device = "FAN"
-    } else if i2cinfo.CardType == "TAORMINA" {
-        device = fmt.Sprintf("FAN_%d", devNumber+1)
-    } else if i2cinfo.CardType == "LIPARI" {
-        device = fmt.Sprintf("FAN")
-    } else if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" {
-        device = fmt.Sprintf("FAN")
-    } else {
-        cli.Printf("e", "INVALID CARD_TYPE.  Make sure card type is set in the environment\n")
-        err = errType.FAIL
-    }
-    return
-}
+
 
  

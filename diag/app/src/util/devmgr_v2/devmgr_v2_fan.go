@@ -4,14 +4,17 @@ import (
     "fmt"
     "os"
     "github.com/spf13/cobra"
-    "device/fpga/materafpga"
+    "hardware/hwdev"
 )
 
 var faninitCmd = &cobra.Command{
     Use:   "faninit",
     Short: "Initialize the fans to a default state",
     Run: func(cmd *cobra.Command, args []string) {
-        materafpga.Fan_Init()
+        //This will need an arg for fan controller number if this ever supports 
+        //a platform with more than one fan controller
+        devName, _ := hwdev.FanGetDeviceName(0)
+        hwdev.FanSetup(devName)
     },
 }
 
@@ -25,9 +28,9 @@ var fanctrlCmd = &cobra.Command{
             fmt.Printf("ERROR: Pwm percent must be 0 - 100.  You entered %d\n", pwmPercent)
             os.Exit(-1)
         }
-        for i:=0; i<materafpga.MAXFAN; i++ {
-            materafpga.FAN_Set_PWM(uint32(i), pwmPercent) 
-        }
+        devName, _ := hwdev.FanGetDeviceName(0)
+        hwdev.FanSpeedSet(devName, int(pwmPercent), 0xFF)
+        fmt.Printf("Fan PWM set to %d percent\n", pwmPercent)
     },
 }
 
