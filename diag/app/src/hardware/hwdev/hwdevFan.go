@@ -1,6 +1,7 @@
 package hwdev
 
 import (
+    "fmt"
     "strconv"
     "common/cli"
     "common/dmutex"
@@ -259,6 +260,22 @@ func FanSetup(devName string) (err int) {
     } else {
         cli.Println("e", "Unsupported component: ", i2cif.Comp)
         err = errType.INVALID_PARAM
+    }
+    return
+}
+
+func FanGetDeviceName(devNumber int) (device string, err int) {
+    if i2cinfo.CardType == "MTP" {
+        device = "FAN"
+    } else if i2cinfo.CardType == "TAORMINA" {
+        device = fmt.Sprintf("FAN_%d", devNumber+1)
+    } else if i2cinfo.CardType == "LIPARI" {
+        device = fmt.Sprintf("FAN")
+    } else if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" {
+        device = fmt.Sprintf("FAN")
+    } else {
+        cli.Printf("e", "INVALID CARD_TYPE.  Make sure card type is set in the environment\n")
+        err = errType.FAIL
     }
     return
 }

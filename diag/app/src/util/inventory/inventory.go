@@ -255,42 +255,50 @@ func present() (err int) {
             if os.Getenv(uutName) != presentStr {
                 os.Setenv(uutName, presentStr)
             }
-            uutFieldStr = "-uut=" + uutName
-            out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=PN", "-disp", uutFieldStr).Output()
-            if errGo != nil {
-                cli.Println("e", errGo)
-                err = errType.FAIL
-            }
-            outStr = string(out)
-            //cli.Println("i", "Debugging: output of eeutil PN reading -", outStr)
-            if regexPN.MatchString(outStr) {
-                submatchall = regexPN.FindAllStringSubmatch(outStr, -1)
-                for _, element := range submatchall {
-                    PN  = element[1]
-                }
-            } else if regexAN.MatchString(outStr) { // using Assembly Number
-                submatchall = regexAN.FindAllStringSubmatch(outStr, -1)
-                for _, element := range submatchall {
-                    PN  = element[1]
-                }
-            } else {
-                PN = "NotProgrammed"
-            }
 
-            out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=SN", "-disp", uutFieldStr).Output()
-            if errGo != nil {
-                cli.Println("e", errGo)
-                err = errType.FAIL
-            }
-            outStr = string(out)
-            //cli.Println("i", "Debugging: output of eeutil SN reading -", outStr)
-            if regexSN.MatchString(outStr) {
-                submatchall = regexSN.FindAllStringSubmatch(outStr, -1)
-                for _, element := range submatchall {
-                    SN  = element[1]
-                }
+            //Temporary work around for Gelsop.   Due to Microcontroller h/w bug, we cannot have an eeprom to program right now
+            //As a work around to get scripting efforts moving, we will just hard code the part number and serial number 
+            if(presentStr == "GELSOP") {
+                PN = "101-P00001-00A"
+                SN = "serialnumber"+strconv.Itoa(i)
             } else {
-                SN = "NotProgrammed"   // not programmed, empty slot show "N/A"
+                uutFieldStr = "-uut=" + uutName
+                out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=PN", "-disp", uutFieldStr).Output()
+                if errGo != nil {
+                    cli.Println("e", errGo)
+                    err = errType.FAIL
+                }
+                outStr = string(out)
+                //cli.Println("i", "Debugging: output of eeutil PN reading -", outStr)
+                if regexPN.MatchString(outStr) {
+                    submatchall = regexPN.FindAllStringSubmatch(outStr, -1)
+                    for _, element := range submatchall {
+                        PN  = element[1]
+                    }
+                } else if regexAN.MatchString(outStr) { // using Assembly Number
+                    submatchall = regexAN.FindAllStringSubmatch(outStr, -1)
+                    for _, element := range submatchall {
+                        PN  = element[1]
+                    }
+                } else {
+                    PN = "NotProgrammed"
+                }
+
+                out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=SN", "-disp", uutFieldStr).Output()
+                if errGo != nil {
+                    cli.Println("e", errGo)
+                    err = errType.FAIL
+                }
+                outStr = string(out)
+                //cli.Println("i", "Debugging: output of eeutil SN reading -", outStr)
+                if regexSN.MatchString(outStr) {
+                    submatchall = regexSN.FindAllStringSubmatch(outStr, -1)
+                    for _, element := range submatchall {
+                        SN  = element[1]
+                    }
+                } else {
+                    SN = "NotProgrammed"   // not programmed, empty slot show "N/A"
+                }
             }
         }
 
