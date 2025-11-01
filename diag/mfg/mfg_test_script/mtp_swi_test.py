@@ -480,6 +480,10 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_boardid_pcisubsystemid_write(nic_list, stage=FF_Stage.FF_SWI)
             elif test == "SET_ZEPHYR_MAINFWA":
                 rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='mainfwa')
+            elif test == "SET_ZEPHYR_MAINFWB":
+                rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='mainfwb')
+            elif test == "SET_ZEPHYR_GOLDFW":
+                rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='goldfw')
             elif test == "I2C_DUMP":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_i2c_dump(nic_list)
             elif test == "ESEC_UNLOCK":
@@ -629,10 +633,6 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PARA_MGMT_INIT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_BOOT_INIT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "FW_IMG_STORE2EMMC")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_GOLDFW_INSTALL", stage=FF_Stage.FF_SWI)
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_GOLDFW")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "GOLDFW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_MAINFWA_INSTALL", stage=FF_Stage.FF_SWI)
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_EXTOSA")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFWA")
@@ -643,6 +643,10 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFWB")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_B_BOOT")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_GOLDFW_INSTALL", stage=FF_Stage.FF_SWI)
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_GOLDFW")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "GOLDFW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "LOADED_FW_VERSION_CHECK")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_EXTOSA")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFWA")
@@ -681,6 +685,12 @@ def main():
             run_swi_test(fsafe_cpld_type_list, "FSAFE_CPLD_PROG")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_BOOT")
+            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
+            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWB")
+            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
+            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SET_ZEPHYR_GOLDFW")
+            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
+            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWA")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_ERASE_PCIEAWD_ENV")

@@ -767,7 +767,7 @@ def main():
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--stage", "--corner", type=FF_Stage, help="diagnostic environment condition", choices=list(FF_Stage), default=FF_Stage.FF_P2C)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip_test", help="skip a particular test or test section", nargs="*", default=[])
+    parser.add_argument("--skip_test", help="skip a particular test or test sectio, e.g. SCAN_VERIFY", nargs="*", default=[])
     parser.add_argument("--only_test", help="run particular tests only", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])

@@ -517,6 +517,8 @@ def main():
                 rlist = dl_assign_board_id(mtp_mgmt_ctrl, nic_list)
             elif test == "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR":
                 rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_boardid_pcisubsystemid_write(nic_list)
+            elif test == "SET_ZEPHYR_GOLDFW":
+                rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='goldfw')
             elif test == "CON_ERASE_BOARD_CONFIG":
                 rlist = mtp_mgmt_ctrl.mtp_nic_erase_board_config(nic_list)
             elif test == "ERASE_BOARD_CONFIG":
@@ -698,6 +700,8 @@ def main():
             run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_SWI_QSPI_PROG")
             run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
             run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
+            run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_ZEPHYR_GOLDFW")
+            run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
 
             # ## 2a. Prog FRU before enableOOB for Salina
             run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "FRU_PROG")

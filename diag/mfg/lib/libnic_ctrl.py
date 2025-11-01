@@ -1829,8 +1829,23 @@ class nic_ctrl():
         if not fw_info_buf:
             self.nic_set_err_msg("Unable to get 'fwupdate -l' command output")
             return False
+        # preprocess fwupdate output for json load 
+        sanitized_output = []
+        open_brace_cnt = 0
+        json_data_start = False
+        for line in fw_info_buf.strip().split('\n'):
+            if line.startswith("{"):
+                json_data_start = True
+            if "{" in line:
+                open_brace_cnt += 1
+            if json_data_start and open_brace_cnt > 0:
+                if "{" in line or "}" in line or ":" in line:
+                    sanitized_output.append(line)
+            if "}" in line:
+                open_brace_cnt -= 1
+
         try:
-            fw_info = json.loads('\n'.join(fw_info_buf.strip().split('\n')[1:-1]))
+            fw_info = json.loads('\n'.join(sanitized_output))
         except:
             self.nic_set_err_msg("'fwupdate -l' command output is not formatted as JSON")
             return False

@@ -413,7 +413,7 @@ int connect_nic(int fd, FILE *fptr)
             return rc;
         }
         fprintf(fptr, "login successful\n"); 
-    } else if ( strstr(res_ptr, "elba-gold") ) {
+    } else if ( strstr(res_ptr, "elba-gold") || strstr(res_ptr, "salina-gold")) {
         fprintf(fptr, "got goldfw  prompt %s\n", res_ptr);
         printf("got goldfw  prompt %s\n", res_ptr);
         return 0xa;
