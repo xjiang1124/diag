@@ -731,7 +731,7 @@ def main():
                 elif test == "SET_ZEPHYR_GOLDFW":
                     rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='goldfw')
                 elif test == "SET_ZEPHYR_MAINFWA":
-                    rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='mainfwa')
+                    rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='mainfwa', bootfw_verify=False)
                 elif test == "SALINA_QSPI_PROG":
                     rlist = dl_salina_qspi_program(mtp_mgmt_ctrl, nic_list)
                 elif test == "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE":

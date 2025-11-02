@@ -6138,7 +6138,7 @@ class nic_ctrl():
                 return False
         return True
 
-    def zephyr_debug_update_firmware(self, bootfw='mainfwa'):
+    def zephyr_debug_update_firmware(self, bootfw='mainfwa', bootfw_verify=True):
         """
         set zephyr bootfw by zephyr shell command 'debug update firmware --next-boot mainfwa'
         the command usage:
@@ -6184,21 +6184,22 @@ class nic_ctrl():
             return False
         time.sleep(60)
         # show version
-        cmd = MFG_DIAG_CMDS().ZEPHYR_SHOW_VERSION_FMT
-        if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            time.sleep(27)
+        if bootfw_verify:
+            cmd = MFG_DIAG_CMDS().ZEPHYR_SHOW_VERSION_FMT
             if not self.nic_exec_cmd_from_zephyr_console(cmd):
-                self.nic_set_err_msg("Zephyr show version Command '{:s}' Failed Even with Retry".format(cmd))
+                time.sleep(27)
+                if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                    self.nic_set_err_msg("Zephyr show version Command '{:s}' Failed Even with Retry".format(cmd))
+                    return False
+            cmd_buf = self.nic_get_cmd_buf()
+            cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
+            cmd_buf = re.sub(r'\r', '', cmd_buf)
+            cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
+            match = re.findall(r"Current\sfirmware\s+:\s({:s})".format(set2booting_map[bootfw][1]), cmd_buf)
+            if not match:
+                self.nic_set_err_msg("Zephr did not boot to {:s}".format(bootfw))
+                self.nic_set_err_msg(cmd_buf)
                 return False
-        cmd_buf = self.nic_get_cmd_buf()
-        cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
-        cmd_buf = re.sub(r'\r', '', cmd_buf)
-        cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
-        match = re.findall(r"Current\sfirmware\s+:\s({:s})".format(set2booting_map[bootfw][1]), cmd_buf)
-        if not match:
-            self.nic_set_err_msg("Zephr did not boot to {:s}".format(bootfw))
-            self.nic_set_err_msg(cmd_buf)
-            return False
 
         return True
 

@@ -7458,7 +7458,7 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_console
-    def mtp_nic_zephyr_debug_update_firmware(self, slot, bootfw='mainfwa'):
+    def mtp_nic_zephyr_debug_update_firmware(self, slot, bootfw='mainfwa', bootfw_verify=True):
         """
             update - Update commands
             Subcommands:
@@ -7476,7 +7476,7 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Please provide correct Zephyr FW 'mainfwa' 'mainfwa' or 'goldfw'")
             return False
 
-        if not self._nic_ctrl_list[slot].zephyr_debug_update_firmware(bootfw):
+        if not self._nic_ctrl_list[slot].zephyr_debug_update_firmware(bootfw, bootfw_verify):
             self.cli_log_slot_err_lock(slot, "Zephyr Set zephyr bootfw failed")
             self.mtp_get_nic_err_msg(slot)
             return False
