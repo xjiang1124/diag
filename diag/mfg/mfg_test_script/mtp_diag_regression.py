@@ -336,7 +336,7 @@ def main():
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--stage", "--corner", type=FF_Stage, help="diagnostic environment condition", choices=list(FF_Stage), default=FF_Stage.FF_P2C)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip_test", help="skip a particular test or test section", nargs="*", default=[])
+    parser.add_argument("--skip_test", help="skip a particular test or test sectio, e.g. SCAN_VERIFY", nargs="*", default=[])
     parser.add_argument("--only_test", help="run particular tests only", nargs="*", default=[])
     parser.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])
@@ -728,6 +728,10 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_nic_pcie_prbs_salina(nic_list, vmarg=test_kwargs["vmarg"], asic_dir_path=test_kwargs["asic_dir_path"])
                 elif test == "SALINA_QSPI_VERIFY":
                     rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs["bootstage"], warm_reset=test_kwargs['warm_reset'])
+                elif test == "SET_ZEPHYR_GOLDFW":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='goldfw')
+                elif test == "SET_ZEPHYR_MAINFWA":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='mainfwa', bootfw_verify=False)
                 elif test == "SALINA_QSPI_PROG":
                     rlist = dl_salina_qspi_program(mtp_mgmt_ctrl, nic_list)
                 elif test == "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE":
@@ -973,6 +977,8 @@ def main():
                     # Program DL IMAGE Since NIC Diag init and EMMC stress not work on P2C IMAGE
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_ZEPHYR_GOLDFW")
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux", warm_reset=False)
                     nic_diag_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
                     run_test(nic_diag_init_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
             else:
@@ -982,6 +988,8 @@ def main():
                     # Program DL IMAGE Since NIC Diag init and EMMC stress not work on P2C IMAGE
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_ZEPHYR_GOLDFW")
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux", warm_reset=False)
                     nic_diag_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
                     run_test(nic_diag_init_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
 
@@ -1003,7 +1011,7 @@ def main():
 
             ### SALINA TEST ORDER
             if get_slots_of_type(SALINA_NIC_TYPE_LIST, except_type=[NIC_Type.LINGUA]):
-                test_section_list = ["STRESS", "P2C_IMG_PROG", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
+                test_section_list = ["STRESS", "I2C", "J2C_SEQ", "P2C_IMG_PROG", "SALINA_SNAKE"]
             if get_slots_of_type(NIC_Type.LINGUA):
                 test_section_list = ["OCP_PRE_CHECK", "STRESS", "P2C_IMG_PROG", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
 
@@ -1333,6 +1341,10 @@ def main():
                     #prog special image
                     run_regression_test(salina_dpu_snake, "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE")
                     run_regression_test(salina_dpu_snake, "SALINA_SNAKE_QSPI_IMG_PROG")
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr", warm_reset=False)
+                    #set a35 to mainfwa, since this sname image not wort with a35 goldfw
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWA")
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux", warm_reset=False)
                 elif test_section == "STRESS":
                     ######################################################################
                     #  Salina NIC Power cycle test
@@ -1447,6 +1459,8 @@ def main():
             # recover to DL QSPI image for salina cards
             run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
             run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
+            run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_ZEPHYR_GOLDFW")
+            run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux", warm_reset=False)
 
             # log the diag test history
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()

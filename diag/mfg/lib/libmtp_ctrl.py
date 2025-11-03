@@ -7458,7 +7458,7 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_console
-    def mtp_nic_zephyr_debug_update_firmware(self, slot, bootfw='mainfwa'):
+    def mtp_nic_zephyr_debug_update_firmware(self, slot, bootfw='mainfwa', bootfw_verify=True):
         """
             update - Update commands
             Subcommands:
@@ -7476,7 +7476,7 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Please provide correct Zephyr FW 'mainfwa' 'mainfwa' or 'goldfw'")
             return False
 
-        if not self._nic_ctrl_list[slot].zephyr_debug_update_firmware(bootfw):
+        if not self._nic_ctrl_list[slot].zephyr_debug_update_firmware(bootfw, bootfw_verify):
             self.cli_log_slot_err_lock(slot, "Zephyr Set zephyr bootfw failed")
             self.mtp_get_nic_err_msg(slot)
             return False
@@ -8945,14 +8945,14 @@ class mtp_ctrl():
         for partition in ["mainfwa", "mainfwb", "goldfw"]:
             try:
                 if partition == "mainfwa":
-                    self.cli_log_slot_inf(slot, "{:s}(fw-a):   {:s}   {:s} ".format(partition, fwlist["firmware"][partition]["fw-a"]["software_version"], fwlist["firmware"][partition]["fw-a"]["build_date"]))
-                    self.cli_log_slot_inf(slot, "{:s}(uboot-a):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["uboot-a"]["software_version"], fwlist["firmware"][partition]["uboot-a"]["build_date"]))
+                    self.cli_log_slot_inf(slot, "{:s}(fw_a):   {:s}   {:s} ".format(partition, fwlist["firmware"][partition]["fw_a"]["software_version"], fwlist["firmware"][partition]["fw_a"]["build_date"]))
+                    self.cli_log_slot_inf(slot, "{:s}(uboot_a):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["uboot_a"]["software_version"], fwlist["firmware"][partition]["uboot_a"]["build_date"]))
                 elif partition == "mainfwb":
-                    self.cli_log_slot_inf(slot, "{:s}(fw-b):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["fw-b"]["software_version"], fwlist["firmware"][partition]["fw-b"]["build_date"]))
-                    self.cli_log_slot_inf(slot, "{:s}(uboot-b):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["uboot-b"]["software_version"], fwlist["firmware"][partition]["uboot-b"]["build_date"]))
+                    self.cli_log_slot_inf(slot, "{:s}(fw_b):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["fw_b"]["software_version"], fwlist["firmware"][partition]["fw_b"]["build_date"]))
+                    self.cli_log_slot_inf(slot, "{:s}(uboot_b):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["uboot_b"]["software_version"], fwlist["firmware"][partition]["uboot_b"]["build_date"]))
                 else:
-                    self.cli_log_slot_inf(slot, "{:s}(a35-goldfip):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["a35-goldfip"]["software_version"], fwlist["firmware"][partition]["a35-goldfip"]["build_date"]))
-                    self.cli_log_slot_inf(slot, "{:s}(a35-golduboot):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["a35-golduboot"]["software_version"], fwlist["firmware"][partition]["a35-golduboot"]["build_date"]))
+                    self.cli_log_slot_inf(slot, "{:s}(goldfip):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["goldfip"]["software_version"], fwlist["firmware"][partition]["goldfip"]["build_date"]))
+                    self.cli_log_slot_inf(slot, "{:s}(golduboot):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["golduboot"]["software_version"], fwlist["firmware"][partition]["golduboot"]["build_date"]))
             except KeyError as e:
                 self.cli_log_slot_err(slot, "FWLIST missing {:s} info".format(partition))
                 err_msg = traceback.format_exc()
@@ -9028,6 +9028,7 @@ class mtp_ctrl():
         return True
 
     def fst_get_nic_fw_info(self, slot):
+        verify_rc = True
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf(slot, "Retrieve FW info")
 
@@ -9044,7 +9045,10 @@ class mtp_ctrl():
             return False
         fwlist = json.loads(fw_json[0])
         if nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            goldfw_ver = image_control.get_goldfw(self, slot, FF_Stage.FF_SWI)["version"]
+            mainfw_ver = image_control.get_mainfw(self, slot, FF_Stage.FF_SWI)["version"]
             try:
+                ### Display FW version info
                 # A35 boot0
                 partition = "a35-boot0"
                 self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["a35-boot0"]["software_version"], fwlist[partition]["a35-boot0"]["build_date"]))
@@ -9052,31 +9056,67 @@ class mtp_ctrl():
                 partition = "extosa"
                 self.cli_log_slot_inf(slot, "A35 uboota {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["uboot-a"]["software_version"], fwlist[partition]["uboot-a"]["build_date"]))
                 self.cli_log_slot_inf(slot, "A35 mainfwa {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["fw-a"]["software_version"], fwlist[partition]["fw-a"]["build_date"]))
+                # self.cli_log_slot_inf(slot, "A35 uboota {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["uboot_a"]["software_version"], fwlist[partition]["uboot_a"]["build_date"]))
+                # self.cli_log_slot_inf(slot, "A35 mainfwa {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["fw_a"]["software_version"], fwlist[partition]["fw_a"]["build_date"]))
                 # A35 fwb and ubootb 
                 partition = "extosb"
                 self.cli_log_slot_inf(slot, "A35 ubootb {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["uboot-b"]["software_version"], fwlist[partition]["uboot-b"]["build_date"]))
                 self.cli_log_slot_inf(slot, "A35 mainfwb {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["fw-b"]["software_version"], fwlist[partition]["fw-b"]["build_date"]))
+                # self.cli_log_slot_inf(slot, "A35 ubootb {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["uboot_b"]["software_version"], fwlist[partition]["uboot_b"]["build_date"]))
+                # self.cli_log_slot_inf(slot, "A35 mainfwb {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["fw_b"]["software_version"], fwlist[partition]["fw_b"]["build_date"]))
                 # A35 goldfw and ubootg 
                 partition = "extosgoldfw"
                 self.cli_log_slot_inf(slot, "A35 ubootg {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["a35-golduboot"]["software_version"], fwlist[partition]["a35-golduboot"]["build_date"]))
                 self.cli_log_slot_inf(slot, "A35 goldfw {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["a35-goldfip"]["software_version"], fwlist[partition]["a35-goldfip"]["build_date"]))
+                # self.cli_log_slot_inf(slot, "A35 ubootg {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["golduboot"]["software_version"], fwlist[partition]["golduboot"]["build_date"]))
+                # self.cli_log_slot_inf(slot, "A35 goldfw {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["goldfip"]["software_version"], fwlist[partition]["goldfip"]["build_date"]))
                 # N1 boot0
                 partition = "n1-boot0"
                 self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-boot0"]["software_version"], fwlist[partition]["n1-boot0"]["build_date"]))
                 # N1 mainfwa and uboota 
                 partition = "mainfwa"
                 self.cli_log_slot_inf(slot, "N1 {:s} uboota:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-uboot-a"]["software_version"], fwlist[partition]["n1-uboot-a"]["build_date"]))
+                # self.cli_log_slot_inf(slot, "N1 {:s} uboota:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-uboot_a"]["software_version"], fwlist[partition]["n1-uboot_a"]["build_date"]))
                 self.cli_log_slot_inf(slot, "N1 {:s} kernel_fit:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]))
                 self.cli_log_slot_inf(slot, "N1 {:s} system_image:   {:15s}   {:s} ".format(partition, fwlist[partition]["system_image"]["software_version"], fwlist[partition]["system_image"]["build_date"]))
                 # N1 mainfwb and ubootb
                 partition = "mainfwb"
                 self.cli_log_slot_inf(slot, "N1 {:s} ubootb:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-uboot-b"]["software_version"], fwlist[partition]["n1-uboot-b"]["build_date"]))
+                # self.cli_log_slot_inf(slot, "N1 {:s} ubootb:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-uboot_b"]["software_version"], fwlist[partition]["n1-uboot_b"]["build_date"]))
                 self.cli_log_slot_inf(slot, "N1 {:s} kernel_fit:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]))
                 self.cli_log_slot_inf(slot, "N1 {:s} system_image:   {:15s}   {:s} ".format(partition, fwlist[partition]["system_image"]["software_version"], fwlist[partition]["system_image"]["build_date"]))
                 # N1 goldfw and ubootg
                 partition = "n1-goldfw"
                 self.cli_log_slot_inf(slot, "N1 {:s} ubootg:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-uboot-g"]["software_version"], fwlist[partition]["n1-uboot-g"]["build_date"]))
                 self.cli_log_slot_inf(slot, "N1 {:s} kernel:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-kernel-g"]["software_version"], fwlist[partition]["n1-kernel-g"]["build_date"]))
+
+                # # Verify loaded fw version
+                # # verify goldfw version
+                # for k, v in fwlist["n1-goldfw"].items():
+                #     if v["software_version"] != goldfw_ver:
+                #         self.cli_log_slot_err(slot, "n1-goldfw {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                #         verify_rc = False
+                # for k, v in fwlist["extosgoldfw"].items():
+                #     if v["software_version"] != goldfw_ver:
+                #         self.cli_log_slot_err(slot, "extosgoldfw {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                #         verify_rc = False
+                # # verify mainfw version
+                # for k, v in fwlist["mainfwa"].items():
+                #     if v["software_version"] != mainfw_ver:
+                #         self.cli_log_slot_err(slot, "mainfwa {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                #         verify_rc = False
+                # for k, v in fwlist["extosa"].items():
+                #     if v["software_version"] != mainfw_ver:
+                #         self.cli_log_slot_err(slot, "extosa {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                #         verify_rc = False
+                # for k, v in fwlist["mainfwb"].items():
+                #     if v["software_version"] != mainfw_ver:
+                #         self.cli_log_slot_err(slot, "mainfwb {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                #         verify_rc = False
+                # for k, v in fwlist["extosb"].items():
+                #     if v["software_version"] != mainfw_ver:
+                #         self.cli_log_slot_err(slot, "extosb {:s} version not match, {:s} <--> {:s}".format(k, v["software_version"], goldfw_ver))
+                #         verify_rc = False
             except KeyError as e:
                 self.cli_log_slot_err(slot, "FWLIST missing {:s} info".format(partition))
                 err_msg = traceback.format_exc()
@@ -9119,7 +9159,7 @@ class mtp_ctrl():
                     return False
         self.cli_log_slot_inf(slot, "")
 
-        return True
+        return verify_rc
 
     def fst_check_boot_image(self, slot):
         cmd = "/nic/tools/fwupdate -r"

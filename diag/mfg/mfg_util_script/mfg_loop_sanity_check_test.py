@@ -144,7 +144,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG FAN Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
-    parser.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
+    parser.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test sectio, e.g. SCAN_VERIFY", nargs="*", default=[])
     parser.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
     parser.add_argument("--loop", "-loop", help="Step up loop time")
 

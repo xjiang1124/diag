@@ -58,7 +58,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG P2C Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip-test", help="skip a particular test or test section", nargs="*", default=[])
+    parser.add_argument("--skip-test", help="skip a particular test or test sectio, e.g. SCAN_VERIFY", nargs="*", default=[])
     parser.add_argument("--only-test", help="run particular tests only", nargs="*", default=[])
     parser.add_argument("--mtpid", "-mtpid", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
