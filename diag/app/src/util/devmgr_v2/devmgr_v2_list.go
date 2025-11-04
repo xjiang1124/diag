@@ -1,11 +1,13 @@
 package main
 
 import (
+    "os"
     "strconv"
     "common/errType"
     "hardware/hwinfo"
     "hardware/i2cinfo"
     "github.com/spf13/cobra"
+    "device/sucuart"
 )
 
 var listCmd = &cobra.Command{
@@ -15,6 +17,10 @@ var listCmd = &cobra.Command{
         uut := "UUT_NONE"
         slot, _ := cmd.Flags().GetInt("slot")
         if slot >= 1 && slot <= 10 {
+            if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+                sucuart.Suc_dev_list(slot)
+                return
+            }
             uut = "UUT_" + strconv.Itoa(slot)
             lockName, err := hwinfo.PreUutSetup(uut)
             if err != errType.SUCCESS {
