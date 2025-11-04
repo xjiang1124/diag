@@ -1256,6 +1256,8 @@ class MTP_IMAGES:
     # mtp_fpga_img["MATERA"] = "to_be_define.bin"
     mtp_fpga_ver["MATERA"] = "a012"
     mtp_fpga_date["MATERA"] = "12222024"    #mmddYYYY
+    mtp_fpga_ver["PANAREA"] = "a002"
+    mtp_fpga_date["PANAREA"] = "08052025"    #mmddYYYY
 
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"

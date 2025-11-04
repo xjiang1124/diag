@@ -283,7 +283,7 @@ class mtp_ctrl():
             if self._psu_sn[psu]:
                 self.cli_log_report_inf("MTP PSU_{:s} MFR ID: {:s}".format(psu, self._psu_sn[psu]))
 
-        if self._mtp_type == "MATERA":
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             if not self._fpga_ver:
                 self.cli_log_err("Unable to retrieve MTP FPGA Version")
                 return False
@@ -1328,7 +1328,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to get MTP type", level = 0)
             return False
 
-        if self._mtp_type == "MATERA":
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             # MTP FPGA version
             reg_addr = '0x00'
             cmd = MFG_DIAG_CMDS().MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
@@ -1339,7 +1339,7 @@ class mtp_ctrl():
             if match:
                 version = match[0][-4:]
                 if not version.upper().startswith("A"):
-                    self.cli_log_wrn("FPGA version {:s} of Matera MTP NOT support Salina NIC cards".format(version))
+                    self.cli_log_wrn("FPGA version {:s} of {:s} MTP NOT support Salina NIC cards".format(version, str(self._mtp_type)))
             else:
                 self.cli_log_err("Failed to parse get MTP FPGA version info", level=0)
                 return False
@@ -1674,22 +1674,22 @@ class mtp_ctrl():
         # store serial number
         for psu in range(self._psu_num):
             psu = str(psu+1)
-            cmd = MFG_DIAG_CMDS().MTP_PSU_DISP_FMT.format(psu) if self._mtp_type != MTP_TYPE.MATERA else MFG_DIAG_CMDS().MTP_MATERA_PSU_DISP_FMT.format(psu)
+            cmd = MFG_DIAG_CMDS().MTP_PSU_DISP_FMT.format(psu) if self._mtp_type not in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA) else MFG_DIAG_CMDS().MTP_MATERA_PSU_DISP_FMT.format(psu)
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
                 self.cli_log_err("Executing command {:s} failed".format(cmd))
                 rc = False
                 continue
-            psu_sn_pattern = r"MFR_SERIAL: *(.*)"  if self._mtp_type != MTP_TYPE.MATERA else r'PSU_' + psu + r'.*S\/N:\s+(\w+)'
+            psu_sn_pattern = r"MFR_SERIAL: *(.*)"  if self._mtp_type not in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA) else r'PSU_' + psu + r'.*S\/N:\s+(\w+)'
             psu_sn_match = re.search(psu_sn_pattern, self.mtp_get_cmd_buf())
             if not psu_sn_match:
                 self.cli_log_err("Failed to read PSU_{:s} Serial Number".format(psu))
-                if not MFG_BYPASS_PSU_CHECK and self._mtp_type != MTP_TYPE.MATERA:
+                if not MFG_BYPASS_PSU_CHECK and self._mtp_type not in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
                     rc = False
                 continue
             self._psu_sn[psu] = psu_sn_match.group(1).strip()
 
         # PSU check
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA) :
             if not MFG_BYPASS_PSU_CHECK:
                 # get and parse psu status data
                 cmd = MFG_DIAG_CMDS().MTP_MATERA_DEVMGR_STATUS_FMT
@@ -1829,7 +1829,7 @@ class mtp_ctrl():
             return parsed_data
 
         rc = True
-        if self._mtp_type != MTP_TYPE.MATERA:
+        if self._mtp_type not in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             # Fan present test
             cmd = MFG_DIAG_CMDS().MTP_FAN_PRSNT_FMT
             if self.get_mtp_factory_location() == Factory.LAB:
@@ -2089,7 +2089,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to get MTP type", level = 0)
             return False
 
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd = "killall fpga_uart"
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Command {:s} failed".format(cmd), level=0)
@@ -2158,7 +2158,7 @@ class mtp_ctrl():
                 self.cli_log_err("Command {:s} failed".format(cmd), level=0)
                 return False
 
-            if self._mtp_type == MTP_TYPE.MATERA:
+            if self._mtp_type in (MTP_TYPE.MATERA, MTP.PANAREA):
                 cmd = "redis-cli hkeys CARD_DICT"
                 if not self.mtp_mgmt_exec_cmd(cmd):
                     self.cli_log_err("Command {:s} failed".format(cmd), level=0)
@@ -2187,7 +2187,7 @@ class mtp_ctrl():
     def mtp_inlet_temp_test(self, stage=None, sanity=False):
         rc = True
         inlet_1, inlet_2 = None, None
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd = "devmgr_v2 status -d TSENSOR_IOBL"
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("{:s} command failed".format(cmd))
@@ -2428,7 +2428,23 @@ class mtp_ctrl():
         fan_spd = libmfg_utils.pick_fan_speed(stage, self._mtp_type)
 
         self.cli_log_inf("Start MTP chassis sanity check", level=0)
-        if self._mtp_type == "MATERA":
+        if self._mtp_type == MTP_TYPE.MATERA:
+            # cpu expected cores and temperature check
+            rc &= self.matera_mtp_cpu_chk_test()
+            # ddr capacity and frequency check
+            rc &= self.matera_mtp_ddr_chk_test()
+            # board temperature check
+            rc &= self.matera_mtp_board_temp_chk_test()
+            # fan test and fan spd set
+            rc &= self.mtp_fan_init(fan_spd)
+            # PSU fan temp and status check
+            rc &= self.mtp_psu_init()
+            # FPGA revsion, register RW and lspci( gen1 by 1, maybe) check
+            rc &= self.mtp_fpga_chk_test()
+            # MTP FRU check and display, Serial Number is valid
+            rc &= self.matera_mtp_fru_chk_test()
+            rc = True
+        elif self._mtp_type == MTP_TYPE.PANAREA:
             # cpu expected cores and temperature check
             rc &= self.matera_mtp_cpu_chk_test()
             # ddr capacity and frequency check
@@ -2709,12 +2725,15 @@ class mtp_ctrl():
             self.cli_log_err("MTP command {:s} failed".format(cmd))
             return False
         eeutil_info_output = self.mtp_get_cmd_buf()
-        for fru in frus_list:
-            if fru not in eeutil_info_output:
-                self.cli_log_err("Failed to find {:S}".format(fru))
-                self.cli_log_err(eeutil_info_output)
-                return False
-        self.cli_log_inf("FRU, IOBL, IOBR and FPIC founded in eeutil info")
+
+        #this function will add for panarea later
+        if self._mtp_type == MTP_TYPE.MATERA:
+            for fru in frus_list:
+                if fru not in eeutil_info_output:
+                    self.cli_log_err("Failed to find {:S}".format(fru))
+                    self.cli_log_err(eeutil_info_output)
+                    return False
+            self.cli_log_inf("FRU, IOBL, IOBR and FPIC founded in eeutil info")
 
         # FRU serial number check
         for fru in frus_list:
@@ -2820,7 +2839,7 @@ class mtp_ctrl():
     def mtp_inlet_sensor_test(self):
         inlet_1, inlet_2 = None, None
 
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd = "devmgr_v2 status -d TSENSOR_IOBL"
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
@@ -2869,7 +2888,7 @@ class mtp_ctrl():
 
     def mtp_get_inlet_temp(self, low_threshold, high_threshold):
         inlet_1, inlet_2 = None, None
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd = "devmgr_v2 status -d TSENSOR_IOBL"
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
@@ -5473,22 +5492,22 @@ class mtp_ctrl():
         else:
             asic_type = "capri"
 
-        if asic_type == "capri" and self._mtp_type == MTP_TYPE.MATERA:
-            self.cli_log_slot_err(slot_main, "Unable to run capri in matera mtp")
+        if asic_type == "capri" and self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
+            self.cli_log_slot_err(slot_main, "Unable to run capri in {:s} mtp".format(self._mtp_type))
             return [slot_main]
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
-        if self._mtp_type == MTP_TYPE.MATERA: sig_list = [MFG_DIAG_SIG.MATERA_NIC_MGMT_PARA_SIG]
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA): sig_list = [MFG_DIAG_SIG.MATERA_NIC_MGMT_PARA_SIG]
 
         if not mgmt:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC environment")
             cmd = MFG_DIAG_CMDS().MTP_PARA_INIT_FMT.format(nic_list_param, asic_type)
-            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS().MATERA_MTP_SINGLE_INIT_FMT.format(nic_list_param, asic_type)
+            if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA): cmd = MFG_DIAG_CMDS().MATERA_MTP_SINGLE_INIT_FMT.format(nic_list_param, asic_type)
         elif fpo:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port with FPO")
             cmd = MFG_DIAG_CMDS().MTP_PARA_MGMT_FPO_FMT.format(nic_list_param, asic_type)
-            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS().MATERA_MTP_SINGLE_MGMT_FPO_FMT.format(nic_list_param, asic_type)
+            if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA): cmd = MFG_DIAG_CMDS().MATERA_MTP_SINGLE_MGMT_FPO_FMT.format(nic_list_param, asic_type)
             if asic_type == "salina": cmd = MFG_DIAG_CMDS().MATERA_SALINA_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
         elif aapl:
             for slot in nic_list:
@@ -5498,7 +5517,7 @@ class mtp_ctrl():
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
             cmd = MFG_DIAG_CMDS().MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
-            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS().MATERA_MTP_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
+            if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA): cmd = MFG_DIAG_CMDS().MATERA_MTP_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
             if asic_type == "salina": cmd = MFG_DIAG_CMDS().MATERA_SALINA_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
             if swm_lp:
                 cmd = "".join((cmd, " -swm_lp"))
@@ -5521,7 +5540,7 @@ class mtp_ctrl():
 
     def mtp_nic_mgmt_para_init_fpo(self, nic_list, stop_on_err=False):
         # dump MTP Marvel Switch Port status
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             self.cli_log_inf("Dump MTP Marvel Switch Port Status", level=0)
             port = '-1'
             for mvl_instance in ("0", "1"):
@@ -5822,7 +5841,7 @@ class mtp_ctrl():
         nic_ip_addr_list = []
         # mac_addr_reg_exp = r"([a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2})"
         mac_addr_reg_exp = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).+([a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2})"
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd = MFG_DIAG_CMDS().MATERA_MTP_NIC_MAC_DISP_FMT
         else:
             cmd = MFG_DIAG_CMDS().MTP_NIC_MAC_DISP_FMT
@@ -5940,12 +5959,12 @@ class mtp_ctrl():
         if not reg_addr2exp_val:
             return False
 
-        if self._mtp_type != MTP_TYPE.MATERA:
+        if self._mtp_type not in  (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(slot+1)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
                 self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
                 return False
-        bus_num = slot + 1 + 2 if self._mtp_type == MTP_TYPE.MATERA else 0
+        bus_num = slot + 1 + 2 if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA) else 0
         nic_type = self.mtp_get_nic_type(slot)
 
         for reg_addr, exp_val in reg_addr2exp_val.items():
@@ -6214,7 +6233,7 @@ class mtp_ctrl():
             return fail_nic_list
         slot_main = slot_list[0]
 
-        if self._mtp_type == MTP_TYPE.MATERA and bootstage:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA) and bootstage:
             if bootstage not in ('a35_uboot', 'n1_uboot', 'zephyr', 'linux', 'diag', 'nondiag'):
                 self.cli_log_slot_err(slot_main, f"Unsupported Salina boot stage {bootstage}")
                 return fail_nic_list
@@ -7042,7 +7061,7 @@ class mtp_ctrl():
         if not nic_list:
             return []
 
-        matera_mtp = True if self._mtp_type == MTP_TYPE.MATERA else False
+        matera_mtp = True if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA) else False
 
         nic_fail_list = list()
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
@@ -7472,8 +7491,8 @@ class mtp_ctrl():
                           counter for bl1 and pentrust
         """
 
-        if bootfw not in ('mainfwa', 'mainfwa', 'goldfw'):
-            self.cli_log_slot_err_lock(slot, "Please provide correct Zephyr FW 'mainfwa' 'mainfwa' or 'goldfw'")
+        if bootfw not in ('mainfwa', 'mainfwb', 'goldfw'):
+            self.cli_log_slot_err_lock(slot, "Please provide correct Zephyr FW 'mainfwa' 'mainfwb' or 'goldfw'")
             return False
 
         if not self._nic_ctrl_list[slot].zephyr_debug_update_firmware(bootfw, bootfw_verify):
@@ -7646,7 +7665,7 @@ class mtp_ctrl():
         return True
 
     def mtp_nic_stop_tclsh(self, slot):
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             self._nic_ctrl_list[slot].mtp_exec_cmd("{:s}diag/util/jtag_accpcie_salina clr {:d}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH, slot+1))
         else:
             self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
@@ -7661,7 +7680,7 @@ class mtp_ctrl():
         # clear reg 0x50 after reading
         reg_addr = 0x50
         write_data = 0
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd = MFG_DIAG_CMDS().NIC_I2C_DUMP_POST_FMT.format(slot+3) + " ;"
             cmd += MFG_DIAG_CMDS().NIC_I2C_DUMP_4B_POST_FMT.format(slot+3) + " ;"
         else:
@@ -7671,7 +7690,7 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd = ""
         else:
             cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(slot+1) + " ;"
@@ -7680,7 +7699,7 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
-        if self._mtp_type == MTP_TYPE.MATERA:
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd_list = list()
             cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("17","20","0"))
             cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("17","20","9"))
@@ -7780,7 +7799,7 @@ class mtp_ctrl():
             Dump registers 0xa, 0x12, 0x24
         """
         for reg_addr in [0xa, 0x12, 0x24]:
-            if self._mtp_type == MTP_TYPE.MATERA:
+            if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
                 cmd = ""
             else:
                 cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(slot+1) + " ;"
@@ -7836,7 +7855,7 @@ class mtp_ctrl():
         # do not run esecure with one wire interface
         if stage == FF_Stage.FF_SRN or joo == '0' or nic_type in SALINA_NIC_TYPE_LIST: esecure = "0"
 
-        if self._mtp_type != MTP_TYPE.MATERA:
+        if self._mtp_type not in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd = MFG_DIAG_CMDS().NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
         else:
             # "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s} -joo {:s} -i {:s} -o {:s} -e {:s} -s {:s} -ite {:s}"
@@ -7914,22 +7933,22 @@ class mtp_ctrl():
 
     def mtp_nic_console_lock(self):
         # fpga implementation allows multiple console
-        if self._mtp_type == MTP_TYPE.MATERA: return
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA): return
         self._nic_console_lock.acquire()
 
     def mtp_nic_console_unlock(self):
         # fpga implementation allows multiple console
-        if self._mtp_type == MTP_TYPE.MATERA: return
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA): return
         self._nic_console_lock.release()
 
     def mtp_single_j2c_lock(self):
         # fpga implementation allows multiple j2c
-        if self._mtp_type == MTP_TYPE.MATERA: return
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA): return
         self._j2c_lock.acquire()
 
     def mtp_single_j2c_unlock(self):
         # fpga implementation allows multiple j2c
-        if self._mtp_type == MTP_TYPE.MATERA: return
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA): return
         self._j2c_lock.release()
 
     def mtp_turbo_j2c_lock(self, slot):

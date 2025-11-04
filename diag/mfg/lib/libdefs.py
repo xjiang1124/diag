@@ -64,6 +64,7 @@ class MTP_TYPE:
     ELBA  = "ELBA"
     TURBO_ELBA = "TURBO_ELBA"
     MATERA = "MATERA"
+    PANAREA = "PANAREA"
 
 class Factory:
     UNKNOWN = "Unknown"
