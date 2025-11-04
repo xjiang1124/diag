@@ -2158,7 +2158,7 @@ class mtp_ctrl():
                 self.cli_log_err("Command {:s} failed".format(cmd), level=0)
                 return False
 
-            if self._mtp_type in (MTP_TYPE.MATERA, MTP.PANAREA):
+            if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
                 cmd = "redis-cli hkeys CARD_DICT"
                 if not self.mtp_mgmt_exec_cmd(cmd):
                     self.cli_log_err("Command {:s} failed".format(cmd), level=0)
