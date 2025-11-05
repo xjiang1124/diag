@@ -842,6 +842,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     pollara_family = False
     lingua_family = False
+
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if not nic_prsnt_list[slot]:
             continue
@@ -2443,50 +2444,62 @@ def pick_fan_speed(stage, mtp_type=None):
     if stage == FF_Stage.FF_P2C:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
         if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_NORM_FAN_SPD
+        if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_EDVT_NORM_FAN_SPD
 
     elif stage == FF_Stage.FF_2C_L:
         fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
         if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_LOW_FAN_SPD
+        if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_EDVT_LOW_FAN_SPD
 
         if not GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
             if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_MODEL_EDVT_LOW_FAN_SPD
+            if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_MODEL_EDVT_LOW_FAN_SPD
 
     elif stage == FF_Stage.FF_4C_L:
         fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
         if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_LOW_FAN_SPD
+        if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_EDVT_LOW_FAN_SPD
 
         if not GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
             if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_MODEL_EDVT_LOW_FAN_SPD
+            if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_MODEL_EDVT_LOW_FAN_SPD
 
     elif stage == FF_Stage.FF_2C_H:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_HIGH_FAN_SPD
+        if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_EDVT_HIGH_FAN_SPD
 
         if not GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
             if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_MODEL_EDVT_HIGH_FAN_SPD
+            if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_MODEL_EDVT_HIGH_FAN_SPD
 
     elif stage == FF_Stage.FF_4C_H:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_HIGH_FAN_SPD
+        if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_EDVT_HIGH_FAN_SPD
 
         if not GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
             if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_MODEL_EDVT_HIGH_FAN_SPD
+            if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_MODEL_EDVT_HIGH_FAN_SPD
 
     elif stage == FF_Stage.FF_ORT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_HIGH_FAN_SPD
+        if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_EDVT_HIGH_FAN_SPD
 
     elif stage == FF_Stage.FF_RDT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_HIGH_FAN_SPD
+        if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_EDVT_HIGH_FAN_SPD
 
     else:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
         if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_NORM_FAN_SPD
+        if mtp_type == MTP_TYPE.PANAREA: fanspd = MTP_Const.MFG_PANAREA_EDVT_NORM_FAN_SPD
 
     return fanspd
 

@@ -5223,15 +5223,24 @@ class mtp_ctrl():
 
     def mtp_nic_sn_init(self, slot, fpo=False):
         if not self._nic_ctrl_list[slot]._sn:
-            if not self._nic_ctrl_list[slot].nic_smb_fru_init(self._factory_location, fpo=fpo):
-                return False
+            if self._mtp_type != MTP_TYPE.PANAREA:
+                if not self._nic_ctrl_list[slot].nic_smb_fru_init(self._factory_location, fpo=fpo):
+                    return False
+            else:
+                self._nic_ctrl_list[slot]._sn = "serialnumber" + str(int(slot+1))
+                self._pn = "101-P00001-00A"
+                self._mac = "049081AAAAA" + str(int(slot+1))
+                self._date = None
             self.mtp_set_nic_sn(slot, self._nic_ctrl_list[slot]._sn)
         return True
 
     def mtp_nic_dpn_init(self, slot, fpo=False):
         if not self._nic_ctrl_list[slot]._dpn:
-            if not self._nic_ctrl_list[slot].nic_smb_dpn_fru_init(self._factory_location, fpo=fpo):
-                return False
+            if self._mtp_type != MTP_TYPE.PANAREA:
+                if not self._nic_ctrl_list[slot].nic_smb_dpn_fru_init(self._factory_location, fpo=fpo):
+                    return False
+            else:
+                self._dpn = "58-0013-01"
         return True
 
     def mtp_nic_cpld_init(self, slot, smb=False):
@@ -6337,6 +6346,7 @@ class mtp_ctrl():
             NIC_Type.MALFA:           MFG_DIAG_RE.MFG_NIC_TYPE_MALFA,
             NIC_Type.POLLARA:         MFG_DIAG_RE.MFG_NIC_TYPE_POLLARA,
             NIC_Type.LINGUA:          MFG_DIAG_RE.MFG_NIC_TYPE_LINGUA,
+            NIC_Type.GELSOP:          MFG_DIAG_RE.MFG_NIC_TYPE_GELSOP,
         }
 
         for nic_type in list(regex_dict.keys()):

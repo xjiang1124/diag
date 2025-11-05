@@ -1212,6 +1212,53 @@ class NIC_IMAGES:
     fipb_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.117.3-a-61/mainfw/secure/salina/fip.img"
     fipg_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.117.3-a-61/goldfw/secure/salina/fip.img"
 
+    # GELSOP is AINIC
+    cpld_img["GELSOP"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_ver["GELSOP"] = "0x3"
+    cpld_dat["GELSOP"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    sec_cpld_img["GELSOP"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    sec_cpld_ver["GELSOP"] = "0x3"
+    sec_cpld_dat["GELSOP"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    fail_cpld_img["GELSOP"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    fail_cpld_ver["GELSOP"] = "0x3"
+    fail_cpld_dat["GELSOP"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    fea_cpld_img["GELSOP"] = "salina.fea"
+    ufm1_img["GELSOP"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
+    arm_a_boot0_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_boot0.img"
+    arm_a_uboota_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_uboota.img"
+    arm_a_ubootb_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_ubootb.img"
+    arm_a_ubootg_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_ubootg.img"
+    arm_a_zephyr_a_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    arm_a_zephyr_b_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    arm_a_zephyr_gold_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    qspi_prog_sh_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_prog.sh"
+    qspi_snake_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218.tar.gz"
+    qspi_verify_sh_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_verify.sh"
+    mbist_boot0_img["GELSOP"] = "salina/pollara/ainic_boot0_ctle-iters-7-20250218.tar.gz"
+
+    cpld_img["58-0013-01"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    cpld_ver["58-0013-01"] = "0x3"
+    cpld_dat["58-0013-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0013-01"] = "salina_cfg0-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    sec_cpld_ver["58-0013-01"] = "0x3"
+    sec_cpld_dat["58-0013-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0013-01"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
+    fail_cpld_ver["58-0013-01"] = "0x3"
+    fail_cpld_dat["58-0013-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
+    fea_cpld_img["58-0013-01"] = "salina.fea"
+    ufm1_img["58-0013-01"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
+    arm_a_boot0_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_boot0.img"
+    arm_a_uboota_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_uboota.img"
+    arm_a_ubootb_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_ubootb.img"
+    arm_a_ubootg_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_ubootg.img"
+    arm_a_zephyr_a_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    arm_a_zephyr_b_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    arm_a_zephyr_gold_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    qspi_prog_sh_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_prog.sh"
+    qspi_verify_sh_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_verify.sh"
+    qspi_snake_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218.tar.gz"
+
+
 class MTP_IMAGES:
     amd64_img = dict()
     arm64_img = dict()
@@ -1526,7 +1573,7 @@ MFG_VALID_NIC_TYPE_LIST = [
     NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25SWMDELL,
     NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
     NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS,
-    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA
+    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA, NIC_Type.GELSOP
 ]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.ORTANO]
 
@@ -1544,6 +1591,10 @@ MTP_REV04_CAPABLE_NIC_TYPE_LIST = [
 
 MTP_MATERA_CAPABLE_NIC_TYPE_LIST = [
     NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA
+]
+
+MTP_PANAREA_CAPABLE_NIC_TYPE_LIST = [
+    NIC_Type.GELSOP
 ]
 
 CAPRI_NIC_TYPE_LIST = [
@@ -1565,7 +1616,7 @@ SALINA_AI_NIC_TYPE_LIST = [
     NIC_Type.POLLARA, NIC_Type.LINGUA
 ]
 
-SALINA_NIC_TYPE_LIST = SALINA_DPU_NIC_TYPE_LIST + SALINA_AI_NIC_TYPE_LIST
+SALINA_NIC_TYPE_LIST = SALINA_DPU_NIC_TYPE_LIST + SALINA_AI_NIC_TYPE_LIST + [NIC_Type.GELSOP]
 
 PSLC_MODE_TYPE_LIST = [
     NIC_Type.VOMERO2, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
@@ -1609,7 +1660,7 @@ MAINFW_TYPE_LIST = [
 # ARM_L1 test set mode hod_1100
 ARM_L1_MODE_HOD_1100 = [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4,
                         NIC_Type.ORTANO2SOLOS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS]
-CTO_MODEL_TYPE_LIST = [NIC_Type.GINESTRA_S4] + SALINA_NIC_TYPE_LIST
+CTO_MODEL_TYPE_LIST = [NIC_Type.GINESTRA_S4] + SALINA_NIC_TYPE_LIST + [NIC_Type.GELSOP]
 SWI_UPDATE_FRU_TYPE_LIST = [NIC_Type.GINESTRA_CIS]
 # Card Type List Which need attash ROT cable when run FST test
 ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST = [
