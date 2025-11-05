@@ -46,7 +46,7 @@ const (
     ID_LIPARI_ELBA     = 0x81    //PENSANDO SWITCH
     ID_MTFUJI_ELBA     = 0x82    //CISCO SWITCH
     ID_CAPACI_ELBA     = 0x83    //HPE SWITCH
-    
+    ID_DESCHUTES       = 0x84    //CISCO GIGLIO SWITCH
 )
 
 const (
