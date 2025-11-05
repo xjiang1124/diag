@@ -9,6 +9,7 @@ import (
     "common/cli"
     "platform/panarea"
     "device/fpga/panareafpga"
+    "device/psu/dps2100"
 )
 
 const errhelpPanarea = "\nfpgautil:\n" +
@@ -16,7 +17,7 @@ const errhelpPanarea = "\nfpgautil:\n" +
         "fpgautil r32 <addr>\n" +
         "fpgautil w32 <addr> <data>\n" +
         "\n" + 
-        "fpgautil show fan\n" +
+        "fpgautil show fan/psu\n" +
         "\n" +
         "fpgautil flash help  << Display debug commands in the CLI >>\n" +
         "fpgautil flash program/verify/generate <primary/secondary/allflash> <filename>\n" +
@@ -70,6 +71,23 @@ func panarea_fpga_cli() {
     } else if os.Args[1] == "show" {
         if os.Args[2][0] == 'f' || os.Args[2][0] == 'F' {
             panarea.ShowFanInfo()
+        } else if os.Args[2][0] == 'p' || os.Args[2][0] == 'P' {
+            var present bool
+            present, _ = panareafpga.PSU_present(0)
+            if present == true {
+                dps2100.DisplayManufacturingInfo("PSU_1", 1)
+            } else {
+                fmt.Printf(" INFO: PSU_1 is not present")
+            }
+            present, _ = panareafpga.PSU_present(1)
+            if present == true {
+                dps2100.DisplayManufacturingInfo("PSU_2", 1)
+            } else {
+                fmt.Printf(" INFO: PSU_2 is not present")
+            }
+        } else {
+            fmt.Printf("ERROR: show argv[2] is incorrect.  You entered '%s'  Please check the help\n", os.Args[2])
+            os.Exit(-1)
         }
     //
     //FPGA Local Flash commands 

@@ -155,7 +155,7 @@ func Suc_cpld_read(slot int, offset byte) (data byte, err int) {
     if err != errType.SUCCESS {
         return 0, err
     }
-    cli.Println("%s", string(buf))
+    //cli.Println("%s", string(buf))
     parts := strings.Split(string(buf), "value ") // Split on "value "
     if len(parts) > 1 {
         hexValue := strings.TrimSpace(parts[1])
