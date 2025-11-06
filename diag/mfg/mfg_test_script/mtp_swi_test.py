@@ -714,6 +714,10 @@ def main():
             # run_swi_test(fw_boot_type_list, "SW_SHUTDOWN")
             # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SW_SHUTDOWN")
 
+        elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+            run_swi_test(pass_nic_list, "NIC_PWRCYC")
+
+
         else:
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)

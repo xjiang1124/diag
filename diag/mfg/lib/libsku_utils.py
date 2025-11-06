@@ -103,6 +103,7 @@ class PART_NUMBERS_MATCH:
     POLLARA_DELL_PN_FMT = r"0745T9(?:X|A)[0-9]{2}"                                                  #0745T9 X/A         POLLARA DELL PN
     LINGUA_PN_FMT = r"102-P11500-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                                #102-P11500-00B 01  LINGUA
     MALFA_PN_FMT = r"102-P10600-0[0-9]{1}(?:\s[A-Z0-9]{1,2})?"                                      #102-P10600-00 01   MALFA
+    GELSOP_PN_FMT = r"101-P00001-0[0-9]{1}(?:\s[A-Z0-9]{1,2})?"                                     #101-P00001-00A     GELSOP
 
 SN_FORMAT_TABLE = {
     Factory.P1: {
@@ -148,6 +149,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.LENI48G_PN_FMT:                  "FPK" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.MALFA_PN_FMT:                    "PFP" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.POLLARA_PN_FMT:                  "FPL" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.GELSOP_PN_FMT:                   "serialnumber" + r"(?:[1-9]|10)",
         PART_NUMBERS_MATCH.LINGUA_PN_FMT:                   "FPM" + FLX_SN_SUFFIX_FMT,
         "DEFAULT":                                          "FPF" + FLX_SN_SUFFIX_FMT
     },
@@ -320,6 +322,9 @@ PN_FORMAT_TABLE = {
         ],
     NIC_Type.MALFA: [
         PART_NUMBERS_MATCH.MALFA_PN_FMT                         #102-P10600-0 01    MALFA
+        ],
+    NIC_Type.GELSOP: [
+        PART_NUMBERS_MATCH.GELSOP_PN_FMT                        #101-P00001-001    GELSOP
         ]
 }
 

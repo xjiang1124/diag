@@ -774,6 +774,9 @@ def main():
             # esec_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
             # run_dl_test(esec_list, "L1_ESEC_PROG")
 
+        elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
+
         else:
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)

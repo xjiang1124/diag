@@ -938,7 +938,6 @@ def main():
 
                 return rlist
 
-
             if vmarg_idx > 0:
                 mtp_mgmt_ctrl.mtp_diag_dsp_restart()
 
@@ -971,9 +970,9 @@ def main():
                     run_test(capri_nic_list, "PCIE_POLL_DISABLE")
                     mtp_mgmt_ctrl.cli_log_inf("NIC Diag Setup complete\n", level = 0)
 
-                if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+                if mtp_mgmt_ctrl.mtp_get_mtp_type() not in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
                     run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
-                else:
+                elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
                     # Program DL IMAGE Since NIC Diag init and EMMC stress not work on P2C IMAGE
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
@@ -981,10 +980,12 @@ def main():
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux", warm_reset=False)
                     nic_diag_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
                     run_test(nic_diag_init_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
+                else:
+                    pass
             else:
-                if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+                if mtp_mgmt_ctrl.mtp_get_mtp_type() not in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
                     run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)
-                else:
+                elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
                     # Program DL IMAGE Since NIC Diag init and EMMC stress not work on P2C IMAGE
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
@@ -992,6 +993,8 @@ def main():
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux", warm_reset=False)
                     nic_diag_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
                     run_test(nic_diag_init_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
+                else:
+                    pass
 
             test_section_list = []
 
@@ -1014,6 +1017,9 @@ def main():
                 test_section_list = ["STRESS", "I2C", "J2C_SEQ", "P2C_IMG_PROG", "SALINA_SNAKE"]
             if get_slots_of_type(NIC_Type.LINGUA):
                 test_section_list = ["OCP_PRE_CHECK", "STRESS", "P2C_IMG_PROG", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
+
+            ### VULCANO TEST ORDER
+                test_section_list = []
 
             if args.skip_test:
                 test_section_list = libmfg_utils.list_subtract(test_section_list, args.skip_test)

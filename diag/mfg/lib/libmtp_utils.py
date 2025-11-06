@@ -33,7 +33,7 @@ def check_mtp_host_nic_presence(mtp_mgmt_ctrl, host_nic_device="i210"):
         True if MTP NIC device check pass
         False if MTP NIC device check failed
     """
-    if mtp_mgmt_ctrl._mtp_type == MTP_TYPE.MATERA:
+    if mtp_mgmt_ctrl._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
         host_nic_device = "BCM5720"
 
     ret = True
