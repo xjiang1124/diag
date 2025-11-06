@@ -7,6 +7,11 @@ import (
 // User guild for Cobra can be found at
 // https://github.com/spf13/cobra/blob/main/site/content/user_guide.md
 
+var slot int
+var commands string
+var offset uint
+var value uint
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
     Use:   "sucutil",
@@ -24,6 +29,7 @@ func Execute() {
 
 func init() {
     rootCmd.AddCommand(CreateCpldCmd())
+    rootCmd.AddCommand(CreateExecCmd())
     //add more sucutil commands here
     rootCmd.CompletionOptions.DisableDefaultCmd = true
 }

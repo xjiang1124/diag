@@ -80,7 +80,13 @@ func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
     reader := bufio.NewReader(u.port)
     prompt := []byte("uart:~$")
     var result []byte
+    read_count := 0
     for {
+        read_count++
+        // limit the number of read attempts
+        if read_count > 65536 {
+            break
+        }
         b, err_r := reader.ReadByte()
         if err_r != nil {
             // Read timeout or error
@@ -91,7 +97,7 @@ func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
             break
         }
         result = append(result, b)
-        if bytes.HasSuffix(result, prompt) || len(result) > 65536 {
+        if bytes.HasSuffix(result, prompt) {
             break
         }
     }
@@ -128,7 +134,7 @@ func suc_cmd_list(slot int, cmd_list []string) () {
     }
     defer u.close_suc_uart()
 
-    for _, cmd := range cmd_list {
+    for i, cmd := range cmd_list {
         buf, err := u.send_cmd_suc_uart(cmd)
         if err != errType.SUCCESS {
             return
@@ -141,7 +147,9 @@ func suc_cmd_list(slot int, cmd_list []string) () {
             }
             cli.Println("i", line)
         }
-        cli.Println("i")
+        if i != len(cmd_list) - 1 {
+            cli.Println("i")
+        }
     }
     return
 }
@@ -154,6 +162,10 @@ func Suc_dev_list(slot int) () {
 func Suc_dev_status(slot int) () {
     cmd_list := []string{"voltage ina3221_sensor\r\n", "voltage mp2861_sensor\r\n", "tmp451 temperature\r\n"}
     suc_cmd_list(slot, cmd_list)
+}
+
+func Suc_dev_margin(slot int) () {
+    return
 }
 
 func Suc_cpld_read(slot int, offset byte) (data byte, err int) {
@@ -204,4 +216,16 @@ func Suc_cpld_write(slot int, offset byte, value byte) (err int) {
         return errType.FAIL
     }
     return
+}
+
+func Suc_exec_cmds(slot int, cmds string) () {
+    raw_commands := strings.Split(cmds, ";")
+    var command_list []string
+    for _, command := range raw_commands {
+        trimmed_cmd := strings.TrimSpace(command)
+        if trimmed_cmd != "" {
+            command_list = append(command_list, trimmed_cmd + "\r\n")
+        }
+    }
+    suc_cmd_list(slot, command_list)
 }

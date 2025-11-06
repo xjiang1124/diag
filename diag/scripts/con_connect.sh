@@ -39,8 +39,25 @@ then
     taskset -c $slot fpga_uart $((slot - 1))
 elif [[ $CARD_TYPE == "MTP_PANAREA" ]]
 then
-    term="/dev/SUCUART$1"
-    picocom -b 115200 -f h $term
+    slot=$1
+    uart_id=0
+    if [ $# -eq 2 ]
+    then
+        uart_id=$(($2 & 0x3))
+        echo "uart_id=$uart_id"
+    fi
+    if [[ $uart_id -eq 0 ]]
+    then
+        term="/dev/SUCUART$slot"
+        picocom -b 115200 -f h $term
+    elif [[ $uart_id -eq 1 ]]
+    then
+        fpga_uart_panarea $((slot - 1))
+    elif [[ $uart_id -eq 2 ]]
+    then
+        # TODO: connect to vulcano RISC V console
+        exit 0
+    fi
 else
     cpldutil -cpld-wr -addr=0x18 -data=0
     cpldutil -cpld-wr -addr=0x18 -data=$1
