@@ -371,10 +371,10 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
 
     if stage == FF_Stage.FF_DL:
         images_needed.append(cpld)
-        if nic_type not in SALINA_NIC_TYPE_LIST:
+        if nic_type not in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             images_needed.append(diagfw)
 
-        if nic_type in SALINA_NIC_TYPE_LIST:
+        if nic_type in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             images_needed.append(arm_a_boot0)
             images_needed.append(arm_a_uboota)
             images_needed.append(arm_a_ubootb)
@@ -394,7 +394,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(arm_n_ubootg)
                 images_needed.append(arm_n_kernel_goldfw)
                 images_needed.append(device_config_dtb)
-            if nic_type in SALINA_AI_NIC_TYPE_LIST:
+            if nic_type in SALINA_AI_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
                 images_needed.append(qspi_verify_sh_img)
 
         if nic_type in FPGA_TYPE_LIST:
@@ -421,7 +421,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
             images_needed.append(test_fpga)
             images_needed.append(cpld)
 
-        if nic_type in SALINA_NIC_TYPE_LIST:
+        if nic_type in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             images_needed.append(mbist_boot0_img)
             if nic_type in SALINA_DPU_NIC_TYPE_LIST:
                 images_needed.append(arm_a_boot0)
@@ -441,13 +441,13 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(arm_n_ubootb)
                 images_needed.append(arm_n_ubootg)
                 images_needed.append(arm_n_kernel_goldfw)
-            if nic_type in SALINA_AI_NIC_TYPE_LIST:
+            if nic_type in SALINA_AI_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
                 images_needed.append(qspi_verify_sh_img)
 
     elif stage == FF_Stage.FF_SWI:
         images_needed.append(cpld)
         images_needed.append(sec_cpld)
-        if nic_type not in SALINA_AI_NIC_TYPE_LIST:
+        if nic_type not in SALINA_AI_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             images_needed.append(goldfw)
 
         if nic_type in FPGA_TYPE_LIST:
@@ -466,7 +466,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         if nic_type in MAINFW_TYPE_LIST:
             images_needed.append(mainfw)
 
-        if nic_type in SALINA_NIC_TYPE_LIST:
+        if nic_type in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             images_needed.append(arm_a_boot0)
             images_needed.append(arm_a_uboota)
             images_needed.append(arm_a_ubootb)
@@ -485,7 +485,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(arm_n_ubootg)
                 images_needed.append(arm_n_kernel_goldfw)
                 images_needed.append(mainfw)
-            if nic_type in SALINA_AI_NIC_TYPE_LIST:
+            if nic_type in SALINA_AI_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
                 images_needed.append(firmware_config_dtb)
                 images_needed.append(arm_a_zephyr)
                 images_needed.append(fwsel)
