@@ -77,15 +77,15 @@ func uutPresent(uutName string) (data byte, present bool) {
     present = false
 
     if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        //Check if the card is present and powered on.  
+        //Scripting side does not want to see the card in inventory -present if it's powered off
         present, _ = panareafpga.SLOTpresentUUT(uutName)
-        //Currently there is no way to read the CPLD ID on GelsoP.  We need to get USB working in order to do that.
-        //For now on Panarea, just hard code the CPLD ID since GelsoP is our only card right now.
-        if present == true {
-            data = nicCpldCommon.ID_GELSOP
+        SlotPoweredOn, _ := panareafpga.SLOTpoweredOn(uutName);
+        if present == true && SlotPoweredOn == true {
+            return nicCpldCommon.ID_GELSOP, true
         } else {
-            data = 0x00
+            return 0x00, false
         }
-        return
     }
 
     cli.DisableVerbose()

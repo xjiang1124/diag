@@ -1,6 +1,7 @@
 package main
 
 import (
+    "fmt"
     "github.com/spf13/cobra"
     "device/sucuart"
 )
@@ -29,7 +30,12 @@ func createReadCommand() *cobra.Command {
         Short: "Read from a CPLD register address",
         Run: func(cmd *cobra.Command, args []string) {
             if slot >= 1 && slot <= 10 {
-                sucuart.Suc_cpld_read(slot, byte(offset))
+                data8, err := sucuart.Suc_cpld_read(slot, byte(offset))
+                if err != 0 {
+                    fmt.Printf("ERROR: Failed to read cpld reg %.02x\n", byte(offset))
+                } else {
+                    fmt.Printf("cpld read %.02x, value %.02x\n", byte(offset), data8)
+                }
             }
         },
     }
@@ -47,7 +53,12 @@ func createWriteCommand() *cobra.Command {
         Short: "Write to a CPLD register address",
         Run: func(cmd *cobra.Command, args []string) {
             if slot >= 1 && slot <= 10 {
-                sucuart.Suc_cpld_write(slot, byte(offset), byte(value))
+                err := sucuart.Suc_cpld_write(slot, byte(offset), byte(value))
+                if err != 0 {
+                    fmt.Printf("ERROR: Failed to write cpld reg %.02x\n", byte(offset))
+                } else {
+                    fmt.Printf("cpld write %.02x, value %.02x\n", byte(offset), byte(value))
+                }
             }
         },
     }
