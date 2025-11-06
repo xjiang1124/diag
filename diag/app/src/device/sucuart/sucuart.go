@@ -11,6 +11,7 @@ import (
     "common/errType"
     "go.bug.st/serial"
     "github.com/gofrs/flock"
+    "os/exec"
 )
 
 type SUCUARTHandle struct {
@@ -23,6 +24,17 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
     var i int
     lock_path := fmt.Sprintf("/var/lock/sucuart%d.lock", slot)
     uut_uart := fmt.Sprintf("/dev/SUCUART%d", slot)
+
+    //check that the /dev/sucuart device is not already opened.
+    //Strange things can happen otherwise including the code getting stuck.
+    cmdStr := fmt.Sprintf("lsof %s\n", uut_uart)
+    output , _ := exec.Command("sh", "-c", cmdStr).Output()
+    if len(output) != 0 {
+        cli.Printf("e","Another process has console device %s open.  This process cannot open it", uut_uart)
+        err = errType.FAIL
+        return
+    }
+
     fileLock := flock.New(lock_path)
     for i = 0; i < 1000; i++ {
         locked, err_l := fileLock.TryLock()
@@ -155,7 +167,7 @@ func Suc_cpld_read(slot int, offset byte) (data byte, err int) {
     if err != errType.SUCCESS {
         return 0, err
     }
-    cli.Println("%s", string(buf))
+    //cli.Println("%s", string(buf))
     parts := strings.Split(string(buf), "value ") // Split on "value "
     if len(parts) > 1 {
         hexValue := strings.TrimSpace(parts[1])
@@ -184,7 +196,7 @@ func Suc_cpld_write(slot int, offset byte, value byte) (err int) {
     if err != errType.SUCCESS {
         return
     }
-    cli.Println("%s", string(buf))
+    //cli.Println("%s", string(buf))
     parts := strings.Split(string(buf), "value ") // Split on "value "
     if len(parts) > 1 {
         return errType.SUCCESS

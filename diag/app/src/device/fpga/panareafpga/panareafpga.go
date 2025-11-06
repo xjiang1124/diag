@@ -235,3 +235,33 @@ func SLOTpresentUUT(uutName string) (present bool, err error) {
     present, err = SLOTpresent(uint32(slotNumber))
     return
 }
+
+
+func SLOTpoweredOn(uutName string) (isOn bool, err error) {
+    strLength := len(uutName)
+    if strLength < 5 {
+        err = fmt.Errorf(" Error: SLOTpresentUUT.  String passed is less than 5 characters.  Expectings something like UUT_5")
+        cli.Printf("e", "%s", err)
+        return
+    }
+    slotNumber, err := strconv.ParseUint(uutName[4:strLength], 0, 32)
+    if err != nil {
+        fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %v", err)
+        return
+    }
+    //Zero based
+    slotNumber = slotNumber - 1 
+
+    data32, err := ReadU32((FPGA_S0_CONTROL_REG + uint64(slotNumber*4)))
+    if err != nil {
+        return
+    }
+    if ( (data32 & (FPGA_S0_P3V3_ENABLED | FPGA_S0_P12V_ENABLED)) > 0) {
+        isOn = true
+    } else { 
+        isOn = false
+    }
+    return
+}
+
+

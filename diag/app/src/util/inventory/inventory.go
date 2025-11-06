@@ -16,6 +16,8 @@ import (
     "device/cpld/nicCpldCommon"
     "device/cpld/ortanoCpld"
     "device/cpld/salinaCpld"
+    "device/cpld/vulcanoCpld"
+    "device/sucuart"
     "device/fpga/panareafpga"
     "hardware/hwdev"
 
@@ -42,6 +44,29 @@ var SalinaPowerFailCode = []string{"PWR OK", "P12V Fail", "P5V Fail", "P3v3_NIC 
                                    "CORE_PLL lock Fail", "CPU_PLL lock Fail", "FLASH_PLL lock Fail", "QSPI_RST _L timeout", "DPU warm boot", "ROT warm boot", 
                                    "MTP warm boot", "GPIO3 PC", "ROT PC", "MTP PC", "WDT timeout", "CSR PW Not OK"}
 
+var VulcanoPowerFail = []string{"vrd_fault", "vrd_alert"}
+var VulcanoPowerFailCode = []string{"PWR OK", 
+                                    "P12V Fail", 
+                                    "P5V Fail", 
+                                    "P1V8_NIC Fail", 
+                                    "P1V2 NIC_Fail",
+                                    "VDDIO_P1V2 Fail", 
+                                    "VDDIO_P075 Fail",
+                                    "VDD_P075_ETH Fail",
+                                    "VDD_P075_PX Fail",
+                                    "VDDAN_P1V1_ETH Fail",
+                                    "VDDAN_P1V1_PX  Fail",
+                                    "VDDAN_P1V8_ETH Fail",
+                                    "VDDAN_P1V8_PX Fail",
+                                    "VDDPL_P0V75 Fail",
+                                    "VDDPL_P1V1 ETH Fail",
+                                    "VDDPL_P1V1 PX Fail",
+                                    "VDDPL_P1V2 Fail",
+                                    "VDDCR_PWR Fail",
+                                    "VDD_CORE Fail",
+                                     }
+
+
 func init() {
 }
 
@@ -52,15 +77,15 @@ func uutPresent(uutName string) (data byte, present bool) {
     present = false
 
     if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        //Check if the card is present and powered on.  
+        //Scripting side does not want to see the card in inventory -present if it's powered off
         present, _ = panareafpga.SLOTpresentUUT(uutName)
-        //Currently there is no way to read the CPLD ID on GelsoP.  We need to get USB working in order to do that.
-        //For now on Panarea, just hard code the CPLD ID since GelsoP is our only card right now.
-        if present == true {
-            data = 0x83
+        SlotPoweredOn, _ := panareafpga.SLOTpoweredOn(uutName);
+        if present == true && SlotPoweredOn == true {
+            return nicCpldCommon.ID_GELSOP, true
         } else {
-            data = 0x00
+            return 0x00, false
         }
-        return
     }
 
     cli.DisableVerbose()
@@ -352,6 +377,29 @@ func getPowerGoodSalina(uutName string) (powerGood bool) {
     return
 }
 
+func getPowerGoodVulcano(slot int) (powerGood bool) {
+
+    stat1, err := sucuart.Suc_cpld_read(slot, byte(vulcanoCpld.REG_RESET_CODE))
+    if err != errType.SUCCESS {
+        cli.Printf("e", "Slot-%d Failed to access CPLD to read power status\n", slot)
+        powerGood = false
+    } else {
+        if stat1 == 0 {
+            powerGood = true
+        } else if 0x1 <= stat1 && stat1 <= 0x12 {
+            // power shutoff due to power rail failure
+            powerGood = false
+        } else if stat1 == 0x16 || stat1 == 0x18 {
+            // power shutoff due to functional failure
+            powerGood = false
+        } else {
+            // resets are not power failure in diag test
+            powerGood = true
+        }
+    }
+    return
+}
+
 func getPowerGood(uutName string) (powerGood bool) {
     addr := uint64(naples100Cpld.REG_POWER_STAT1)
 
@@ -378,7 +426,9 @@ func powerStatusCheck(slot int) (err int) {
     cli.DisableVerbose()
 
     err, asicType := cardinfo.GetAsicType(cardType)
-    if asicType == "ELBA" || asicType == "GIGLIO" {
+    if asicType == "VULCANO" {
+        powerGood = getPowerGoodVulcano(slot)
+    } else if asicType == "ELBA" || asicType == "GIGLIO" {
         powerGood = getPowerGoodOrtano(uutName)
     } else if asicType == "SALINA" {
         powerGood = getPowerGoodSalina(uutName)
@@ -547,7 +597,18 @@ func statusDump(slot int)  {
 
     asic_type := os.Getenv("ASIC_TYPE")
     var cpldRegList []uint64
-    if asic_type == "SALINA" {
+    if asic_type == "VULCANO" {
+        cpldRegList = []uint64{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 
+                               0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13,
+                               0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 
+                               0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 
+                               0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31,
+                               0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 
+                               0x3C, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
+                               0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52,
+                               0x52, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5C, 0x5D, 0x5E,
+                               0x60, 0x61, 0x62, 0x63}
+    } else if asic_type == "SALINA" {
         cpldRegList = []uint64{0, 0x01, 0x02, 0x10, 0x11, 0x12, 0x14, 0x16, 0x18, 0x19, 0x1A, 0x1E, 0x20, 0x21, 0x22, 0x26, 0x27, 0x28, 0x2B, 0x2C, 0x2D, 0x30, 0x31, 0x32, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x80}
     } else {
         cpldRegList = []uint64{0, 0x01, 0x02, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1E, 0x20, 0x21, 0x26, 0x27, 0x28, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x30, 0x31, 0x32, 0x49, 0x50, 0x80, 0x99, 0x9A}
@@ -555,7 +616,17 @@ func statusDump(slot int)  {
 
     cli.Println("i", "Dumping CPLD registers for slot", slot)
     for _, cpldReg := range cpldRegList {
-        val, _ := hwdev.NaplesCpldRd(devName, cpldReg, uutName)
+        var val byte;
+        var err int;
+        if asic_type == "VULCANO" {
+            val, err = sucuart.Suc_cpld_read(slot, byte(cpldReg))
+            if err != errType.SUCCESS {
+                cli.Printf("e", "Slot-%d Failed to access CPLD to read register\n", slot)
+                return
+            }
+        } else {
+            val, _ = hwdev.NaplesCpldRd(devName, cpldReg, uutName)
+        }
         cli.Printf("i", "Addr: 0x%02x; Value: 0x%02x\n", cpldReg, val)
     }
 
@@ -606,6 +677,53 @@ func powerStatusDumpSalina(uutName string)  {
     return
 }
 
+func powerStatusDumpVulcano(slot int)  {
+    var err int
+
+    cli.DisableVerbose()
+    stat0, err := sucuart.Suc_cpld_read(slot, byte(vulcanoCpld.REG_RESET_CODE))
+    if err != errType.SUCCESS {
+        cli.EnableVerbose()
+        cli.Printf("e", "powerStatusDumpVulcano: Slot-%d Failed to access CPLD to read power status\n", slot)
+        return
+    }
+    stat1, _ := sucuart.Suc_cpld_read(slot, byte(vulcanoCpld.REG_FAULT_CODE))
+    cli.EnableVerbose()
+
+    
+    dispPowerStatusCode(VulcanoPowerFailCode, stat0) 
+    stat1 = stat1 & 0xC
+    stat1 = stat1 >> 2 
+    dispPowerStatus(VulcanoPowerFail, stat1) 
+
+    return
+}
+/*
+func getPowerGoodVulcano(slot int) (powerGood bool) {
+    addr := byte(vulcanoCpld.REG_RESET_CODE)
+
+    stat1, err := sucuart.Suc_cpld_read(slot, addr)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "Slot-%d Failed to access CPLD to read power status\n", slot)
+        powerGood = false
+    } else {
+        if stat1 == 0 {
+            powerGood = true
+        } else if 0x1 <= stat1 && stat1 <= 0x12 {
+            // power shutoff due to power rail failure
+            powerGood = false
+        } else if stat1 == 0x16 || stat1 == 0x18 {
+            // power shutoff due to functional failure
+            powerGood = false
+        } else {
+            // resets are not power failure in diag test
+            powerGood = true
+        }
+    }
+    return
+}
+*/
+
 func powerStatusDumpFpga(uutName string)  {
 
     cli.DisableVerbose()
@@ -653,6 +771,9 @@ func powerStatusDump(slot int)  {
         return
     } else if cardType == "MALFA" || cardType == "POLLARA" || cardType == "LENI" || cardType == "LENI48G" || cardType == "LINGUA" {
         powerStatusDumpSalina(uutName)
+        return
+    } else if cardType == "GELSOP" {
+        powerStatusDumpVulcano(slot)
         return
     }
 
