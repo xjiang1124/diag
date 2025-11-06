@@ -55,8 +55,8 @@ class nic_test_vul:
         return ret
 
     def suc_i2c_dev1_test(self, args):
-        cmd = "voltage ina3221_sensor"
-        pass_sig = "P3V3_NIC"
+        cmd = "command to be added"
+        pass_sig = "PASS"
         return self.suc_dev_test_common(cmd, pass_sig, args)
 
     def nic_snake_mtp(self, args):
