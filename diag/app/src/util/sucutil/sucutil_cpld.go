@@ -6,11 +6,6 @@ import (
     "device/sucuart"
 )
 
-// Read Command
-var offset uint
-var slot int
-var value uint
-
 // CreateCpldCmd creates the parent cpld command
 func CreateCpldCmd() *cobra.Command {
     var cpldCmd = &cobra.Command{

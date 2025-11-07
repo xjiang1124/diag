@@ -7,6 +7,7 @@ import (
     "strings"
     "hardware/hwdev"
     "github.com/spf13/cobra"
+    "device/sucuart"
 )
 
 var marginCmd = &cobra.Command{
@@ -16,6 +17,10 @@ var marginCmd = &cobra.Command{
         uut := "MTP_MATERA"
         slot, _ := cmd.Flags().GetInt("slot")
         if slot >= 1 && slot <= 10 {
+            if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+                sucuart.Suc_dev_margin(slot)
+                return
+            }
             uut = "UUT_" + strconv.Itoa(slot)
         }
         marginPercent, _ := cmd.Flags().GetInt("pct")
