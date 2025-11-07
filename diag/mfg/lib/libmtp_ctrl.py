@@ -6002,6 +6002,18 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_vulcano_jtag_mbist(self, slot, vmarg="normal", test_type="warm"):
+
+        if not self._nic_ctrl_list[slot].nic_vulcano_jtag_mbist(vmarg, test_type):
+            self.cli_log_slot_err(slot, "NIC JTAG MBIST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        else:
+            self.cli_log_slot_inf(slot, "NIC JTAG MBIST PASS")
+
+        return True
+
     def mtp_l1_pre_setup(self, slot):
 
         failed_slot_list = []
@@ -6088,6 +6100,23 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].ainic_snake_mtp_salina(snake_type, vmarg, dura, timeout, slot_asic_dir_path, ite, int_lpbk):
             self.cli_log_slot_err_lock(slot, "nic_test_v2 nic_snake_mtp {:s} TEST FAILED".format(snake_type))
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_snake_mtp_vulcano(self, slot, snake_type="esam_pktgen_max_power_pcie_sor", vmarg="normal", dura=900, timeout=3600, asic_dir_path=None, ite='1', int_lpbk='0'):
+        '''
+        run salina max power snake
+        '''
+
+        if not asic_dir_path:
+            return False
+
+        slot_asic_dir_path = asic_dir_path[slot]
+
+        if not self._nic_ctrl_list[slot].snake_mtp_vulcano(snake_type, vmarg, dura, timeout, slot_asic_dir_path, ite, int_lpbk):
+            self.cli_log_slot_err_lock(slot, "nic_test_vul.py nic_snake {:s} TEST FAILED".format(snake_type))
             return False
 
         return True
@@ -7867,9 +7896,12 @@ class mtp_ctrl():
 
         if self._mtp_type not in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             cmd = MFG_DIAG_CMDS().NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
-        else:
-            # "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s} -joo {:s} -i {:s} -o {:s} -e {:s} -s {:s} -ite {:s}"
+        elif self._mtp_type == MTP_TYPE.MATERA:
+            # "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s} -joo {:s} -i {:s} -o {:s} -e {:s} -s {:s} -ite {:s} -lt {:s}"
             cmd = MFG_DIAG_CMDS().NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training, joo, loopback, offload, esecure, simplified, ite, lt)
+        elif self._mtp_type == MTP_TYPE.PANAREA:
+            # "./run_l1_vul.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -joo {:s} -i {:s} -e {:s} -s {:s} -ite {:s}"
+            cmd = MFG_DIAG_CMDS().NIC_PANAREA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, joo, loopback, esecure, simplified, ite)
 
         self.cli_log_slot_inf(slot, cmd)
 

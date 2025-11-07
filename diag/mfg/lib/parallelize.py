@@ -150,7 +150,7 @@ def parallel_nic_using_console(func):
     """ Spawn threads for each slot on MTP with FPGA-based console access but keep sequential for old MTP """
     def pick_parallelism(mtp_mgmt_ctrl, nic_list, *test_args, **test_kwargs):
         nic_list = sanitize_input(func, mtp_mgmt_ctrl, nic_list)
-        if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             # run parallel
             fail_nic_list = split_into_threads(func, mtp_mgmt_ctrl, nic_list, False, *test_args, **test_kwargs)
         else:
@@ -168,7 +168,7 @@ def parallel_nic_using_nic_test(func):
     """ Spawn threads for each slot on new MTP with FPGA-based console access but keep semi-parallel for old MTP """
     def pick_parallelism(mtp_mgmt_ctrl, nic_list, *test_args, **test_kwargs):
         nic_list = sanitize_input(func, mtp_mgmt_ctrl, nic_list)
-        if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             # run true parallel
             fail_nic_list = split_into_threads(func, mtp_mgmt_ctrl, nic_list, True, *test_args, **test_kwargs)
         else:
@@ -186,7 +186,7 @@ def parallel_nic_using_j2c(func):
     """ Spawn threads for each slot on new MTP, odd/even slots for Tubro, and sequential for non-Turbo MTP """
     def pick_parallelism(mtp_mgmt_ctrl, nic_list, *test_args, **test_kwargs):
         nic_list = sanitize_input(func, mtp_mgmt_ctrl, nic_list)
-        if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
             # run parallel
             fail_nic_list = split_into_threads(func, mtp_mgmt_ctrl, nic_list, False, *test_args, **test_kwargs)
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.TURBO_ELBA:
