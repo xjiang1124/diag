@@ -866,6 +866,25 @@ class nic_ctrl():
 
         return True
 
+    def nic_vulcano_jtag_mbist(self, vmarg="normal", test_type="warm"):
+        '''
+        run mbist from jtag, salina cards only
+        '''
+
+        if not self.nic_power_cycle(delay=10):
+            return False
+
+        # goto the asic dir
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS().PANAREA_MTP_VULCANO_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+            return False
+
+        return True
+
     def nic_snake_mtp_salina(self, snake_type='esam_pktgen_max_power_sor', vmarg="normal", dura=120, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
         '''
             run salina snake from mtp without mgmt
@@ -911,6 +930,29 @@ class nic_ctrl():
             return False
 
         if MFG_DIAG_SIG.MATERA_AINIC_SNAKE_MTP_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def snake_mtp_vulcano(self, snake_type='esam_pktgen_max_power_pcie_sor', vmarg="normal", dura=900, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
+        '''
+            run salina snake from mtp without mgmt
+        '''
+
+        if not slot_asic_dir_path:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS().PANAREA_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, int_lpbk)
+        cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
+        print(cmd)
+        if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
+            return False
+
+        if MFG_DIAG_SIG.PANAREA_SNAKE_MTP_SIG in self.nic_get_cmd_buf():
             return True
         else:
             return False

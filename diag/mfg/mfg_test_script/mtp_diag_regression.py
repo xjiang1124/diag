@@ -757,6 +757,11 @@ def main():
                 elif test == "OCP_CONN":
                     rlist = ocp_connect(mtp_mgmt_ctrl, nic_list)
 
+                elif test == "VULCANO_JTAG_MBIST":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"], test_type="warm")
+                elif test == "SNAKE_VULCANO_MAX_PWR_MTP":
+                    rlist = mtp_mgmt_ctrl.mtp_snake_mtp_vulcano(nic_list, snake_type=test_kwargs["snake_type"], vmarg=test_kwargs["vmarg"], dura=test_kwargs["dura"], timeout=test_kwargs["timeout"], asic_dir_path=test_kwargs["asic_dir_path"], int_lpbk=test_kwargs["int_lpbk"])
+
                 elif test == "L1":
                     rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, str(stage), test_kwargs["l1_sequence"], ddr=test_kwargs["ddr"])
                 elif test == "L1_OW":
@@ -1019,7 +1024,8 @@ def main():
                 test_section_list = ["OCP_PRE_CHECK", "STRESS", "P2C_IMG_PROG", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
 
             ### VULCANO TEST ORDER
-                test_section_list = []
+            if get_slots_of_type(VULCANO_NIC_TYPE_LIST):
+                test_section_list = ["J2C_SEQ", "VULCANO_SNAKE"]
 
             if args.skip_test:
                 test_section_list = libmfg_utils.list_subtract(test_section_list, args.skip_test)
@@ -1283,6 +1289,13 @@ def main():
                     # prog_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_test(prog_boot0_list, "SALINA_BOOT0_PROG")
 
+                    ######################################################################
+                    #  Vulcano NIC JTAG BIST test
+                    ######################################################################
+
+                    jtag_mbist_list = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
+                    run_regression_test(jtag_mbist_list, "VULCANO_JTAG_MBIST", vmarg=vmarg)
+
                     l1_setup_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_test(l1_setup_list, "L1_SETUP")
 
@@ -1421,6 +1434,19 @@ def main():
                     # run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
                     # run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
                     # run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
+
+                elif test_section == "VULCANO_SNAKE":
+                    # run snake test
+                    vulcano_max_power_snake = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
+
+                    slot2asicdir = dict()
+                    for slot in vulcano_max_power_snake:
+                        if slot == 0:
+                            dir_path = '/home/diag/diag/asic'
+                        else:
+                            dir_path = '/home/diag/diag/asic' + str(slot)
+                        slot2asicdir[slot] = dir_path
+                    run_regression_test(vulcano_max_power_snake, "SNAKE_VULCANO_MAX_PWR_MTP", snake_type="esam_pktgen_max_power_pcie_sor", asic_dir_path=slot2asicdir, vmarg=vmarg, dura=900, timeout=3600, int_lpbk='0')
 
                 # print temperature after the test
                 if GLB_CFG_MFG_TEST_MODE:
