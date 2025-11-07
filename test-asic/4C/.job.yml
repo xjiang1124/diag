@@ -283,8 +283,8 @@ e2e-targets:
       vars:
         BmOs: linux
 
-  leni48:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type leni48 --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
+  leni64:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type leni64 --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -305,7 +305,7 @@ e2e-targets:
          props:
          - name: mtp-nic-processor
            value: matera
-         - name: leni48
+         - name: leni64
            value: yes
     provision:
       username: diag
