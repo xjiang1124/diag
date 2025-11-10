@@ -185,7 +185,10 @@ def dl_verify_diagfw(mtp_mgmt_ctrl, slot):
 def dl_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
-    return mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+    if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+        return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_cpld_update(slot, cpld_img_file)
+    else:
+        return mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
 
 @parallelize.parallel_nic_using_ssh
 def dl_fail_cpld_program(mtp_mgmt_ctrl, slot):
@@ -776,6 +779,7 @@ def main():
 
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            run_dl_test(pass_nic_list, "CPLD_PROG")
 
         else:
             # power cycle all nic

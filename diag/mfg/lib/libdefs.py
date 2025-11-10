@@ -532,6 +532,17 @@ class MFG_DIAG_CMDS:
     SALINA_NIC_PROGRAM_BOOT0_FMT = "./qspi_prog_boot0.sh {:s}"
     SALINA_ESEC_QSPI_ERASE_FMT = "./esec_qspi_erase.sh {:s}"
 
+    # vulcano micro controller zephyr comand
+    SUC_ZEPHYR_CPLD_READ_REGISTER = "cpld rcr {:s}"
+    SUC_ZEPHYR_CPLD_WRITE_REGISTER = "cpld wcr {:s} {:s}"
+    SUC_ZEPHYR_CPLD_CRC = "cpld crc {:s}"
+    SUC_ZEPHYR_CPLD_CRC_BUF = "cpld crc_buf"
+    SUC_ZEPHYR_CPLD_PROG_BUF = "cpld prog_buf {:s}"
+    SUC_ZEPHYR_HWINFO_DEVID = "hwinfo devid"
+
+    # Panarea MTP command
+    PANAREA_SUC_USB_TOOL = "/home/diag/usb/suc_usb_tool.py"
+
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
     NAPLES100_ARM_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd arm -core_freq 833 -arm_freq 1600"

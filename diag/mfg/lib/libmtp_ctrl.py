@@ -1105,7 +1105,7 @@ class mtp_ctrl():
             prompt_str = "{:s}@NIC-{:02d}:{:s} ".format(userid, slot+1, prompt)
         else:
             prompt_str = "{:s}@MTP:{:s} ".format(userid, prompt)
-        handle.sendline("PS1=r'[\D{%Y-%m-%d_%H:%M:%S}] " + prompt_str + "'")
+        handle.sendline(r"PS1='[\D{%Y-%m-%d_%H:%M:%S}] " + prompt_str + "'")
 
         # refresh
         handle.sendline("uname")
@@ -5228,9 +5228,9 @@ class mtp_ctrl():
                     return False
             else:
                 self._nic_ctrl_list[slot]._sn = "serialnumber" + str(int(slot+1))
-                self._pn = "101-P00001-00A"
-                self._mac = "049081AAAAA" + str(int(slot+1))
-                self._date = None
+                self._nic_ctrl_list[slot]._pn = "101-P00001-00A"
+                self._nic_ctrl_list[slot]._mac = "049081AAAAA" + str(int(slot+1))
+                self._nic_ctrl_list[slot]._date = None
             self.mtp_set_nic_sn(slot, self._nic_ctrl_list[slot]._sn)
         return True
 
@@ -7536,6 +7536,40 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].zephyr_debug_update_firmware(bootfw, bootfw_verify):
             self.cli_log_slot_err_lock(slot, "Zephyr Set zephyr bootfw failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True
+
+    def mtp_nic_uc_zephyr_cpld_update(self, slot, cpld_img_file, partition='cfg0'):
+        """
+        update CPLD through micro controller zpher shell cpld command
+            Subcommands:
+            interface  : (debug) Show interface details
+            id         : (debug) Read device ID
+            cfgen      : (debug) Enable config mode - non-debug commands may disable again!
+            cfgdis     : (debug) Disable config mode
+            status0    : (debug) Read status reg 0
+            status1    : (debug) Read status reg 1
+            feabits    : (debug) Read feature bits
+            sector     : (debug) <n> Select sector and reset address
+            read       : (debug) Read next 16-byte page
+            erase      : (debug) <n> Erase sector
+            crc        : <0|1> Show CRC32 of CFG0 or CFG1
+            load_buf   : <0|1> Load CFG0 or CFG1 into local buffer
+            crc_buf    : Show CRC of local buffer
+            prog_buf   : <0|1> Program CFG0 or CFG1 from local buffer
+            refresh    : Reboot CPLD via 'Refresh' config interface command
+            rcr        : <addr> Read common register (hex args)
+            wcr        : <addr> <byte> Write common register (hex args)
+            op         : <byte> [<byte>...] Raw reg interface SPI op (hex args)
+        """
+
+        support_partitions = ("cfg0", "cfg1")
+        if partition not in support_partitions:
+            self.cli_log_slot_err_lock(slot, "Please provide correct cpld partion , it should be in {:d}".format(str(support_partitions)))
+            return False
+        if not self._nic_ctrl_list[slot].uc_zephyr_cpld_update(cpld_img_file, partition):
+            self.cli_log_slot_err_lock(slot, "Program CPLD Failed")
             self.mtp_get_nic_err_msg(slot)
             return False
         return True
