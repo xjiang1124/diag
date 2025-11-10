@@ -7574,6 +7574,20 @@ class mtp_ctrl():
             return False
         return True
 
+    def mtp_nic_uc_image_program(self, slot, uc_img_file):
+        """
+        lsusb
+        lsusb -v -d 0438:0001
+        lsusb -v -d 0438:0001 | grep -E 'iSerial|iProduct|iManufacturer'
+        ./test_all.py --board-type AinicSuc --usb B4A7BA2756444B028820F0E180B0F82E:3 --print-hdrs --print-msgs -vvv --util pldmfwpkg=/home/diag/two_comp_gelso_v0_1_0_0.pldm --test-cases PldmFwUpdateSingleFDUpdateFlow
+        """
+
+        if not self._nic_ctrl_list[slot].uc_image_program(uc_img_file):
+            self.cli_log_slot_err_lock(slot, "Program uC image Failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True
+
     @parallelize.parallel_nic_using_console
     def mtp_program_nic_goldfw_salina(self, slot, stage=FF_Stage.FF_SWI):
         goldfw_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(self, slot, stage)["filename"]

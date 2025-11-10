@@ -191,6 +191,12 @@ def dl_cpld_program(mtp_mgmt_ctrl, slot):
         return mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
 
 @parallelize.parallel_nic_using_ssh
+def dl_uc_img_program(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_DL
+    uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, uc_img_file)
+
+@parallelize.parallel_nic_using_ssh
 def dl_fail_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
@@ -528,7 +534,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_erase_board_config_ssh(nic_list)
             elif test == "BOARD_CONFIG":
                 rlist = mtp_mgmt_ctrl.mtp_nic_board_config(nic_list)
-
+            elif test == "uC_IMG_PROG":
+                rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list)
             elif test == "CPLD_PROG":
                 rlist = dl_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE":
@@ -780,6 +787,8 @@ def main():
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_PROG")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            run_dl_test(pass_nic_list, "uC_IMG_PROG")
 
         else:
             # power cycle all nic

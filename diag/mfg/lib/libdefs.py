@@ -542,6 +542,8 @@ class MFG_DIAG_CMDS:
 
     # Panarea MTP command
     PANAREA_SUC_USB_TOOL = "/home/diag/usb/suc_usb_tool.py"
+    PANAREA_SUC_CNS_PMCI_TEST_ALL = "/home/diag/usb/test_all.py"
+    PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --usb {:s} --print-hdrs --print-msgs -vvv --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
 
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
@@ -791,6 +793,7 @@ class MFG_DIAG_SIG:
     MATERA_I2C_RTC_SIG = "I2C ACCESS TEST PASSED"
 
     PANAREA_SNAKE_MTP_SIG = "SNAKE TEST PASSED"
+    PANAREA_MTP_uC_PROG_SIG = "Test case PldmFwUpdateSingleFDUpdateFlow has PASSED"
     NIC_PARA_EDMA_ENV_INIT_SIG = "EDMA Checking Done"
     NIC_HAL_RUNNING_SIG = "/nic/bin/hal"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
