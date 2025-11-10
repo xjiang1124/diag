@@ -885,6 +885,8 @@ func init() {
     eepromMap["MTP"]           = mtpEepList
     eepromMap["MTPS"]          = mtpEepList
     eepromMap["MTP_MATERA"]    = materaEepList
+    eepromMap["MTP_PANAREA"]    = panareaEepList
+    
     //===============================
     // Taormina
     eepromMap["TAORMINA"]          = naplesEepList
