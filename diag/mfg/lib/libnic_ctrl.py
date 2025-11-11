@@ -712,8 +712,16 @@ class nic_ctrl():
                 self.nic_set_err_msg("Timeout connecting to UART console")
                 self.nic_console_detach()
                 return False
-        # # if zephyr, skip time sync
+        # # if zephyr, skip time sync, and make sure no extra zephyr_prompt
         if str(uart_selecttor) == "0":
+            while True:
+                idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt, self._nic_con_zephyr_prompt], timeout=3)
+                if idx == 0:
+                    break
+                elif idx == 1:
+                    continue
+                else:
+                    break
             return True
 
         if not self.nic_sync_mtp_timestamp():
@@ -4574,6 +4582,9 @@ class nic_ctrl():
             NIC_Type.LINGUA: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LINGUA_PN_FMT)                        #102-P11500-0 XX    LINGUA
                 ],
+            NIC_Type.GELSOP: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GELSOP_PN_FMT)                        #101-P00001-00A XX    GELSOP
+                ],
 
         }
         if self._nic_type not in list(pn_table.keys()):
@@ -6206,10 +6217,7 @@ class nic_ctrl():
             if not self.nic_exec_cmd_from_zephyr_console(cmd):
                 self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed Even with Retry".format(cmd))
                 return False
-        cmd_buf = self.nic_get_cmd_buf()
-        cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
-        cmd_buf = re.sub(r'\r', '', cmd_buf)
-        cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
+        cmd_buf = self.zephyr_output_sanitize(self.nic_get_cmd_buf())
         if bootfw not in cmd_buf.lower():
             self.nic_set_err_msg("debug update firmware next-boot {:s} Failed".format(bootfw))
             self.nic_set_err_msg(cmd_buf)
@@ -6233,15 +6241,206 @@ class nic_ctrl():
                 if not self.nic_exec_cmd_from_zephyr_console(cmd):
                     self.nic_set_err_msg("Zephyr show version Command '{:s}' Failed Even with Retry".format(cmd))
                     return False
-            cmd_buf = self.nic_get_cmd_buf()
-            cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
-            cmd_buf = re.sub(r'\r', '', cmd_buf)
-            cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
+            cmd_buf = self.zephyr_output_sanitize(self.nic_get_cmd_buf())
             match = re.findall(r"Current\sfirmware\s+:\s({:s})".format(set2booting_map[bootfw][1]), cmd_buf)
             if not match:
                 self.nic_set_err_msg("Zephr did not boot to {:s}".format(bootfw))
                 self.nic_set_err_msg(cmd_buf)
                 return False
+
+        return True
+
+    def zephyr_output_sanitize(self, input_str):
+        '''
+        remove carriage return. new line and terminal color code
+        '''
+
+        output_str = re.sub(r'\r\n', '\n', input_str)
+        output_str = re.sub(r'\r', '', output_str)
+        output_str = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', output_str)
+        return output_str
+
+    def uc_zephyr_cpld_update(self, cpld_img, partition='cfg0'):
+        """
+        update CPLD through micro controller zpher shell cpld command
+            Subcommands:
+            interface  : (debug) Show interface details
+            id         : (debug) Read device ID
+            cfgen      : (debug) Enable config mode - non-debug commands may disable again!
+            cfgdis     : (debug) Disable config mode
+            status0    : (debug) Read status reg 0
+            status1    : (debug) Read status reg 1
+            feabits    : (debug) Read feature bits
+            sector     : (debug) <n> Select sector and reset address
+            read       : (debug) Read next 16-byte page
+            erase      : (debug) <n> Erase sector
+            crc        : <0|1> Show CRC32 of CFG0 or CFG1
+            load_buf   : <0|1> Load CFG0 or CFG1 into local buffer
+            crc_buf    : Show CRC of local buffer
+            prog_buf   : <0|1> Program CFG0 or CFG1 from local buffer
+            refresh    : Reboot CPLD via 'Refresh' config interface command
+            rcr        : <addr> Read common register (hex args)
+            wcr        : <addr> <byte> Write common register (hex args)
+            op         : <byte> [<byte>...] Raw reg interface SPI op (hex args)
+        """
+
+        partition = partition.lower()
+        support_partitions = ("cfg0", "cfg1")
+        if partition not in support_partitions:
+            self.nic_set_err_msg("Program partition {:s} not support yet, so far only support {:s}".format(partition, str(support_partitions)))
+            return False
+
+        # get devid
+        devid = self.uc_zephyr_hwinfo_devid()
+        if not devid:
+            return False
+
+        # Zero the device CPLD image upload buffer
+        cmd = "{:s} -d {:s} -z".format(MFG_DIAG_CMDS().PANAREA_SUC_USB_TOOL, devid)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Zero the device CPLD image upload buffer Command '{:s}' Failed".format(cmd))
+            return False
+        if "No such file or directory" in self.nic_get_cmd_buf() or "No suitable USB devices found" in  self.nic_get_cmd_buf():
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            return False
+
+        # copy cpld image to microncontroller buffer
+        cmd = "{:s} -d {:s} -u {:s}".format(MFG_DIAG_CMDS().PANAREA_SUC_USB_TOOL, devid, cpld_img)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Upload CPLD image to device Command '{:s}' Failed".format(cmd))
+            return False
+        if "No such file or directory" in self.nic_get_cmd_buf() or "No suitable USB devices found" in  self.nic_get_cmd_buf():
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            return False
+
+        # calculate buffer crc befor program
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC_BUF.format(partition)
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        match = re.findall(r'CRC32\s+of\s+image\s+buffer\s+=\s+0x([a-fA-F0-9]+)', sanitized_cmd_buf)
+        if not match:
+            self.nic_set_err_msg("Faield to parse command buffer:")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        crc_before_prog = match[0]
+
+        # program cpld partition
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_PROG_BUF.format(partition)
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        if ("Writing {:s}...".format(partition)).lower() not in sanitized_cmd_buf.lower() or "Done!".lower() not in sanitized_cmd_buf.lower():
+            self.nic_set_err_msg("Zephyr CPLD program {:s} Failed".format(partition))
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
+        # calculate partition crc and verify
+        partition_number = partition.replace('cfg', '')
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC.format(partition)
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        match = re.findall(r'CRC32\s+of\s+sector\s+' + partition_number + r'\s+=\s+0x([a-fA-F0-9]+)', sanitized_cmd_buf)
+        if not match:
+            self.nic_set_err_msg("Faield to parse command buffer:")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        crc_after_prog = match[0]
+        if crc_before_prog != crc_before_prog:
+            self.nic_set_err_msg("CRC verify failed after CPLD program, {} to {}.".format(crc_before_prog, crc_after_prog))
+            return False
+
+        return True
+
+    def uc_zephyr_hwinfo_devid(self):
+        """
+        execute hwinfo devid subcomand in zeohyr shell, parse and return devid
+        uart:~$ hwinfo
+        hwinfo - HWINFO commands
+        Subcommands:
+            devid        : Show device id
+            deveui64     : Show device eui64
+            reset_cause  : Reset cause commands
+        """
+
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_HWINFO_DEVID
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr Hwinfo Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        match = re.findall(r'ID:\s+0x([a-fA-F0-9]+)', sanitized_cmd_buf)
+        if not match:
+            self.nic_set_err_msg("Faield to parse command buffer of command {:s}".format(cmd))
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        devid = match[0]
+        return devid
+
+    def uc_image_program(self, uc_img):
+        """
+        lsusb
+        lsusb -v -d 0438:0001
+        lsusb -v -d 0438:0001 | grep -E "iSerial|bEndpointAddress"
+        lsusb -v -d 2fe3:000a | grep -E 'iSerial|iProduct|iManufacturer'
+        lsusb -v -d 0438:0001 | grep -E 'iSerial|iProduct|iManufacturer'
+        ./test_all.py --board-type AinicSuc --usb B4A7BA2756444B028820F0E180B0F82E:3 --print-hdrs --print-msgs -vvv --util pldmfwpkg=/home/diag/two_comp_gelso_v0_1_0_0.pldm --test-cases PldmFwUpdateSingleFDUpdateFlow
+        command output
+        ---------------------------------------------------
+        Test case PldmFwUpdateSingleFDUpdateFlow has PASSED
+        ---------------------------------------------------
+
+        --------------
+        END OF TESTING
+        --------------
+
+        === SUMMARY (TEST CASES) ===
+        PASS       PldmFwUpdateSingleFDUpdateFlow
+        """
+
+        # get usb device ID
+        cmd = 'lsusb | grep "Advanced Micro Devices, Inc. Vulcano SuC" | cat'
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("lsusb Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        device_id = re.findall(r'ID\s+(\d{4}:\d{4})\sAdvanced Micro Devices', cmd_buf)
+        if not device_id:
+            self.nic_set_err_msg("Failed to parse command: {:s} output: {:s}".format(cmd, cmd_buf))
+            return False
+        device_id = device_id[0]
+
+        # get usb device iSerial
+        cmd = "lsusb -v -d {:s} | grep iSerial | cat".format(device_id)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("lsusb Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        device_iSerial = re.findall(r'iSerial\s+\d\s+(\w+)', cmd_buf)
+        if not device_iSerial:
+            self.nic_set_err_msg("Failed to parse command: {:s} output: {:s}".format(cmd, cmd_buf))
+            return False
+        device_iSerial = device_iSerial[0]
+
+        # program uC with MTCP
+        cmd = MFG_DIAG_CMDS().PANAREA_SUC_IMAGE_PROG.format(device_iSerial, uc_img)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Program uC image Command '{:s}' Failed".format(cmd))
+            return False
+        if "No such file or directory" in self.nic_get_cmd_buf() or "No suitable USB devices found" in  self.nic_get_cmd_buf():
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            return False
+
+        if MFG_DIAG_SIG.PANAREA_MTP_uC_PROG_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_err_msg("Program uC image Command signature check failed")
+            return False
 
         return True
 
