@@ -551,3 +551,6 @@ proc ext_snake {{mode "pcie_lb"} {board_id SN000001} {duration 60}} {
     set errCnt [cap_get_myerr_cnt "cap_snake_test_mtp $snake_num 8000 1 1600 1 $duration"]
     return $errCnt
 }
+
+proc vul_verify_voltage_vboot {{ avs_or all avs}} {
+}

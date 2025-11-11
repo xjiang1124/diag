@@ -9,6 +9,7 @@ set int_lpbk    [lindex $argv 5]
 set mtp_clk     [lindex $argv 6]
 
 set ASIC_SRC $::env(ASIC_SRC)
+set ::VEL_SHELL 0
 
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.vul

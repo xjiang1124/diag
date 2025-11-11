@@ -15,8 +15,8 @@ child.expect("\$ ")
 child.sendline("sudo /home/diag/diag/tools/devmem 0xfed08010 w 0x80")
 child.expect("\$ ")
 
-child.sendline("sudo ifconfig enp3s0f1 10.1.1.100 netmask 255.255.255.0")
-child.expect("\$ ")
+#child.sendline("sudo ifconfig enp3s0f1 10.1.1.100 netmask 255.255.255.0")
+#child.expect("\$ ")
 
 child.close()
 

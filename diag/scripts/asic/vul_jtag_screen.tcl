@@ -21,6 +21,7 @@ parray arg
 #source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
 
 ### initialize asic lib
+set ::VEL_SHELL 0
 if { $tcl_path != "" } {
     set ASIC_LIB_BUNDLE "$tcl_path"
 } elseif { $::env(ASIC_LIB_BUNDLE) != "" } {
