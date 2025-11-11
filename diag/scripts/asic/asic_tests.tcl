@@ -552,5 +552,5 @@ proc ext_snake {{mode "pcie_lb"} {board_id SN000001} {duration 60}} {
     return $errCnt
 }
 
-proc vul_verify_voltage_vboot {{ avs_or all avs}} {
+proc vul_verify_voltage_vboot {{ avs_or_all avs}} {
 }
