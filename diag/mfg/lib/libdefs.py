@@ -671,7 +671,7 @@ class MFG_DIAG_CMDS:
 
     #PANAREA MTP
     PANAREA_MTP_VULCANO_NIC_JTAG_MBIST = "tclsh vul_jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s}"
-    PANAREA_SNAKE_MTP_FMT       = "nic_test_v2.py nic_snake_mtp -slot {:s} -timeout {:d} -dura {:d} -snake_type {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}' -int_lpbk {:s}"
+    PANAREA_SNAKE_MTP_FMT       = "nic_test_vul.py nic_snake_mtp -slot {:s} -timeout {:d} -dura {:d} -snake_type {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}' -int_lpbk {:s}"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"

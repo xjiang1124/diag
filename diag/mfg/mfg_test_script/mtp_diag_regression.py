@@ -55,6 +55,8 @@ def check_compatability(mtp_mgmt_ctrl, slot, mtp_capability):
         mtp_exp_capability = 0x1
     elif nic_type in MTP_MATERA_CAPABLE_NIC_TYPE_LIST:
         mtp_exp_capability = 0x4
+    elif nic_type in MTP_PANAREA_CAPABLE_NIC_TYPE_LIST:
+        mtp_exp_capability = 0x5
     else:
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC Type {:s}'s MTP compatibility unknown".format(nic_type), level=0)
     if not mtp_capability & mtp_exp_capability:
@@ -251,7 +253,7 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequent
         fail_j2c_list = run_j2c_test_normally(mtp_mgmt_ctrl, nic_list, test, vmarg)
 
     # double check the L1 test even if it passed
-    if dsp == "ASIC" and (test == "L1" or  test == "L1_OW"):
+    if dsp == "ASIC" and (test == "L1" or  test == "L1_OW") and mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.PANAREA:
         for slot in nic_list:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -744,7 +746,7 @@ def main():
                     rlist = salina_erase_qspi(mtp_mgmt_ctrl, nic_list)
                 elif test == "SALINA_SET_PCIEAWD_ENV":
                     rlist = mtp_mgmt_ctrl.mtp_set_piceawd_env_salina(nic_list)
-                elif test == "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE":
+                elif test in ("SNAKE_SALINA_ASIC_WORK_DIR_PREPARE", "SNAKE_VULCANO_ASIC_WORK_DIR_PREPARE"):
                     rlist = mtp_mgmt_ctrl.mtp_make_copies_of_asic_dir(nic_list)
                 elif test == "SALINA_I2C_QSFP":
                     rlist = mtp_mgmt_ctrl.mtp_i2c_qsfp_salina(nic_list, vmarg=test_kwargs["vmarg"])
@@ -958,8 +960,9 @@ def main():
                     run_test(pass_nic_list, "NIC_PWRCYC")
                     vdd_ddr_check_list = get_slots_of_type([NIC_Type.ORTANO2, NIC_Type.POMONTEDELL])
                     run_test(vdd_ddr_check_list, "VDD_DDR_VERIFY")
-                    run_test(pass_nic_list, "CPLD_INIT")
-                    nic_boot_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
+                    cpld_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=VULCANO_NIC_TYPE_LIST)
+                    run_test(cpld_init_list, "CPLD_INIT")
+                    nic_boot_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST)
                     run_test(nic_boot_init_list, "NIC_BOOT_INIT")
                     all_except_cto = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CTO_MODEL_TYPE_LIST)
                     run_test(all_except_cto, "CPLD_VERIFY")
@@ -1438,6 +1441,7 @@ def main():
                 elif test_section == "VULCANO_SNAKE":
                     # run snake test
                     vulcano_max_power_snake = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
+                    run_regression_test(vulcano_max_power_snake, "SNAKE_VULCANO_ASIC_WORK_DIR_PREPARE")
 
                     slot2asicdir = dict()
                     for slot in vulcano_max_power_snake:

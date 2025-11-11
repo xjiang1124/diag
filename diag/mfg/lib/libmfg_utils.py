@@ -2593,6 +2593,8 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
         mode = "nod"
     elif nic_type in SALINA_NIC_TYPE_LIST:
         mode = "hod"
+    elif nic_type in VULCANO_NIC_TYPE_LIST:
+        mode = "hod"
     else:
         mode = ""
 
