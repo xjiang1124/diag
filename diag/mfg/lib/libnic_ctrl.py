@@ -954,6 +954,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
+        test_name = "max_pwr"
         cmd = MFG_DIAG_CMDS().PANAREA_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, int_lpbk)
         cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
         print(cmd)

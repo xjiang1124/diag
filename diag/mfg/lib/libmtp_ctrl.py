@@ -2726,14 +2726,12 @@ class mtp_ctrl():
             return False
         eeutil_info_output = self.mtp_get_cmd_buf()
 
-        #this function will add for panarea later
-        if self._mtp_type == MTP_TYPE.MATERA:
-            for fru in frus_list:
-                if fru not in eeutil_info_output:
-                    self.cli_log_err("Failed to find {:S}".format(fru))
-                    self.cli_log_err(eeutil_info_output)
-                    return False
-            self.cli_log_inf("FRU, IOBL, IOBR and FPIC founded in eeutil info")
+        for fru in frus_list:
+            if fru not in eeutil_info_output:
+                self.cli_log_err("Failed to find {:S}".format(fru))
+                self.cli_log_err(eeutil_info_output)
+                return False
+        self.cli_log_inf("FRU, IOBL, IOBR and FPIC founded in eeutil info")
 
         # FRU serial number check
         for fru in frus_list:
