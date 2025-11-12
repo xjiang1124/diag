@@ -120,8 +120,8 @@ do
     echo "jtag_accpcie_vulcano clr $SLOT"
     jtag_accpcie_vulcano clr $SLOT
 
-    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test_vul.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $ESEC_EN $SIMPLIFY 0 $PCT $JOO\""
-    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vul.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $ESEC_EN $SIMPLIFY 0 $PCT $JOO"
+    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 0 $PCT $JOO 1\""
+    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 0 $PCT $JOO 1"
     ret=$?
     sync
     num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1 SCREENING FAILED" | wc | awk -F " " '{print $1}')

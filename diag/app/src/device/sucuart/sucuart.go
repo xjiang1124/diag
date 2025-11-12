@@ -135,10 +135,11 @@ func suc_cmd_list(slot int, cmd_list []string) () {
     defer u.close_suc_uart()
 
     for i, cmd := range cmd_list {
-        buf, err := u.send_cmd_suc_uart(cmd)
+        buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
         if err != errType.SUCCESS {
             return
         }
+
         lines := strings.Split(string(buf), "\r\n")
         for _, line := range lines {
             // Skip empty last element if string ends with \r\n
@@ -155,17 +156,56 @@ func suc_cmd_list(slot int, cmd_list []string) () {
 }
 
 func Suc_dev_list(slot int) () {
-    cmd_list := []string{"device list\r\n"}
+    cmd_list := []string{"device list"}
     suc_cmd_list(slot, cmd_list)
 }
 
 func Suc_dev_status(slot int) () {
-    cmd_list := []string{"voltage ina3221_sensor\r\n", "voltage mp2861_sensor\r\n", "tmp451 temperature\r\n"}
+    cmd_list := []string{"voltage ina3221_sensor", "voltage mp2861_sensor", "tmp451 temperature"}
     suc_cmd_list(slot, cmd_list)
 }
 
-func Suc_dev_margin(slot int) () {
+func Suc_dev_margin(slot int, voltage_name string, pct int) () {
+    var cmd_vmarg string
+    if voltage_name != "VDD_CORE" {
+        cmd_vmarg = "voltage ds4424_margin " + voltage_name + " " + strconv.Itoa(pct)
+    } else {
+        cmd_vmarg = "voltage mp2861_margin " + strconv.Itoa(pct)
+    }
+    cmd_list := []string{cmd_vmarg}
+    suc_cmd_list(slot, cmd_list)
+    time.Sleep(time.Duration(100) * time.Millisecond)
     return
+}
+
+func Suc_dev_vset(slot int, voltage_name string, vboot int, vmin int, vmax int) () {
+    var cmd_list []string
+    if voltage_name == "VDD_CORE" {
+        if vboot != -1 {
+            cmd_vboot := "voltage mp2861_set vboot " + strconv.Itoa(vboot)
+            cmd_list = append(cmd_list, cmd_vboot)
+        }
+        if vmin != -1 {
+            cmd_vmin := "voltage mp2861_set vmin " + strconv.Itoa(vmin)
+            cmd_list = append(cmd_list, cmd_vmin)
+        }
+        if vmax != -1 {
+            cmd_vmax := "voltage mp2861_set vmax " + strconv.Itoa(vmax)
+            cmd_list = append(cmd_list, cmd_vmax)
+        }
+    } else {
+        //TODO
+    }
+    if cmd_list != nil {
+        suc_cmd_list(slot, cmd_list)
+        time.Sleep(time.Duration(100) * time.Millisecond)
+    }
+    return
+}
+
+func Suc_dev_margin_info(slot int) () {
+    cmd_list := []string{"voltage ds4424_info"}
+    suc_cmd_list(slot, cmd_list)
 }
 
 func Suc_cpld_read(slot int, offset byte) (data byte, err int) {
@@ -174,8 +214,8 @@ func Suc_cpld_read(slot int, offset byte) (data byte, err int) {
         return 0, err
     }
     defer u.close_suc_uart()
-    cmd := "diag_cpld read " + fmt.Sprintf("0x%02x\r\n", offset)
-    buf, err := u.send_cmd_suc_uart(cmd)
+    cmd := "diag_cpld read " + fmt.Sprintf("0x%02x", offset)
+    buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
     if err != errType.SUCCESS {
         return 0, err
     }
@@ -203,8 +243,8 @@ func Suc_cpld_write(slot int, offset byte, value byte) (err int) {
         return
     }
     defer u.close_suc_uart()
-    cmd := "diag_cpld write " + fmt.Sprintf("0x%02x ", offset) + fmt.Sprintf("0x%02x\r\n", value)
-    buf, err := u.send_cmd_suc_uart(cmd)
+    cmd := "diag_cpld write " + fmt.Sprintf("0x%02x ", offset) + fmt.Sprintf("0x%02x", value)
+    buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
     if err != errType.SUCCESS {
         return
     }
@@ -224,7 +264,7 @@ func Suc_exec_cmds(slot int, cmds string) () {
     for _, command := range raw_commands {
         trimmed_cmd := strings.TrimSpace(command)
         if trimmed_cmd != "" {
-            command_list = append(command_list, trimmed_cmd + "\r\n")
+            command_list = append(command_list, trimmed_cmd)
         }
     }
     suc_cmd_list(slot, command_list)

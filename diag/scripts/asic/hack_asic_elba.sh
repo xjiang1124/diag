@@ -18,5 +18,8 @@ then
 ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack
 fi
 
+if [[ $CARD_TYPE != "MTP_PANAREA" ]]
+then
 cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh/
 head -n -6 .tclrc.diag.elb > .tclrc.diag.elb.new
+fi
