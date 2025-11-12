@@ -2726,14 +2726,12 @@ class mtp_ctrl():
             return False
         eeutil_info_output = self.mtp_get_cmd_buf()
 
-        #this function will add for panarea later
-        if self._mtp_type == MTP_TYPE.MATERA:
-            for fru in frus_list:
-                if fru not in eeutil_info_output:
-                    self.cli_log_err("Failed to find {:S}".format(fru))
-                    self.cli_log_err(eeutil_info_output)
-                    return False
-            self.cli_log_inf("FRU, IOBL, IOBR and FPIC founded in eeutil info")
+        for fru in frus_list:
+            if fru not in eeutil_info_output:
+                self.cli_log_err("Failed to find {:S}".format(fru))
+                self.cli_log_err(eeutil_info_output)
+                return False
+        self.cli_log_inf("FRU, IOBL, IOBR and FPIC founded in eeutil info")
 
         # FRU serial number check
         for fru in frus_list:
@@ -5498,6 +5496,8 @@ class mtp_ctrl():
             asic_type = "elba"
         elif False not in [nic_type in SALINA_NIC_TYPE_LIST for nic_type in nic_type_list]:
             asic_type = "salina"
+        elif False not in [nic_type in VULCANO_NIC_TYPE_LIST for nic_type in nic_type_list]:
+            asic_type = "vulcano"
         else:
             asic_type = "capri"
 
@@ -6203,6 +6203,8 @@ class mtp_ctrl():
                 self.cli_log_err(f"Failed to execute command: {cmd}")
                 self.mtp_dump_err_msg(self._mgmt_handle.before)
 
+        asic = "salina" if self._mtp_type == MTP_TYPE.MATERA else "vulcano"
+
         # check disk free capacity, return False if less then 4G per slot
         total, used, free = shutil.disk_usage("/home/diag")
         freeinGb = int( free / 1024 / 1024 /1024)
@@ -6213,7 +6215,7 @@ class mtp_ctrl():
         for slot in slot_list:
             if slot == 0:
                 continue
-            cmd = f"cp -r /home/diag/diag/asic_all/salina /home/diag/diag/asic{slot}"
+            cmd = f"cp -r /home/diag/diag/asic_all/{asic} /home/diag/diag/asic{slot}"
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err(f"Failed to execute command: {cmd}")
                 self.mtp_dump_err_msg(self._mgmt_handle.before)
