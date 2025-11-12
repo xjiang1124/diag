@@ -215,7 +215,7 @@ func Suc_cpld_read(slot int, offset byte) (data byte, err int) {
     }
     defer u.close_suc_uart()
     cmd := "diag_cpld read " + fmt.Sprintf("0x%02x", offset)
-    buf, err := u.send_cmd_suc_uart(cmd)
+    buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
     if err != errType.SUCCESS {
         return 0, err
     }
@@ -244,7 +244,7 @@ func Suc_cpld_write(slot int, offset byte, value byte) (err int) {
     }
     defer u.close_suc_uart()
     cmd := "diag_cpld write " + fmt.Sprintf("0x%02x ", offset) + fmt.Sprintf("0x%02x", value)
-    buf, err := u.send_cmd_suc_uart(cmd)
+    buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
     if err != errType.SUCCESS {
         return
     }
