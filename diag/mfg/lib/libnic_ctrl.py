@@ -687,7 +687,7 @@ class nic_ctrl():
         if idx < 0:
             self.nic_set_err_msg("{:s} failed - occupied or missing".format(cmd))
             return False
-        if self._nic_type in SALINA_NIC_TYPE_LIST and ( not uart_selecttor ):
+        if self._nic_type in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST and ( not uart_selecttor ):
             self.nic_send_ctrl_c()
         time.sleep(5)
         # send return
@@ -699,7 +699,7 @@ class nic_ctrl():
         exp_list = [self._nic_con_prompt, "login:", "assword:", self._nic_con_zephyr_prompt]
         while True:
             idx = libmfg_utils.mfg_expect(self._nic_handle, exp_list, timeout=MTP_Const.NIC_CON_INIT_DELAY)
-            if idx == 0 or idx== 3:
+            if idx == 0 or idx == 3:
                 break
             elif idx == 1:
                 self._nic_handle.sendline(NIC_MGMT_USERNAME)
@@ -2544,6 +2544,20 @@ class nic_ctrl():
             else:
                 if not self.nic_exec_cmds(nic_cmd_list, timeout=timeout):
                     return False
+
+        return True
+
+    def nic_vulcano_reset_code(self):
+        cmd = MFG_DIAG_CMDS().NIC_RESET_CODE_FMT
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+
+        cmd = MFG_DIAG_CMDS().NIC_HWINFO_RESET_CODE_FMT
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
+            return False
 
         return True
 

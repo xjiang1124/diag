@@ -604,6 +604,8 @@ class MFG_DIAG_CMDS:
     NIC_AVS_POST_FMT = "inventory -sts -slot {:d}"
     NIC_I2C_DUMP_POST_FMT = "i2cdump -y {:d} 0x4a"
     NIC_I2C_DUMP_4B_POST_FMT = "i2cdump -y {:d} 0x4b"
+    NIC_RESET_CODE_FMT = "diag_cpld reset_reason"
+    NIC_HWINFO_RESET_CODE_FMT = "hwinfo reset_cause"
 
     NIC_ENA_ESEC_WRITE_PROT_FMT = "nic_test.py -ena_esec_wp -slot_list='{:s}'"
     NIC_DIS_ESEC_WRITE_PROT_FMT = "nic_test.py -dis_esec_wp -slot_list='{:s}'"
