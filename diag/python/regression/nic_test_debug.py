@@ -462,7 +462,7 @@ class nic_test_debug:
     def debug_cpld_reload(self, args):
         print("eMMC tuning")
         for i in range(args.p_ite):
-            print("=== Ite {} ===".format(i))
+            print("=== PC Ite {} ===".format(i))
 
             uart_session = common.session_start()
             mtp_session = common.session_start()
@@ -481,6 +481,7 @@ class nic_test_debug:
             self.nic_con.uart_session_start(uart_session, args.slot, uart_id=1)
 
             for j in range(args.r_ite):
+                print("=== Reload Ite {} ===".format(j))
                 ret = self.nic_con.uart_session_cmd(uart_session, cmd, timeout=10, ending="U-Boot 2021.04") 
                 if ret != 0:
                     print("==================================")
