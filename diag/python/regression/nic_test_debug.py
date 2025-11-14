@@ -459,8 +459,51 @@ class nic_test_debug:
 
         return 0
 
-    def emmc_tuning(self, args):
+    def debug_cpld_reload(self, args):
         print("eMMC tuning")
+        for i in range(args.p_ite):
+            print("=== Ite {} ===".format(i))
+
+            uart_session = common.session_start()
+            mtp_session = common.session_start()
+    
+            cmd = "debug cpld reload"
+
+            # Power cycle the NIC
+            common.session_cmd(mtp_session, "turn_on_slot.sh off "+str(args.slot))
+            print("Sleep 5 sec")
+            time.sleep(5)
+            common.session_cmd(mtp_session, "turn_on_slot.sh on "+str(args.slot))
+
+            print("Sleep 5 sec")
+            time.sleep(5)
+
+            self.nic_con.uart_session_start(uart_session, args.slot, uart_id=1)
+
+            for j in range(args.r_ite):
+                ret = self.nic_con.uart_session_cmd(uart_session, cmd, timeout=10, ending="U-Boot 2021.04") 
+                if ret != 0:
+                    print("==================================")
+                    print("=== CPU HUNG!!! ===")
+                    print("==================================")
+                    self.nic_con.uart_session_stop(uart_session)
+                    common.session_stop(uart_session)
+
+                    common.session_cmd(mtp_session, "i2cdump -y "+str(args.slot+2)+" 0x4a")
+                    common.session_stop(mtp_session)
+                    return
+                time.sleep(5)
+
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+        common.session_stop(mtp_session)
+        print("==================================")
+        print("=== NO Failure Happened ===")
+        print("==================================")
+        return
+
+    def emmc_tuning(self, args):
+        print("Debug CPLD Reload")
         for i in range(args.iteration):
             print("=== Ite {} ===".format(i))
 
@@ -587,6 +630,13 @@ if __name__ == "__main__":
     parser_emmc_tuning.add_argument("-cdns", "--cdns", help="eMMC CDNS setting", type=str, default="-1,-1,-1")
     parser_emmc_tuning.add_argument("-ite", "--iteration", help="Iteratin", type=int, default=1)
     parser_emmc_tuning.set_defaults(func=test.emmc_tuning)
+
+    # Debug CPLD Reload
+    parser_emmc_tuning = subparsers.add_parser('debug_cpld_reload', help='Debug CPLD Reload', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_emmc_tuning.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_emmc_tuning.add_argument("-p_ite", "--p_ite", help="Iteratin", type=int, default=1)
+    parser_emmc_tuning.add_argument("-r_ite", "--r_ite", help="Reload iteration", type=int, default=1)
+    parser_emmc_tuning.set_defaults(func=test.debug_cpld_reload)
 
     try:
         args = parser.parse_args()
