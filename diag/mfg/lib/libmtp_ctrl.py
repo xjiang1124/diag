@@ -4037,6 +4037,19 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].nic_boot_info_reset()
         return True
 
+    @parallelize.parallel_nic_using_console
+    def mtp_vulcano_reset_code_status(self, slot):
+        self._mtp_type = MTP_TYPE.PANAREA
+        if self._mtp_type != MTP_TYPE.PANAREA:
+            return True
+        if not self._nic_ctrl_list[slot].nic_vulcano_reset_code():
+            self.cli_log_slot_err(slot, "Retrieve reset code failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        self.cli_log_slot_inf(slot, "Retrieve reset code")
+        return True
+
     def mtp_program_nic_adi_ibm_cpld(self, slot, cpld_img, dl_step=True):
         # check the current cpld version
         nic_type = self.mtp_get_nic_type(slot)
