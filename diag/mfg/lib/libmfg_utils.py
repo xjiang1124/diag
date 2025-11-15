@@ -2180,6 +2180,8 @@ def loopback_sanity_check(mtp_mgmt_ctrl, nic_list):
                     port_list = ["1", "2"]
                 elif nic_type in SALINA_AI_NIC_TYPE_LIST:
                     port_list = ["0"]
+                elif nic_type in VULCANO_NIC_TYPE_LIST:
+                    port_list = ["0"]
 
                 for port_num in port_list:
                     if nic_type not in SALINA_NIC_TYPE_LIST:
@@ -2205,6 +2207,18 @@ def loopback_sanity_check(mtp_mgmt_ctrl, nic_list):
                                     cur_fail_list[slot] = 1
                                     loopback_fail_list[slot] += 1
                                     failure_detected = True
+                    elif nic_type in VULCANO_NIC_TYPE_LIST:
+                        if not mtp_mgmt_ctrl.mtp_nic_read_vulcano_transceiver_sn(slot, port_num):
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback sn")
+                            # not present, retry 3x
+                            if loopback_fail_list[slot] == max_retries_per_slot:
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
+                                continue
+                            else:
+                                cur_fail_list[slot] = 1
+                                loopback_fail_list[slot] += 1
+                                failure_detected = True
                     else:
                         if not mtp_mgmt_ctrl.mtp_nic_read_salina_transceiver_sn(slot, port_num):
                             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback sn")

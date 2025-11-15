@@ -554,7 +554,7 @@ if __name__ == "__main__":
     parser_mtp.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_mtp.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
     parser_mtp.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP before test; default to %(default)s", action='store_true', required=False, default=False)
-    parser_mtp.add_argument("--mtp_type", "-mtp_type", help="specify the mtp type TURBO_ELBA or MATERA", nargs="?",  choices=["TURBO_ELBA", "MATERA"], default="MATERA", const="MATERA")
+    parser_mtp.add_argument("--mtp_type", "-mtp_type", help="specify the mtp type TURBO_ELBA or MATERA", nargs="?",  choices=["TURBO_ELBA", "MATERA", "PANAREA"], default="PANAREA", const="PANAREA")
     parser_mtp.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
     parser_mtp.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
     parser_mtp.set_defaults(func=main)

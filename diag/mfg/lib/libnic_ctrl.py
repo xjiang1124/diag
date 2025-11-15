@@ -5,6 +5,7 @@ import re
 import json
 import traceback
 import pexpect
+import threading
 
 from datetime import datetime
 from libdefs import NIC_Type
@@ -1717,6 +1718,13 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        self.nic_set_cmd_buf(cmd_buf)
+        return True
+
+    @nic_console_test('1')
+    def uc_get_zephyr_booting_msg(self, monitor_timeout=30):
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt], self._nic_con_zephyr_prompt, timeout=monitor_timeout)
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         self.nic_set_cmd_buf(cmd_buf)
         return True
@@ -6275,7 +6283,7 @@ class nic_ctrl():
         output_str = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', output_str)
         return output_str
 
-    def uc_zephyr_cpld_update(self, cpld_img, partition='cfg0'):
+    def uc_zephyr_cpld_update(self, cpld_img, partition='0'):
         """
         update CPLD through micro controller zpher shell cpld command
             Subcommands:
@@ -6300,27 +6308,13 @@ class nic_ctrl():
         """
 
         partition = partition.lower()
-        support_partitions = ("cfg0", "cfg1")
+        support_partitions = ("0", "1")
         if partition not in support_partitions:
             self.nic_set_err_msg("Program partition {:s} not support yet, so far only support {:s}".format(partition, str(support_partitions)))
             return False
 
-        # get devid
-        devid = self.uc_zephyr_hwinfo_devid()
-        if not devid:
-            return False
-
-        # Zero the device CPLD image upload buffer
-        cmd = "{:s} -d {:s} -z".format(MFG_DIAG_CMDS().PANAREA_SUC_USB_TOOL, devid)
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_err_msg("Zero the device CPLD image upload buffer Command '{:s}' Failed".format(cmd))
-            return False
-        if "No such file or directory" in self.nic_get_cmd_buf() or "No suitable USB devices found" in  self.nic_get_cmd_buf():
-            self.nic_set_err_msg(self.nic_get_cmd_buf())
-            return False
-
         # copy cpld image to microncontroller buffer
-        cmd = "{:s} -d {:s} -u {:s}".format(MFG_DIAG_CMDS().PANAREA_SUC_USB_TOOL, devid, cpld_img)
+        cmd = "{:s} -s {:d} -u {:s}".format(MFG_DIAG_CMDS().PANAREA_SUC_USB_TOOL, self._slot+1, cpld_img)
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Upload CPLD image to device Command '{:s}' Failed".format(cmd))
             return False
@@ -6349,7 +6343,7 @@ class nic_ctrl():
             return False
         cmd_buf = self.nic_get_cmd_buf()
         sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
-        if ("Writing {:s}...".format(partition)).lower() not in sanitized_cmd_buf.lower() or "Done!".lower() not in sanitized_cmd_buf.lower():
+        if ("Writing CFG{:s}...".format(partition)).lower() not in sanitized_cmd_buf.lower() or "Done!".lower() not in sanitized_cmd_buf.lower():
             self.nic_set_err_msg("Zephyr CPLD program {:s} Failed".format(partition))
             self.nic_set_err_msg(cmd_buf)
             return False
@@ -6446,7 +6440,7 @@ class nic_ctrl():
 
         # program uC with MTCP
         cmd = MFG_DIAG_CMDS().PANAREA_SUC_IMAGE_PROG.format(device_iSerial, uc_img)
-        if not self.mtp_exec_cmd(cmd):
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_POWER_ON_DELAY):
             self.nic_set_err_msg("Program uC image Command '{:s}' Failed".format(cmd))
             return False
         if "No such file or directory" in self.nic_get_cmd_buf() or "No suitable USB devices found" in  self.nic_get_cmd_buf():
@@ -6456,6 +6450,159 @@ class nic_ctrl():
         if MFG_DIAG_SIG.PANAREA_MTP_uC_PROG_SIG not in self.nic_get_cmd_buf():
             self.nic_set_err_msg("Program uC image Command signature check failed")
             return False
+
+        return True
+
+    def i2c_device_screening(self):
+        """
+        Run a bunch of I2C Device Related commands, Make sure they are work
+        """
+
+        # devmgr_v2 margin info
+        cmd = MFG_DIAG_CMDS().MTP_DEVICE_MARGIN_INFO_FMT + " -s {:d}".format(self._slot +1)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("'{:s}' Failed".format(cmd))
+            return False
+        margin_info = self.nic_get_cmd_buf()
+
+        # devmgr_v2 status
+        cmd = MFG_DIAG_CMDS().MTP_MATERA_DEVMGR_STATUS_FMT + " -s {:d}".format(self._slot +1)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("'{:s}' Failed".format(cmd))
+            return False
+        devmgr_v2_status = self.nic_get_cmd_buf()
+
+        # devmgr_v2 list
+        cmd = MFG_DIAG_CMDS().MTP_DEVMGR_LIST_FMT + " -s {:d}".format(self._slot +1)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("'{:s}' Failed".format(cmd))
+            return False
+        devmgr_v2_list = self.nic_get_cmd_buf()
+
+        # check
+        # [2025-11-14_10:31:48] diag@MTP:$ devmgr_v2 margin info -s 6
+        # [INFO]    [2025-11-14-10:31:53.777] VDDIO_P1V2       | bus-1 addr 0x10 register 0xf8:  Reg=0x00  --> Margin=0  Volt=1.20V
+        # [INFO]    [2025-11-14-10:31:53.777] VDD_0P75_PX      | bus-1 addr 0x10 register 0xf9:  Reg=0x00  --> Margin=0  Volt=0.77V
+        # [INFO]    [2025-11-14-10:31:53.777] VDD_0P75_ETH     | bus-1 addr 0x10 register 0xfa:  Reg=0x00  --> Margin=0  Volt=0.77V
+        # [INFO]    [2025-11-14-10:31:53.777] VDDCR_0P75       | bus-1 addr 0x10 register 0xfb:  Reg=0x00  --> Margin=0  Volt=0.88V
+        # [INFO]    [2025-11-14-10:31:53.777] VDDAN_P1V8_PX    | bus-1 addr 0x30 register 0xf8:  Reg=0x00  --> Margin=0  Volt=1.79V
+        # [INFO]    [2025-11-14-10:31:53.777] VDDAN_P1V8_ETH   | bus-1 addr 0x30 register 0xf9:  Reg=0x00  --> Margin=0  Volt=1.79V
+        # [INFO]    [2025-11-14-10:31:53.777] VDDAN_P1V1_PX    | bus-1 addr 0x30 register 0xfa:  Reg=0x00  --> Margin=0  Volt=1.11V
+        # [INFO]    [2025-11-14-10:31:53.777] VDDAN_P1V1_ETH   | bus-1 addr 0x30 register 0xfb:  Reg=0x00  --> Margin=0  Volt=1.11V
+        # [INFO]    [2025-11-14-10:31:53.777] VDDPL_P1V2       | bus-1 addr 0x50 register 0xf8:  Reg=0x00  --> Margin=0  Volt=1.20V
+        # [INFO]    [2025-11-14-10:31:53.777] VDDPL_P1V1_PX    | bus-1 addr 0x50 register 0xf9:  Reg=0x00  --> Margin=0  Volt=1.10V
+        # [INFO]    [2025-11-14-10:31:53.777] VDDPL_P1V1_ETH   | bus-1 addr 0x50 register 0xfa:  Reg=0x00  --> Margin=0  Volt=1.11V
+        # [INFO]    [2025-11-14-10:31:53.777] VDDPL_0P75       | bus-1 addr 0x50 register 0xfb:  Reg=0x00  --> Margin=0  Volt=0.75V
+        if "Volt=" not in margin_info:
+            self.nic_set_err_msg("devmgr_v2 margin info check failed")
+            return False
+        # [2025-11-14_11:38:06] diag@MTP:$ devmgr_v2 status -s 6
+        # [INFO]    [2025-11-14-11:38:13.017] tmp451 temperature
+        # [INFO]    [2025-11-14-11:38:13.017] LOCAL TEMP : 21.000
+        # [INFO]    [2025-11-14-11:38:13.017] REMOTE TEMP: 21.000
+        # [INFO]    [2025-11-14-11:38:13.017]
+        # [INFO]    [2025-11-14-11:38:13.208] voltage ina3221_sensor
+        # [INFO]    [2025-11-14-11:38:13.208] NAME            | VBOOT  |  VOUT   |  IOUT   |  POUT
+        # [INFO]    [2025-11-14-11:38:13.208] -----------------------------------------------------
+        # [INFO]    [2025-11-14-11:38:13.208] VDD_0P75_ETH    | 0.770  |  0.000  |  0.000  |  0.000
+        # [INFO]    [2025-11-14-11:38:13.208] VDDAN_P1V1_ETH  | 1.110  |  0.000  |  0.000  |  0.000
+        # [INFO]    [2025-11-14-11:38:13.208] VDDCR_0P75      | 0.880  |  0.000  |  0.000  |  0.000
+        # [INFO]    [2025-11-14-11:38:13.208] VDDAN_P1V1_PX   | 1.110  |  0.000  |  0.000  |  0.000
+        # [INFO]    [2025-11-14-11:38:13.208] VDD_0P75_PX     | 0.770  |  0.000  |  0.000  |  0.000
+        # [INFO]    [2025-11-14-11:38:13.208] P3V3_NIC        | 3.300  |  3.328  |  0.160  |  0.532
+        # [INFO]    [2025-11-14-11:38:13.208]
+        # [INFO]    [2025-11-14-11:38:13.292] LOCAL TEMP : 21.062
+        # [INFO]    [2025-11-14-11:38:13.292] REMOTE TEMP: 21.062
+        if "P3V3_NIC" not in devmgr_v2_status or "ERROR:" in devmgr_v2_status:
+            self.nic_set_err_msg("devmgr_v2 status info check failed")
+            return False
+        # [2025-11-14_10:28:33] diag@MTP:$ devmgr_v2 list -s 6
+        # [INFO]    [2025-11-14-10:28:41.549] devices:
+        # [INFO]    [2025-11-14-10:28:41.549] - eic@44800000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.549]   DT node labels: eic
+        # [INFO]    [2025-11-14-10:28:41.549] - gpio@44840300 (READY)
+        # [INFO]    [2025-11-14-10:28:41.549]   DT node labels: pg
+        # [INFO]    [2025-11-14-10:28:41.549] - gpio@44840280 (READY)
+        # [INFO]    [2025-11-14-10:28:41.549]   DT node labels: pf
+        # [INFO]    [2025-11-14-10:28:41.549] - gpio@44840200 (READY)
+        # [INFO]    [2025-11-14-10:28:41.549]   DT node labels: pe
+        # [INFO]    [2025-11-14-10:28:41.549] - gpio@44840180 (READY)
+        # [INFO]    [2025-11-14-10:28:41.549]   DT node labels: pd
+        # [INFO]    [2025-11-14-10:28:41.549] - gpio@44840100 (READY)
+        # [INFO]    [2025-11-14-10:28:41.549]   DT node labels: pc
+        # [INFO]    [2025-11-14-10:28:41.549] - gpio@44840080 (READY)
+        # [INFO]    [2025-11-14-10:28:41.549]   DT node labels: pb
+        # [INFO]    [2025-11-14-10:28:41.549] - gpio@44840000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.549]   DT node labels: pa
+        # [INFO]    [2025-11-14-10:28:41.549] - cdc_acm_uart0 (READY)
+        # [INFO]    [2025-11-14-10:28:41.549]   DT node labels: cdc_acm_uart0
+        # [INFO]    [2025-11-14-10:28:41.549] - flash-region@c000000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: pfm
+        # [INFO]    [2025-11-14-10:28:41.55 ] - flash-region@8000000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: bfm
+        # [INFO]    [2025-11-14-10:28:41.55 ] - flash-region@A000000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: cfm
+        # [INFO]    [2025-11-14-10:28:41.55 ] - flash-controller@44002000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: nvmctrl0
+        # [INFO]    [2025-11-14-10:28:41.55 ] - sercom@46004000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: sercom4
+        # [INFO]    [2025-11-14-10:28:41.55 ] - usb@4f010000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: hsusb0 zephyr_udc0
+        # [INFO]    [2025-11-14-10:28:41.55 ] - vulcano_flash@0 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ] - vulcano_flash_mux@0 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ] - sercom@45802000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: sercom3
+        # [INFO]    [2025-11-14-10:28:41.55 ] - sercom@45800000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: sercom2
+        # [INFO]    [2025-11-14-10:28:41.55 ] - sercom@46002000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: sercom1
+        # [INFO]    [2025-11-14-10:28:41.55 ] - sercom@46000000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: sercom0
+        # [INFO]    [2025-11-14-10:28:41.55 ] - sercom@45804000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: sercom5
+        # [INFO]    [2025-11-14-10:28:41.55 ] - ixs@46030000 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: ixs0
+        # [INFO]    [2025-11-14-10:28:41.55 ] - leds (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ] - ina3221_41@2 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: p3v3_nic
+        # [INFO]    [2025-11-14-10:28:41.55 ] - ina3221_41@1 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: vdd_0p75_px
+        # [INFO]    [2025-11-14-10:28:41.55 ] - ina3221_41@0 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: vddan_p1v1_px
+        # [INFO]    [2025-11-14-10:28:41.55 ] - ina3221_40@2 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: vddcr_p075
+        # [INFO]    [2025-11-14-10:28:41.55 ] - ina3221_40@1 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: vddan_p1v1_eth
+        # [INFO]    [2025-11-14-10:28:41.55 ] - ina3221_40@0 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: vdd_0p75_eth
+        # [INFO]    [2025-11-14-10:28:41.55 ] - ina3221@41 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ] - ina3221@40 (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ] - tmp451@4c (READY)
+        # [INFO]    [2025-11-14-10:28:41.55 ]   DT node labels: temp_sensor
+        if "READY" not in devmgr_v2_list:
+            self.nic_set_err_msg("devmgr_v2 list info check failed")
+            return False
+
+        return True
+
+    def vulcano_suc_i2c_device_test(self, timeout=300):
+        '''
+        nic_test_vul.py suc_i2c_ds4424_test -slot <slot> -index <index>
+        nic_test_vul.py suc_i2c_tmp451_test -slot <slot>
+        nic_test_vul.py suc_i2c_rc22308_test -slot <slot>
+        '''
+        suc_i2c_devices = ("suc_i2c_ds4424_test", "suc_i2c_tmp451_test", "suc_i2c_rc22308_test")
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        for device in suc_i2c_devices:
+            cmd = MFG_DIAG_CMDS().NIC_TEST_VULCANO_CMD + " {:s} -slot {:s}".format(device, str(self._slot + 1))
+            if not self.mtp_exec_cmd(cmd, timeout=timeout):
+                return False
+            if "error" in self.nic_get_cmd_buf():
+                self.nic_set_err_msg("Error found in command '{:s}'".format(cmd))
+                return False
 
         return True
 
@@ -7582,6 +7729,30 @@ class nic_ctrl():
             return False
 
         sn_match = re.search(r"XCVR SN:\s+(\w+)", cmd_buf)
+
+        if sn_match is None or len(sn_match.groups()) == 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Failed to parse Port {:s} loopback transceiver EEPROM".format(port))
+            return False
+        self._loopback_sn[port] = sn_match.group(1).strip()
+
+        self.nic_set_cmd_buf(cmd_buf)
+        return True
+
+    def nic_read_vulcano_transceiver_sn(self, port):
+        if port not in ("0","1","2"):
+            self.nic_set_err_msg("Script error: invalid port specified")
+            return False
+
+        cmd = MFG_DIAG_CMDS().PANAREA_SUC_UTIL_OSFP_READ_SN + " -s {:s}".format(str(self._slot + 1))
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+            return False
+
+        cmd_buf = self.nic_get_cmd_buf()
+        if "osfp_read_sn Failed" in cmd_buf or "osfp: command not found" in cmd_buf or "No OSFP Detected" in cmd_buf:
+            return False
+
+        sn_match = re.search(r"OSFP\sS\/N:\s+(\w+)", cmd_buf)
 
         if sn_match is None or len(sn_match.groups()) == 0:
             self.nic_set_cmd_buf(cmd_buf)
