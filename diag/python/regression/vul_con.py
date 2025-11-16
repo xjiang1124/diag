@@ -21,6 +21,8 @@ class vul_con:
         try:
             session.sendline(cmd)
             session.expect(expstr, timeout)
+            session.sendline("")
+            session.expect("uart:~\$", timeout)
         except pexpect.TIMEOUT:
             print("=== TIMEOUT: Failed to connect console")
             ret = -1

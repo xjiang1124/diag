@@ -63,15 +63,16 @@ func createMarginInfoCommand() *cobra.Command {
 func createSetCommand() *cobra.Command {
     var setCmd = &cobra.Command{
         Use:   "set",
-        Short: "Set vboot/vmin/vmax",
+        Short: "Set vboot/vout/vmin/vmax",
         Run: func(cmd *cobra.Command, args []string) {
             slot, _ := cmd.Flags().GetInt("slot")
             devName, _ := cmd.Flags().GetString("dev")
             vboot, _ := cmd.Flags().GetInt("vboot")
+            vout, _ := cmd.Flags().GetInt("vout")
             vmin, _ := cmd.Flags().GetInt("vmin")
             vmax, _ := cmd.Flags().GetInt("vmax")
             if slot >= 1 && slot <= 10 {
-                sucuart.Suc_dev_vset(slot, strings.ToUpper(devName), vboot, vmin, vmax)
+                sucuart.Suc_dev_vset(slot, strings.ToUpper(devName), vboot, vout, vmin, vmax)
             }
         },
     }

@@ -54,9 +54,19 @@ class nic_test_vul:
 
         return ret
 
-    def suc_i2c_dev1_test(self, args):
-        cmd = "command to be added"
-        pass_sig = "PASS"
+    def suc_i2c_ds4424_test(self, args):
+        cmd = "ds4424 i2ctest {}".format(int(args.index))
+        pass_sig = "DS4424 I2C TEST PASSED"
+        return self.suc_dev_test_common(cmd, pass_sig, args)
+
+    def suc_i2c_tmp451_test(self, args):
+        cmd = "tmp451 i2ctest"
+        pass_sig = "TMP451 I2C TEST PASSED"
+        return self.suc_dev_test_common(cmd, pass_sig, args)
+
+    def suc_i2c_rc22308_test(self, args):
+        cmd = "rc22308 i2ctest"
+        pass_sig = "RC22308 I2C TEST PASSED"
         return self.suc_dev_test_common(cmd, pass_sig, args)
 
     def nic_snake_mtp(self, args):
@@ -187,9 +197,18 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(title="subcommands list", dest="suite", description="'%(prog)s {subcommand} --help' for detail usage of specified subcommand", help='sub-command description')
 
     # i2c dev test
-    parser_i2c_test = subparsers.add_parser('suc_i2c_dev1_test', help='i2c dev1 test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_i2c_test = subparsers.add_parser('suc_i2c_ds4424_test', help='i2c ds4424 test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_i2c_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
-    parser_i2c_test.set_defaults(func=test.suc_i2c_dev1_test)
+    parser_i2c_test.add_argument("-index", "--index", help="which DS4424 device to test", type=str, default="")
+    parser_i2c_test.set_defaults(func=test.suc_i2c_ds4424_test)
+
+    parser_i2c_test = subparsers.add_parser('suc_i2c_tmp451_test', help='i2c tmp451 test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_i2c_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_i2c_test.set_defaults(func=test.suc_i2c_tmp451_test)
+
+    parser_i2c_test = subparsers.add_parser('suc_i2c_rc22308_test', help='i2c rc22308 test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_i2c_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_i2c_test.set_defaults(func=test.suc_i2c_rc22308_test)
 
     # NIC snake test from mtp
     parser_nic_snake_mtp = subparsers.add_parser('nic_snake_mtp', help='NIC snake test from mtp', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
