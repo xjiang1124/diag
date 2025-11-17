@@ -44,6 +44,7 @@ pentrust_img = "pentrust"
 fipa_img = "fipa"
 fipb_img = "fipb"
 fipg_img = "fipg"
+microcontroller_img = "microcontroller_img"
 
 def get_dict_entry(mtp_mgmt_ctrl, img_dict, nic_type):
     try:
@@ -319,6 +320,12 @@ def get_fipg_img(mtp_mgmt_ctrl, slot, stage):
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.fipg_img, nic_type)
     }
 
+def get_microcontroller_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, microcontroller_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.microcontroller_img, nic_type)
+    }
+
 def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     # map image display names to the right get method
@@ -365,6 +372,8 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         fipa_img: get_fipa_img,
         fipb_img: get_fipb_img,
         fipg_img: get_fipg_img,
+        fipg_img: get_fipg_img,
+        microcontroller_img: get_microcontroller_img,
         }
 
     images_needed = list()
@@ -396,6 +405,9 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(device_config_dtb)
             if nic_type in SALINA_AI_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
                 images_needed.append(qspi_verify_sh_img)
+
+        if nic_type in VULCANO_NIC_TYPE_LIST:
+            images_needed.append(microcontroller_img)
 
         if nic_type in FPGA_TYPE_LIST:
             images_needed.append(fail_cpld)
@@ -497,6 +509,9 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(qspi_prog_secure_sh_img)
                 images_needed.append(qspi_verify_sh_img)
                 images_needed.append(qspi_verify_secure_sh_img)
+
+        if nic_type in VULCANO_NIC_TYPE_LIST:
+            images_needed.append(microcontroller_img)
 
     # return dict with {"Image display name": filepath}
     ret_dict = dict()

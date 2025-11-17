@@ -191,10 +191,19 @@ def dl_cpld_program(mtp_mgmt_ctrl, slot):
         return mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
 
 @parallelize.parallel_nic_using_ssh
+def dl_osfp_sn_read(mtp_mgmt_ctrl, slot):
+    port = "0"
+    return mtp_mgmt_ctrl.mtp_nic_read_vulcano_transceiver_sn(slot, port)
+
+@parallelize.parallel_nic_using_ssh
 def dl_uc_img_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
-    uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_microcontroller_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
     return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, uc_img_file)
+
+@parallelize.parallel_nic_using_ssh
+def dl_uc_boot_check(mtp_mgmt_ctrl, slot):
+    return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_boot_check(slot)
 
 @parallelize.parallel_nic_using_ssh
 def dl_fail_cpld_program(mtp_mgmt_ctrl, slot):
@@ -536,6 +545,14 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_board_config(nic_list)
             elif test == "uC_IMG_PROG":
                 rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "I2C_DEVICE_SCREENING":
+                rlist = mtp_mgmt_ctrl.mtp_nic_i2c_device_screening(nic_list)
+            elif test == "VUL_SUC_I2C_DEVICE_TEST":
+                rlist = mtp_mgmt_ctrl.mtp_nic_vul_suc_i2c_device_test(nic_list)
+            elif test == "OSFP_SN_READ_TEST":
+                rlist = dl_osfp_sn_read(mtp_mgmt_ctrl, nic_list)
+            elif test == "uC_BOOTING_CHK":
+                rlist = dl_uc_boot_check(mtp_mgmt_ctrl, nic_list)
             elif test == "CPLD_PROG":
                 rlist = dl_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE":
@@ -785,10 +802,14 @@ def main():
             # run_dl_test(esec_list, "L1_ESEC_PROG")
 
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+            run_dl_test(pass_nic_list, "uC_BOOTING_CHK")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
-            run_dl_test(pass_nic_list, "uC_IMG_PROG")
+            run_dl_test(pass_nic_list, "I2C_DEVICE_SCREENING")
+            run_dl_test(pass_nic_list, "VUL_SUC_I2C_DEVICE_TEST")
+            run_dl_test(pass_nic_list, "OSFP_SN_READ_TEST")
+            # run_dl_test(pass_nic_list, "uC_IMG_PROG")
 
         else:
             # power cycle all nic

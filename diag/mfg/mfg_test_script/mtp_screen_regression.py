@@ -1150,7 +1150,15 @@ def main():
             run_nic_test(pass_nic_list, "ASIC_LOG_SAVE")
             run_nic_test(pass_nic_list, "L1_SETUP")
             run_nic_test(pass_nic_list, "L1", "ASIC", l1_sequence=l1_sequence)
-
+        elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+            # run_mtp_test(pass_nic_list, "USB_BENCHMARK")
+            run_mtp_test(pass_nic_list, "SSD_BENCHMARK")
+            run_mtp_test(pass_nic_list, "CPU_BENCHMARK")
+            run_mtp_test(pass_nic_list, "MEM_BENCHMARK")
+            run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN_LOW")
+            run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN_HIGH")
+            run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN_NORMAL")
+            run_mtp_test(pass_nic_list, "I2C_DEVICE")
         else:
             run_mtp_test(pass_nic_list, "MTP_FRU_PROG")
             run_nic_test(pass_nic_list, "SLOTS_FULL_CHECK")

@@ -7555,7 +7555,7 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_nic_uc_zephyr_cpld_update(self, slot, cpld_img_file, partition='cfg0'):
+    def mtp_nic_uc_zephyr_cpld_update(self, slot, cpld_img_file, partition='0'):
         """
         update CPLD through micro controller zpher shell cpld command
             Subcommands:
@@ -7579,12 +7579,141 @@ class mtp_ctrl():
             op         : <byte> [<byte>...] Raw reg interface SPI op (hex args)
         """
 
-        support_partitions = ("cfg0", "cfg1")
+        support_partitions = ("0", "1")
         if partition not in support_partitions:
             self.cli_log_slot_err_lock(slot, "Please provide correct cpld partion , it should be in {:d}".format(str(support_partitions)))
             return False
         if not self._nic_ctrl_list[slot].uc_zephyr_cpld_update(cpld_img_file, partition):
             self.cli_log_slot_err_lock(slot, "Program CPLD Failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True
+
+    def mtp_nic_uc_zephyr_boot_check(self, slot, monitor_timeout=40):
+        """
+        sample microcontroller power cycle output as following:
+            [00:00:00.000,000] <inf> part_core## Gelso bringup app loaded ##
+            Boot info:
+            magic=0x464e4942 size=40
+            bootloader_source=1 bootloader_version=0x0000000300010000
+            runtime_source=1
+            Boot control:
+            magic=0x4c544342 size=16
+            target=0 tries_remaining=0
+            ## PLDM is OK ##
+            ## PFM Status ##
+            pfm_swapped=0
+            PFM_A seq_no=0. rc=0
+            PFM_B seq_no=0. rc=0
+            ## BFM status ##
+            bfm_swapped=0
+            BFM_A seq_no=1. rc=0
+            BFM_B seq_no=0. rc=0
+            : partition_init: with 5 devices, mask: 0x0000001f
+            [00:00:00.004,000] <inf> usbd_cdc_acm: rx_en: trigger rx_fifo_work
+            [00:00:00.004,000] <inf> usbd_cdc_acm: USB configuration is not enabled or suspended
+            *** Booting Zephyr OS build v4.1.0 ***
+            [00:00:00.004,000] <inf> usbd_init: interface 0 alternate 0
+            [00:00:00.004,000] <inf> usbd_init:     ep 0x81 mps 0x0010 interface ep-bm 0x00020000
+            [00:00:00.004,000] <inf> usbd_init: interface 1 alternate 0
+            [00:00:00.004,000] <inf> usbd_init:     ep 0x82 mps 0x0200 interface ep-bm 0x00040000
+            ............
+        """
+        def mtp_2nd_mgmt_exec_cmd(mtp_mgmt_ctrl, handle, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
+
+            rc = True
+            handle.sendline(cmd)
+            cmd_before = ""
+            buf_before_sig = ""
+            for sig in sig_list:
+                idx = libmfg_utils.mfg_expect(handle, [sig], timeout)
+                buf_before_sig += handle.before
+                if idx < 0:
+                    rc = False
+                    cmd_before = handle.before
+                    break
+            idx = libmfg_utils.mfg_expect(handle, ["$"], timeout)
+            # signature match fails
+            if not rc:
+                mtp_mgmt_ctrl.mtp_dump_err_msg(cmd_before)
+                return (False, cmd_before)
+            elif idx < 0:
+                mtp_mgmt_ctrl.mtp_dump_err_msg(handle.before)
+                return (False, buf_before_sig + handle.before)
+            else:
+                cmd_output = buf_before_sig + handle.before
+                # print(cmd_buf + "$")
+
+            # get command return code
+            handle.sendline("echo $?")
+            idx = libmfg_utils.mfg_expect(handle, ["$"], 3)
+            idx = libmfg_utils.mfg_expect(handle, ["$"], 5)
+            if idx < 0:
+                mtp_mgmt_ctrl.cli_log_slot_wrn("Failed to Get Command Return Value" + handle.before)
+                return (True, cmd_output)
+
+            cmd_return_code = handle.before.splitlines()[2].strip("\r").strip()
+            if cmd_return_code != '0':
+                return (False, cmd_output + " echo $?" + handle.before)
+
+            return (True, cmd_output)
+
+        def power_cycle_slot_in_2nd_session(mtp_mgmt_ctrl, second_handle, slot):
+
+            mtp_mgmt_ctrl.cli_log_inf_lock("Power Cylce slot slot {:d} in 2nd session".format(slot + 1) , level=0)
+            result = False
+            cmd = "turn_on_slot.sh off {:d}; sleep 10;turn_on_slot.sh on {:d}".format(slot + 1, slot +1)
+            cmd_result = mtp_2nd_mgmt_exec_cmd(mtp_mgmt_ctrl, second_handle, cmd, timeout=30)
+            if not cmd_result[0]:
+                mtp_mgmt_ctrl.cli_log_err_lock("command {:s} on 2nd mtp mgmt session failed".format(cmd), level=0)
+                mtp_mgmt_ctrl.cli_log_err_lock(cmd_result[1], level=0)
+                return result
+            result = True
+            return result
+
+        power_cycle_handle = self.mtp_session_create()
+        boot_check_threads = []
+        t1 = threading.Thread(target=self._nic_ctrl_list[slot].uc_get_zephyr_booting_msg, args=(monitor_timeout,))
+        boot_check_threads.append(t1)
+        t2 = threading.Thread(target=power_cycle_slot_in_2nd_session, args=(self, power_cycle_handle, slot))
+        boot_check_threads.append(t2)
+
+        for thread in boot_check_threads:
+            thread.start()
+            time.sleep(5)
+        for thread in boot_check_threads:
+            thread.join()
+
+        power_cycle_handle.close()
+
+        if "Booting Zephyr OS build".lower() not in self.mtp_get_nic_cmd_buf(slot).lower():
+            self.cli_log_slot_err_lock(slot, "uc zephyr boot check Failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_i2c_device_screening(self, slot):
+        """
+        Run a bunch of I2C related commands, make sure they are work
+        """
+
+        if not self._nic_ctrl_list[slot].i2c_device_screening():
+            self.cli_log_slot_err_lock(slot, "I2C Device Screening Failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_vul_suc_i2c_device_test(self, slot, timeout=300):
+        """
+        nic_test_vul.py suc_i2c_ds4424_test -slot <slot> -index <index>
+        nic_test_vul.py suc_i2c_tmp451_test -slot <slot>
+        nic_test_vul.py suc_i2c_rc22308_test -slot <slot>
+        """
+
+        if not self._nic_ctrl_list[slot].vulcano_suc_i2c_device_test():
+            self.cli_log_slot_err_lock(slot, "Vucano Suc I2C Device test Failed")
             self.mtp_get_nic_err_msg(slot)
             return False
         return True
@@ -8801,6 +8930,20 @@ class mtp_ctrl():
 
     def mtp_nic_read_salina_transceiver_sn(self, slot, port):
         if not self._nic_ctrl_list[slot].nic_read_salina_transceiver_sn(port):
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        if port in list(self._nic_ctrl_list[slot]._loopback_sn.keys()):
+            self.cli_log_slot_inf(slot, "Detected port {:s} loopback transceiver {:s}".format(port, self._nic_ctrl_list[slot]._loopback_sn[port]))
+        else:
+            self.cli_log_slot_inf(slot, "Missing port {:s} loopback info".format(port))
+            return False
+
+        return True
+
+    def mtp_nic_read_vulcano_transceiver_sn(self, slot, port):
+        if not self._nic_ctrl_list[slot].nic_read_vulcano_transceiver_sn(port):
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False

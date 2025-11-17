@@ -363,6 +363,7 @@ class MFG_DIAG_CMDS:
     MTP_PSU_TEST_FMT = "mtptest -psu"
     NIC_CARD_TYPE_SET_FMT = "export CARD_TYPE={:s}"
     MTP_MATERA_DEVMGR_STATUS_FMT = "devmgr_v2 status"
+    MTP_DEVMGR_LIST_FMT = "devmgr_v2 list"
     MTP_MATERA_FAN_SET_SPD_FMT = "devmgr_v2 fanctrl --pct {:d}"
     MTP_MATERA_INVENTORY_CPU_FMT = "inventory -cpu"
     MTP_MATERA_INVENTORY_DDR_FMT = "inventory -ddr"
@@ -541,9 +542,13 @@ class MFG_DIAG_CMDS:
     SUC_ZEPHYR_HWINFO_DEVID = "hwinfo devid"
 
     # Panarea MTP command
+    PANAREA_SUC_UTIL = "/home/diag/diag/util/sucutil"
+    PANAREA_SUC_UTIL_CPLD_CMD = PANAREA_SUC_UTIL + " cpld"
+    PANAREA_SUC_UTIL_RAW_CMD = PANAREA_SUC_UTIL + " exec"
+    PANAREA_SUC_UTIL_OSFP_READ_SN = PANAREA_SUC_UTIL_RAW_CMD + ' -c "osfp serialnumber" '
     PANAREA_SUC_USB_TOOL = "/home/diag/usb/suc_usb_tool.py"
-    PANAREA_SUC_CNS_PMCI_TEST_ALL = "/home/diag/usb/test_all.py"
-    PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --usb {:s} --print-hdrs --print-msgs -vvv --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
+    PANAREA_SUC_CNS_PMCI_TEST_ALL = "/home/diag/cns-pmci/test_all.py"
+    PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --usb {:s}:3 --print-hdrs --print-msgs -vvv --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
 
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
@@ -670,6 +675,7 @@ class MFG_DIAG_CMDS:
     MATERA_I2C_QSFP_FMT         = "nic_test_v2.py test_spi -slot {:s} -vmarg {:s}"
     MATERA_I2C_RTC_FMT         = "tclsh sal_i2c_access.tcl -slot {:s} -vmarg {:s}"
     MATERA_L1_PRE_SETUP_FMT     = "tclsh sal_arm_freq.tcl -slot {:s}"
+    NIC_TEST_VULCANO_CMD         = "nic_test_vul.py"
 
     #PANAREA MTP
     PANAREA_MTP_VULCANO_NIC_JTAG_MBIST = "tclsh vul_jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s}"
@@ -743,6 +749,7 @@ class MFG_DIAG_CMDS:
     NIC_EDMA_TEST_FMT = "{:s}run_edma.sh"
     NIC_I2C_DETECT_FMT = "i2cdetect -y -r {:d}"
     MTP_DEVICE_MARGIN_SET_FMT = "devmgr_v2 margin -d {:s} -p {:d}"
+    MTP_DEVICE_MARGIN_INFO_FMT = "devmgr_v2 margin info"
     MTP_STOP_REDIS_FMT = "systemctl stop redis-server"
 
     def __init__(self, cmdMapStr=None, cmdMapType='dpn'):

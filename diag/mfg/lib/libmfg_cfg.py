@@ -78,6 +78,7 @@ class NIC_IMAGES:
     device_config_dtb = dict()
     firmware_config_dtb = dict()
     mbist_boot0_img = dict()
+    microcontroller_img = dict()
 
     # write it down here so release script copies this file
     uboot_img["INSTALLER"] = "install_file"
@@ -1213,10 +1214,10 @@ class NIC_IMAGES:
     fipg_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.117.3-a-61/goldfw/secure/salina/fip.img"
 
     # GELSOP is AINIC
-    cpld_img["GELSOP"] = "gelso_test_j2c_worked_8605.jed"
+    cpld_img["GELSOP"] = "gelso_test_8415.jed"
     cpld_ver["GELSOP"] = "0x3"
     cpld_dat["GELSOP"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    sec_cpld_img["GELSOP"] = "gelso_test_j2c_worked_8605.jed"
+    sec_cpld_img["GELSOP"] = "gelso_test_8415.jed"
     sec_cpld_ver["GELSOP"] = "0x3"
     sec_cpld_dat["GELSOP"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
     fail_cpld_img["GELSOP"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
@@ -1235,11 +1236,12 @@ class NIC_IMAGES:
     qspi_snake_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218.tar.gz"
     qspi_verify_sh_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_verify.sh"
     mbist_boot0_img["GELSOP"] = "salina/pollara/ainic_boot0_ctle-iters-7-20250218.tar.gz"
+    microcontroller_img["GELSOP"] = "vulcano/gelsop/two_comp_gelso_v0_1_0_0.pldm"
 
-    cpld_img["58-0013-01"] = "gelso_test_j2c_worked_8605.jed"
+    cpld_img["58-0013-01"] = "gelso_test_8415.jed"
     cpld_ver["58-0013-01"] = "0x3"
     cpld_dat["58-0013-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0013-01"] = "gelso_test_j2c_worked_8605.jed"
+    sec_cpld_img["58-0013-01"] = "gelso_test_8415.jed"
     sec_cpld_ver["58-0013-01"] = "0x3"
     sec_cpld_dat["58-0013-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
     fail_cpld_img["58-0013-01"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
@@ -1257,6 +1259,7 @@ class NIC_IMAGES:
     qspi_prog_sh_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_prog.sh"
     qspi_verify_sh_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_verify.sh"
     qspi_snake_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218.tar.gz"
+    microcontroller_img["58-0013-01"] = "vulcano/gelsop/two_comp_gelso_v0_1_0_0.pldm"
 
 
 class MTP_IMAGES:
@@ -1303,8 +1306,8 @@ class MTP_IMAGES:
     # mtp_fpga_img["MATERA"] = "to_be_define.bin"
     mtp_fpga_ver["MATERA"] = "a012"
     mtp_fpga_date["MATERA"] = "12222024"    #mmddYYYY
-    mtp_fpga_ver["PANAREA"] = "a002"
-    mtp_fpga_date["PANAREA"] = "08052025"    #mmddYYYY
+    mtp_fpga_ver["PANAREA"] = "a005"
+    mtp_fpga_date["PANAREA"] = "09162025"    #mmddYYYY
 
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
