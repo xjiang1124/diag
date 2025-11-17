@@ -61,7 +61,7 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
         cli.Printf("e", "failed to open SUCUART for slot %d: %v", slot, err_o)
         return nil, errType.FAIL
     }
-    port.SetReadTimeout(1 * time.Second)
+    port.SetReadTimeout(10 * time.Second)
     return &SUCUARTHandle{slot, port, fileLock}, errType.SUCCESS
 }
 
@@ -127,6 +127,32 @@ func (u *SUCUARTHandle) close_suc_uart() {
     }
 }
 
+func suc_single_cmd(slot int, cmd string, print_output bool) (output []byte) {
+    u, err := open_suc_uart(slot, 115200)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer u.close_suc_uart()
+
+    output, err = u.send_cmd_suc_uart(cmd + "\r\n")
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if print_output {
+        lines := strings.Split(string(output), "\r\n")
+        for _, line := range lines {
+            // Skip empty last element if string ends with \r\n
+            if line == "" {
+                continue
+            }
+            cli.Println("i", line)
+        }
+    }
+
+    return
+}
+
 func suc_cmd_list(slot int, cmd_list []string) () {
     u, err := open_suc_uart(slot, 115200)
     if err != errType.SUCCESS {
@@ -161,8 +187,34 @@ func Suc_dev_list(slot int) () {
 }
 
 func Suc_dev_status(slot int) () {
-    cmd_list := []string{"voltage ina3221_sensor", "voltage mp2861_sensor", "tmp451 temperature"}
+    cmd_list := []string{"tmp451 temperature", "voltage mp2861_sensor", "voltage ina3221_sensor"}
     suc_cmd_list(slot, cmd_list)
+    cli.Println("i")
+    //print the voltages for those not monitored by ina3221
+    ds4424_output := suc_single_cmd(slot, "voltage ds4424_info", false)
+    rails := []string{"VDDIO_P1V2", "VDDAN_P1V8_PX", "VDDAN_P1V8_ETH", "VDDPL_P1V2", "VDDPL_P1V1_PX", "VDDPL_P1V1_ETH", "VDDPL_0P75"}
+    results := make(map[string]string)
+    lines := strings.Split(string(ds4424_output), "\r\n")
+    for _, line := range lines {
+        for _, rail := range rails {
+            if strings.Contains(line, rail) {
+                parts := strings.Split(line, "Volt=")
+                if len(parts) > 1 {
+                    vout := strings.TrimSuffix(parts[1], "V")
+                    results[rail] = vout
+                }
+            }
+        }
+    }
+    if len(results) != 0 {
+        cli.Println("i", "NAME            | VOUT")
+        cli.Println("i", "------------------------")
+        for _, rail := range rails {
+            if vout, exists := results[rail]; exists {
+                cli.Printf("i", "%-15s | %s\n", rail, vout)
+            }
+        }
+    }
 }
 
 func Suc_dev_margin(slot int, voltage_name string, pct int) () {
@@ -178,12 +230,15 @@ func Suc_dev_margin(slot int, voltage_name string, pct int) () {
     return
 }
 
-func Suc_dev_vset(slot int, voltage_name string, vboot int, vmin int, vmax int) () {
+func Suc_dev_vset(slot int, voltage_name string, vboot int, vout int, vmin int, vmax int) () {
     var cmd_list []string
     if voltage_name == "VDD_CORE" {
         if vboot != -1 {
             cmd_vboot := "voltage mp2861_set vboot " + strconv.Itoa(vboot)
             cmd_list = append(cmd_list, cmd_vboot)
+        }
+        if vout != -1 {
+            //TODO
         }
         if vmin != -1 {
             cmd_vmin := "voltage mp2861_set vmin " + strconv.Itoa(vmin)
