@@ -18,7 +18,7 @@ set hsm_rn [lindex $argv 1]
 set dry_run [lindex $argv 2]
 
 set card_type $::env(CARD_TYPE)
-set LOG_FN ${card_type}_pac_efuse_prog.log
+set LOG_FN ${card_type}_slot${slot}_pac_efuse_prog.log
 
 set port $slot
 
@@ -54,8 +54,8 @@ puts $rtn
 
 set out_err [plog_get_err_count]
 if { $in_err != $out_err || $rtn != 1 } {
-    plog_msg "EFUSE CHECK WITH J2C ERROR"
-    plog_msg "EFUSE PROG FAILED"
+    plog_err "EFUSE CHECK WITH J2C ERROR"
+    plog_err "EFUSE PROG FAILED"
     diag_close_j2c_if $port $slot
     plog_stop
     return -1
@@ -82,11 +82,12 @@ if { $bit22 != 0 || $bit23 != 0 } {
         set idx [expr $i + 4]
         set fuse_val [sal_fuse_get_line 0 $idx 0]
         set pac_sum [expr {$fuse_val | $pac_sum}]
+        plog_msg "fuse_val($i): $fuse_val"
     }
     if { $pac_sum != 0 } {
-        plog_msg "PAC is programmed but read protection is not"
+        plog_err "PAC is programmed but read protection is not"
         sal_fuse_dump
-        plog_msg "EFUSE PROG FAILED"
+        plog_err "EFUSE PROG FAILED"
         diag_close_j2c_if $port $slot
         plog_stop
         return 0
@@ -96,7 +97,7 @@ if { $bit22 != 0 || $bit23 != 0 } {
 set in_err [plog_get_err_count]
 set pac_rn [sal_get_pac $hsm_rn]
 if { $pac_rn == -1 } {
-    plog_msg "EFUSE PROG FAILED"
+    plog_err "EFUSE PROG FAILED"
     diag_close_j2c_if $port $slot
     return
 }
@@ -131,8 +132,8 @@ for {set i 0} {$i < 8} {incr i} {
     set idx [expr $i + 4]
     set fuse_read($i) [sal_fuse_get_line 0 $idx 0]
     if { "$fuse_read($i)" != "$pac_val($i)" } {
-        plog_msg "failed to set fuse value read: $fuse_read($i) expected: $pac_val($i)"
-        plog_msg "EFUSE PROG FAILED"
+        plog_err "failed to set fuse value read: $fuse_read($i) expected: $pac_val($i)"
+        plog_err "EFUSE PROG FAILED"
         sal_fuse_dump
         diag_close_j2c_if $port $slot
         plog_stop
@@ -151,18 +152,18 @@ if { $dry_run  == 0 } {
 
 set bit [sal_fuse_get_bit 0 22 0]
 if { $bit != 1 } {
-    plog_msg "failed to set read disable bit 22"
+    plog_err "failed to set read disable bit 22"
     sal_fuse_dump
-    plog_msg "EFUSE PROG FAILED"
+    plog_err "EFUSE PROG FAILED"
     diag_close_j2c_if $port $slot
     plog_stop
     return
 }
 set bit [sal_fuse_get_bit 0 23 0]
 if { $bit != 1 } {
-    plog_msg "failed to set read disable bit 23"
+    plog_err "failed to set read disable bit 23"
     sal_fuse_dump
-    plog_msg "EFUSE PROG FAILED"
+    plog_err "EFUSE PROG FAILED"
     diag_close_j2c_if $port $slot
     plog_stop
     return
@@ -172,8 +173,8 @@ set out_err [plog_get_err_count]
 sal_fuse_dump
 
 if { $in_err != $out_err } {
-    plog_msg "EFUSE PROG FAILED"
-    plog_msg "EFUSE PROG FAILED"
+    plog_err "EFUSE PROG FAILED"
+    plog_err "EFUSE PROG FAILED"
 } else {
     plog_msg "EFUSE PROG PASSED"
     plog_msg "EFUSE PROG PASSED"
