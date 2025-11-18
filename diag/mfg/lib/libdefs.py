@@ -699,8 +699,12 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_STOP_SYSMOND_FMT = "killall sysmond"
     NIC_DIAG_STOP_HAL_FMT = "killall hal"
     NIC_DIAG_STOP_TCLSH_FMT = "killall tclsh"
-    NIC_DIAG_STOP_PICOCOM_FMT = "killall -9 picocom"
+    NIC_DIAG_STOP_PICOCOM_FMT = "ps -ef | grep picocom | grep ttyS | awk '{{print $2}}' | xargs kill -9"
+    MATERA_NIC_DIAG_STOP_PICOCOM_FMT = "ps -ef | grep fpga_uart | grep {:s} | awk '{{print $2}}' | xargs kill -9"
+    PANAREA_NIC_DIAG_STOP_PICOCOM_FMT = "ps -ef | grep picocom  | grep SUCUART{:s} | awk '{{print $2}}' | xargs kill -9"
     NIC_DIAG_CHECK_PICOCOM_FMT = "ps -elf | grep picocom"
+    MATERA_NIC_DIAG_CHECK_PICOCOM_FMT = "ps -elf | grep fpga_uart | grep {:s}"
+    PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT = "ps -elf | grep picocom | grep SUCUART{:s}"
     NIC_DIAG_CONFIG_FMT = "source /data/nic_arm/nic_config.sh"
 
     MTP_DIAG_MGR_START_FMT = "nohup diagmgr > {:s} 2>&1 &"

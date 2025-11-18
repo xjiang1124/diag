@@ -673,12 +673,27 @@ class nic_ctrl():
         return rc
 
     def nic_console_attach(self, uart_selecttor=None):
-        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_DIAG_STOP_PICOCOM_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
-
-        # Check if there is still got picocom process running
-        self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_DIAG_CHECK_PICOCOM_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+        # Terminate connected device before the new connection
+        if self._mtp_type == MTP_TYPE.PANAREA:
+            cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot + 1))
+            self._nic_handle.sendline(cmd)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+            # Check if there is still got picocom process running
+            self._nic_handle.sendline(MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT.format(str(self._slot + 1)))
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+        elif self._mtp_typ == MTP_TYPE.MATERA:
+            cmd = MFG_DIAG_CMDS().MATERA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot))
+            self._nic_handle.sendline(cmd)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+            # Check if there is still got picocom process running
+            self._nic_handle.sendline(MFG_DIAG_CMDS().MATERA_NIC_DIAG_CHECK_PICOCOM_FMT.format(str(self._slot)))
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+        else:
+            self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_DIAG_STOP_PICOCOM_FMT)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+            # Check if there is still got picocom process running
+            self._nic_handle.sendline(MFG_DIAG_CMDS().NIC_DIAG_CHECK_PICOCOM_FMT)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
         cmd = MFG_DIAG_CMDS().NIC_CON_ATTACH_FMT.format(self._slot+1)
         if uart_selecttor is not None:

@@ -959,12 +959,15 @@ class mtp_ctrl():
         running_on_mtp = True if os.getenv('CARD_TYPE') and 'MTP' in os.getenv('CARD_TYPE') else False
         if running_on_mtp:
             # assign task sshd to cpu core 0
-            pid_cmd = 'ppid=$(ps -o ppid= -p $$) && ps -elf | grep " $ppid " | grep sshd'
+            pid_cmd = """ppid=$(ps -o ppid= -p $$) && ps -elf | grep " $ppid " | grep sshd | awk '{print $4}' | cat """
             if not self.mtp_mgmt_exec_cmd(pid_cmd):
                 self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
                 return False
-            sshd_pid = self.mtp_get_cmd_buf().split('\n')[1].split()[3]
-            pid_cmd = 'taskset -pc 0 {:s}'.format(sshd_pid)
+            sshd_pid_match = re.findall(r'(\d+)', self.mtp_get_cmd_buf())
+            if not sshd_pid_match:
+                self.cli_log_err("Failed to Get sshd pid")
+                return False
+            sshd_pid = sshd_pid_match[0]
             if not self.mtp_mgmt_exec_cmd(pid_cmd):
                 self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
                 return False
