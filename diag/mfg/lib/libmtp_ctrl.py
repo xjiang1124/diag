@@ -3141,7 +3141,7 @@ class mtp_ctrl():
             return True
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf(slot, "Init NIC boot info")
-        if nic_type != SALINA_AI_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
+        if nic_type not in SALINA_AI_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST  and not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)

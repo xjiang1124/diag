@@ -681,7 +681,7 @@ class nic_ctrl():
             # Check if there is still got picocom process running
             self._nic_handle.sendline(MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT.format(str(self._slot + 1)))
             idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
-        elif self._mtp_typ == MTP_TYPE.MATERA:
+        elif self._mtp_type == MTP_TYPE.MATERA:
             cmd = MFG_DIAG_CMDS().MATERA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot))
             self._nic_handle.sendline(cmd)
             idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
@@ -6333,9 +6333,17 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Upload CPLD image to device Command '{:s}' Failed".format(cmd))
             return False
-        if "No such file or directory" in self.nic_get_cmd_buf() or "No suitable USB devices found" in  self.nic_get_cmd_buf():
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        if "No such file or directory".lower() in sanitized_cmd_buf.lower() or "No suitable USB devices found".lower() in  sanitized_cmd_buf.lower() or "Uploading: 100%".lower() not in sanitized_cmd_buf.lower():
             self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
+        match = re.findall(r'Image\s+CRC\s+=\s+0x([a-fA-F0-9]+)', sanitized_cmd_buf)
+        if not match:
+            self.nic_set_err_msg("Faield to parse command buffer:")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        image_crc = match[0]
 
         # calculate buffer crc befor program
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC_BUF.format(partition)
@@ -6350,6 +6358,9 @@ class nic_ctrl():
             self.nic_set_err_msg(cmd_buf)
             return False
         crc_before_prog = match[0]
+        if crc_before_prog != image_crc:
+            self.nic_set_err_msg("CRC verify failed,  image crc:{} vs buffer crc:{}.".format(image_crc, crc_before_prog))
+            return False
 
         # program cpld partition
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_PROG_BUF.format(partition)
@@ -6378,7 +6389,7 @@ class nic_ctrl():
             return False
         crc_after_prog = match[0]
         if crc_before_prog != crc_before_prog:
-            self.nic_set_err_msg("CRC verify failed after CPLD program, {} to {}.".format(crc_before_prog, crc_after_prog))
+            self.nic_set_err_msg("CRC verify failed, buffer crc:{} vs flash partion crc:{}.".format(crc_before_prog, crc_after_prog))
             return False
 
         return True
