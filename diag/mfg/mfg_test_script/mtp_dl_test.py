@@ -643,28 +643,25 @@ def main():
             return rlist
 
         dsp = FF_Stage.FF_DL
+        mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
+        if not args.scandl:
+            if "SCAN_VERIFY" in args.skip_test:
+                # only for QA, fake the scans
+                run_dl_test(pass_nic_list, "FAKE_SCAN_VERIFY")
+            else:
+                run_dl_test(pass_nic_list, "SCAN_VERIFY")
+        # validate the DPN is allowed for this PN
+        dpn_test_nic_list = get_slots_of_type(CTO_MODEL_TYPE_LIST)
+        run_dl_test(dpn_test_nic_list, "DPN_VALIDATE")
+        for slot in pass_nic_list:
+            dl_display_program_matrix(mtp_mgmt_ctrl, slot, swmtestmode)
 
         if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
 
             # power cycle all nic
-            mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ESEC_UNLOCK")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
-
-            if not args.scandl:
-                if "SCAN_VERIFY" in args.skip_test:
-                    # only for QA, fake the scans
-                    run_dl_test(pass_nic_list, "FAKE_SCAN_VERIFY")
-                else:
-                    run_dl_test(pass_nic_list, "SCAN_VERIFY")
-
-            # validate the DPN is allowed for this PN
-            dpn_test_nic_list = get_slots_of_type(CTO_MODEL_TYPE_LIST)
-            run_dl_test(dpn_test_nic_list, "DPN_VALIDATE")
-
-            for slot in pass_nic_list:
-                dl_display_program_matrix(mtp_mgmt_ctrl, slot, swmtestmode)
 
             # FOR ADI IBM CARDS ONLY
             adi_ibm_reset_list = get_slots_of_type(NIC_Type.ORTANO2ADIIBM)
@@ -710,19 +707,10 @@ def main():
             smart_nic_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_NIC_TYPE_LIST)
             run_dl_test(smart_nic_list, "NIC_PARA_MGMT_FPO_INIT")
             run_dl_test(smart_nic_list, "NIC_BOOT_INIT")
-
             avs_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=ADI_VRM_TYPE_LIST)
             run_dl_test(avs_list, "AVS_SET")
+
             ## 2. program fw
-            # non_cap_nic_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CAPRI_NIC_TYPE_LIST)
-            # run_dl_test(non_cap_nic_list, "ERASE_MAINFW")
-            # run_dl_test(pass_nic_list, "QSPI_PROG")   # Not Support diagfw for Leni/Leni48G/Malfa
-            # uboot_prog_nic_list = get_slots_of_type(ELBA_NIC_TYPE_LIST, except_type=[NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT])
-            # run_dl_test(uboot_prog_nic_list, "UBOOT_PROG")
-            # run_dl_test(get_slots_of_type(NIC_Type.ORTANO2ADIIBM), "UBOOTA_PROG")
-            # run_dl_test(get_slots_of_type(NIC_Type.ORTANO2ADIIBM), "UBOOTB_PROG")
-            # qspi_gold_nic_list = get_slots_of_type([NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4])
-            # run_dl_test(qspi_gold_nic_list, "QSPI_GOLD_PROG")
             run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
             run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_SWI_QSPI_PROG")
             run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
@@ -743,29 +731,17 @@ def main():
             run_dl_test(get_slots_of_type(PSLC_MODE_TYPE_LIST), "EMMC_BKOPS_EN")
             run_dl_test(get_slots_of_type(PSLC_MODE_TYPE_LIST), "NIC_FWUPDATE_INIT_EMMC")
 
-            # run_dl_test(pass_nic_list, "NIC_DIAG_INIT", emmc_format=True, emmc_check=True, fru_fpo=True, fru_valid=True if not args.scandl else False)
-
             ## 3. program fru, board settings
-            # run_dl_test(pass_nic_list, "QSPI_VERIFY")
             vrmfix_list = get_slots_of_type((NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOS4))
             run_dl_test(vrmfix_list, "FIX_VRM")
-            # vddrfix_list = get_slots_of_type([NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOS4, NIC_Type.POMONTEDELL] + GIGLIO_NIC_TYPE_LIST)
-            # run_dl_test(vddrfix_list, "VDD_DDR_FIX")
             run_dl_test(get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_NIC_TYPE_LIST), "FRU_PROG")
-            # erase_brdcfg_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST)
-            # run_dl_test(erase_brdcfg_list, "ERASE_BOARD_CONFIG")
             run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
             run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR")
-            # brd_config_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
-            # run_dl_test(brd_config_list, "BOARD_CONFIG")
-
             run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
             run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
+
             ## 4. program cpld
-            ################## Done########################################
-            # fpga_list = get_slots_of_type(FPGA_TYPE_LIST)
-            # run_dl_test(fpga_list, "FPGA_PROG")
             cpld_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST+SALINA_NIC_TYPE_LIST)
             run_dl_test(cpld_list, "UMF1_PROG")
             cpld_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST+SALINA_NIC_TYPE_LIST)
@@ -773,35 +749,8 @@ def main():
             ecpld_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST, except_type=SALINA_NIC_TYPE_LIST)
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
 
-            # run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_SET_PCIEAWD_ENV")
-            # run_dl_test(ecpld_list, "FEA_CPLD_PROG")
-            # cpld_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.NAPLES25OCP])
-            # run_dl_test(cpld_list, "CPLD_REF")
-            ################## Done########################################
-            # ## 5. flash asic esecure fw
-            # non_capri_type_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
-            # run_dl_test(non_capri_type_list, "DISABLE_ESEC_WP")
-
-            # ## 6. verify everything
-            # run_dl_test(pass_nic_list, "NIC_DIAG_INIT")
-
-            # non_ibm_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=NIC_Type.NAPLES100IBM)
-            # run_dl_test(non_ibm_list, "NIC_POWER")
-            # run_dl_test(pass_nic_list, "NIC_PRSNT")
-            # run_dl_test(pass_nic_list, "NIC_DIAG_BOOT")
-            # run_dl_test(pass_nic_list, "FRU_VERIFY")
-            # hpeswm_nic_list = get_slots_of_type(NIC_Type.NAPLES25SWM)
-            # run_dl_test(hpeswm_nic_list, "REWORK_VERIFY")
-            # run_dl_test(pass_nic_list, "CPLD_VERIFY")
-            # run_dl_test(pass_nic_list, "DIAGFW_STORE")
-            # ecpld_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
-            # run_dl_test(ecpld_list, "FEA_VERIFY")
-            # fpga_list = get_slots_of_type(FPGA_TYPE_LIST)
-            # run_dl_test(fpga_list, "FPGA_PROG_VERIFY")
-            # esec_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
-            # run_dl_test(esec_list, "L1_ESEC_PROG")
-
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+
             run_dl_test(pass_nic_list, "uC_BOOTING_CHK")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_PROG")
@@ -809,7 +758,7 @@ def main():
             run_dl_test(pass_nic_list, "I2C_DEVICE_SCREENING")
             run_dl_test(pass_nic_list, "VUL_SUC_I2C_DEVICE_TEST")
             run_dl_test(pass_nic_list, "OSFP_SN_READ_TEST")
-            # run_dl_test(pass_nic_list, "uC_IMG_PROG")
+            run_dl_test(pass_nic_list, "uC_IMG_PROG")
 
         else:
             # power cycle all nic

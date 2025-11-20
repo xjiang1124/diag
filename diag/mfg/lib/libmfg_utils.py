@@ -1261,7 +1261,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname="", stage=""):
         mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
     else:
 
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in SALINA_NIC_TYPE_LIST:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             mtp_mgmt_ctrl.mtp_nic_dump_reg(slot)
             mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
         
@@ -1269,7 +1269,11 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname="", stage=""):
         if mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in SALINA_AI_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
             mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_check_rebooted()
-        mtp_mgmt_ctrl.mtp_nic_port_counters(slot) # if mtp_mgmt_ctrl._nic_ctrl_list[slot]._nic_status == NIC_Status.NIC_STA_MGMT_FAIL
+        elif  mtp_mgmt_ctrl.mtp_get_nic_type(slot) in SALINA_AI_NIC_TYPE_LIST:
+            mtp_mgmt_ctrl.mtp_nic_port_counters(slot) # if mtp_mgmt_ctrl._nic_ctrl_list[slot]._nic_status == NIC_Status.NIC_STA_MGMT_FAIL
+        else:
+            # need add vulcano specific check here
+            pass
         mtp_mgmt_ctrl.mtp_nic_console_unlock()
 
         mtp_mgmt_ctrl.mtp_sal_check_j2c(slot, testname)
