@@ -959,12 +959,15 @@ class mtp_ctrl():
         running_on_mtp = True if os.getenv('CARD_TYPE') and 'MTP' in os.getenv('CARD_TYPE') else False
         if running_on_mtp:
             # assign task sshd to cpu core 0
-            pid_cmd = 'ppid=$(ps -o ppid= -p $$) && ps -elf | grep " $ppid " | grep sshd'
+            pid_cmd = """ppid=$(ps -o ppid= -p $$) && ps -elf | grep " $ppid " | grep sshd | awk '{print $4}' | cat """
             if not self.mtp_mgmt_exec_cmd(pid_cmd):
                 self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
                 return False
-            sshd_pid = self.mtp_get_cmd_buf().split('\n')[1].split()[3]
-            pid_cmd = 'taskset -pc 0 {:s}'.format(sshd_pid)
+            sshd_pid_match = re.findall(r'(\d+)', self.mtp_get_cmd_buf())
+            if not sshd_pid_match:
+                self.cli_log_err("Failed to Get sshd pid")
+                return False
+            sshd_pid = sshd_pid_match[0]
             if not self.mtp_mgmt_exec_cmd(pid_cmd):
                 self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
                 return False
@@ -3138,7 +3141,7 @@ class mtp_ctrl():
             return True
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf(slot, "Init NIC boot info")
-        if nic_type != SALINA_AI_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
+        if nic_type not in SALINA_AI_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST  and not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)

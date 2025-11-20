@@ -1266,7 +1266,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname="", stage=""):
             mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
         
         mtp_mgmt_ctrl.mtp_nic_console_lock()
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in SALINA_AI_NIC_TYPE_LIST:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in SALINA_AI_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
             mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_check_rebooted()
         mtp_mgmt_ctrl.mtp_nic_port_counters(slot) # if mtp_mgmt_ctrl._nic_ctrl_list[slot]._nic_status == NIC_Status.NIC_STA_MGMT_FAIL
@@ -1274,7 +1274,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname="", stage=""):
 
         mtp_mgmt_ctrl.mtp_sal_check_j2c(slot, testname)
 
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST):
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST):
             mtp_mgmt_ctrl.mtp_single_j2c_lock()
             mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
             if mtp_mgmt_ctrl.mtp_nic_failed_boot(slot):
