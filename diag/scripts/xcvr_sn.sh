@@ -64,6 +64,10 @@ elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
 then
     LOGFILE=/tmp/qsfp$SLOT
     rm $LOGFILE
+    sucutil exec -s $SLOT -c "osfp info"
+    printf "\n"
+    sucutil exec -s $SLOT -c "osfp page_dump" 
+    printf "\n"
     sucutil exec -s $SLOT -c "osfp serialnumber" >> $LOGFILE
     sn=$(awk -F'N:' '{print $2}' /tmp/qsfp6)
     #sn=$(awk '{print $(NF)}' $LOGFILE)
