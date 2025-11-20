@@ -76,18 +76,6 @@ func uutPresent(uutName string) (data byte, present bool) {
 
     present = false
 
-    if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
-        //Check if the card is present and powered on.  
-        //Scripting side does not want to see the card in inventory -present if it's powered off
-        present, _ = panareafpga.SLOTpresentUUT(uutName)
-        SlotPoweredOn, _ := panareafpga.SLOTpoweredOn(uutName);
-        if present == true && SlotPoweredOn == true {
-            return nicCpldCommon.ID_GELSOP, true
-        } else {
-            return 0x00, false
-        }
-    }
-
     cli.DisableVerbose()
     data, err := hwdev.NaplesCpldRdBlind(devName, addr, uutName)
 
@@ -132,6 +120,18 @@ func uutPresent(uutName string) (data byte, present bool) {
     }
 
     cli.EnableVerbose()
+
+    if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        //Check if the card is present and powered on.  
+        //Scripting side does not want to see the card in inventory -present if it's powered off
+        present, _ = panareafpga.SLOTpresentUUT(uutName)
+        SlotPoweredOn, _ := panareafpga.SLOTpoweredOn(uutName);
+        if present == true && SlotPoweredOn == true {
+            return nicCpldCommon.ID_GELSOP, true
+        } else {
+            return 0x00, false
+        }
+    }
 
     return
 }
@@ -420,6 +420,10 @@ func powerStatusCheck(slot int) (err int) {
     uutName := "UUT_"+strconv.Itoa(slot)
     var powerGood bool
 
+    if slot == 0 {
+        cli.Printf("e", "Please use the slot arg to set the slot.  Slot zero passed is not valid \n")
+        return errType.FAIL
+    }
     cardType := os.Getenv(uutName)
     fmt.Printf(" CardType=%s\n", cardType)
 
@@ -756,6 +760,11 @@ func powerStatusDump(slot int)  {
     cardType := os.Getenv(uutName)
     pwrStatName := powerStatName
     fmt.Printf(" CardType=%s\n", cardType)
+
+    if slot == 0 {
+        cli.Printf("e", "Please use the slot arg to set the slot.  Slot zero passed is not valid \n")
+        return
+    }
 
     if cardType == "NAPLES25SWM" {
         pwrStatName = powerStatNameSWM
