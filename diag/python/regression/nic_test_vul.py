@@ -34,16 +34,17 @@ class nic_test_vul:
         ret = 0
         try:
             uart_session = common.session_start()
-            self.vul_con.usb_uart_session_connect(uart_session, args.slot, uart_id=0)
-            cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, ending="uart:~\$", timeout=30)
-            if cmdret != 0:
-                print("Command {} failed".format(cmd))
-                ret = -1
-            if pass_sig not in output:
-                print("===== FAILED: missing passing signature")
-                ret = -1
-            self.nic_con.uart_session_stop(uart_session)
-            common.session_stop(uart_session)
+            ret = self.vul_con.usb_uart_session_connect(uart_session, args.slot, uart_id=0)
+            if ret == 0:
+                cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, ending="uart:~\$", timeout=30)
+                if cmdret != 0:
+                    print("Command {} failed".format(cmd))
+                    ret = -1
+                if pass_sig not in output:
+                    print("===== FAILED: missing passing signature")
+                    ret = -1
+                self.nic_con.uart_session_stop(uart_session)
+                common.session_stop(uart_session)
         except pexpect.TIMEOUT:
             print("=== TIMEOUT: Failed to run cmd on slot {} ===".format(args.slot))
             ret = -1
