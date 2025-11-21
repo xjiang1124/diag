@@ -81,10 +81,11 @@ func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
     prompt := []byte("uart:~$")
     var result []byte
     read_count := 0
+    retry_count := 0
     for {
         read_count++
         // limit the number of read attempts
-        if read_count > 65536 {
+        if read_count > 65536 || retry_count > 10 {
             break
         }
         b, err_r := reader.ReadByte()
@@ -98,7 +99,15 @@ func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
         }
         result = append(result, b)
         if bytes.HasSuffix(result, prompt) {
-            break
+            //right after power cycle, we might get prompt from UART before sending any commands
+            if idx := bytes.Index(result, []byte(cmd)); idx != -1 {
+                break
+            } else {
+                //discard if the buffer does not contain the command we sent
+                result = result[:0]
+                read_count = 0
+                retry_count++
+            }
         }
     }
     //fmt.Printf("Received: %s\n", result)

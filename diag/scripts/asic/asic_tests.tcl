@@ -552,5 +552,33 @@ proc ext_snake {{mode "pcie_lb"} {board_id SN000001} {duration 60}} {
     return $errCnt
 }
 
-proc vul_verify_voltage_vboot {{ avs_or_all avs}} {
+proc vul_verify_voltage_vboot {} {
+    #core65
+    set v65_vboot_expected [ expr ( [vul_get_avs_voltage_core65] / 1000.0 ) ]
+    set v65_vboot_actual [ vul_vrm_get_vboot_core65 1 ]
+    set v65_vout [ vul_vrm_get_vout_core65 1 ]
+    plog_msg "VDD_CORE vboot expected: $v65_vboot_expected"
+    plog_msg "VDD_CORE vboot acutal: $v65_vboot_actual"
+    plog_msg "VDD_CORE vout: $v65_vout"
+
+    set difference [expr {abs($v65_vboot_actual - $v65_vboot_expected)}]
+    if {$difference > 0.005} {
+        plog_err "VBOOT verify failed for VDD_CORE"
+    }
+
+    set difference [expr {abs($v65_vout - $v65_vboot_actual)}]
+    if {$difference > 0.005} {
+        plog_err "VBOOT verify failed for VDD_CORE"
+    }
+
+    #core75
+    set v75_vboot_expected [ expr ( [vul_get_avs_voltage_core75] / 1000.0 ) ]
+    set v75_vout [ vul_vrm_get_vout_core75 1 ]
+    plog_msg "VDDCR_0P75 vboot expected: $v75_vboot_expected"
+    plog_msg "VDDCR_0P75 vout: $v75_vout"
+
+    set difference [expr {abs($v75_vout - $v75_vboot_expected)}]
+    if {$difference > 0.005} {
+        plog_err "VBOOT verify failed for VDDCR_0P75"
+    }
 }
