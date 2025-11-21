@@ -5030,7 +5030,7 @@ class mtp_ctrl():
                 self.mtp_single_j2c_unlock()
 
         # For Salina Cards run get_nic_sts.tcl for every failure
-        if nic_type in SALINA_NIC_TYPE_LIST:
+        if nic_type in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             self.mtp_single_j2c_lock()
             self.mtp_nic_console_lock()
             self.mtp_nic_dump_reg(slot)
@@ -8314,7 +8314,7 @@ class mtp_ctrl():
 
     def mtp_nic_dump_reg(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in SALINA_NIC_TYPE_LIST:
+        if nic_type not in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             return True
         if not self._nic_ctrl_list[slot].nic_dump_reg():
             self.cli_log_slot_err(slot, "Unable to run register dump")
@@ -8327,7 +8327,7 @@ class mtp_ctrl():
          WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
         """
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             return True
         if not self._nic_ctrl_list[slot].read_nic_temp():
             self.cli_log_slot_err(slot, "Unable to read NIC temperature")

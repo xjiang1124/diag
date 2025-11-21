@@ -675,7 +675,10 @@ class nic_ctrl():
     def nic_console_attach(self, uart_selecttor=None):
         # Terminate connected device before the new connection
         if self._mtp_type == MTP_TYPE.PANAREA:
-            cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot + 1))
+            if str(uart_selecttor) == "1":
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_FPGA_UART_FMT.format(str(self._slot))
+            else:
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot + 1))
             self._nic_handle.sendline(cmd)
             idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
             # Check if there is still got picocom process running
@@ -6419,13 +6422,86 @@ class nic_ctrl():
         devid = match[0]
         return devid
 
+    def uc_sucuart_slot2sn_bus_dev(self):
+        """
+        according to rule /etc/udev/rules.d/99-suc-uart.rules, which map usb UART to slot
+        find the bus number, device number and serial number for the slot
+        """
+
+        # check usb uart exist
+        usb_uart_dev = "/dev/SUCUART{:d}".format(self._slot + 1)
+        cmd = 'ls {:s}'.format(usb_uart_dev)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
+            return False
+        if "No such file or directory".lower() in self.nic_get_cmd_buf().lower():
+            self.nic_set_err_msg("Device {:s} not exist".format(usb_uart_dev))
+            return False
+
+        busnum = None
+        devnum = None
+        serial = None
+        cmd = 'udevadm info -q path -n {:s}'.format(usb_uart_dev)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]', '', self.nic_get_cmd_buf()).strip()
+        if "No such device".lower() in cmd_buf.lower():
+            self.nic_set_err_msg("Device {:s} not exist".format(usb_uart_dev))
+            return False
+
+        usb_uart_dev_interface_path = cmd_buf.split("\n")[1].strip("\r").strip()
+        usb_uart_dev_interface = usb_uart_dev_interface_path.rsplit('/tty/', 1)[0]
+        usb_uart_dev_interface = usb_uart_dev_interface.rsplit('/devices/', 1)[1]
+        usb_uart_dev_path = os.path.dirname('/sys/devices/' + usb_uart_dev_interface)
+
+        # get serial
+        filename = os.path.join(usb_uart_dev_path, "serial")
+        cmd = 'cat {:s}'.format(filename)
+
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]', '', self.nic_get_cmd_buf()).strip()
+        if "No such file or directory".lower() in cmd_buf:
+            self.nic_set_err_msg("File {:s} not exist".format(filename))
+            return False
+        serial =  cmd_buf.split("\n")[1].strip("\r").strip()
+
+        # get busnum
+        filename = os.path.join(usb_uart_dev_path, "busnum")
+        cmd = 'cat {:s}'.format(filename)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]', '', self.nic_get_cmd_buf()).strip()
+        if "No such file or directory".lower() in cmd_buf:
+            self.nic_set_err_msg("File {:s} not exist".format(filename))
+            return False
+        busnum =  cmd_buf.split("\n")[1].strip("\r").strip()
+
+        # get devnum
+        filename = os.path.join(usb_uart_dev_path, "devnum")
+        cmd = 'cat {:s}'.format(filename)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]', '', self.nic_get_cmd_buf()).strip()
+        if "No such file or directory".lower() in cmd_buf:
+            self.nic_set_err_msg("File {:s} not exist".format(filename))
+            return False
+        devnum =  cmd_buf.split("\n")[1].strip("\r").strip()
+
+        if not all((serial, busnum, devnum)):
+            return False
+
+        return serial, busnum, devnum
+
     def uc_image_program(self, uc_img):
         """
-        lsusb
-        lsusb -v -d 0438:0001
-        lsusb -v -d 0438:0001 | grep -E "iSerial|bEndpointAddress"
-        lsusb -v -d 2fe3:000a | grep -E 'iSerial|iProduct|iManufacturer'
-        lsusb -v -d 0438:0001 | grep -E 'iSerial|iProduct|iManufacturer'
+        Get usb device iserial according to self._slot, which mapping to device /dev/SUCUART(self._slot+1).
+        For the usb device interface, so far we hardcode 3 here, unless uC firmware change it in the future
+        Command example:
         ./test_all.py --board-type AinicSuc --usb B4A7BA2756444B028820F0E180B0F82E:3 --print-hdrs --print-msgs -vvv --util pldmfwpkg=/home/diag/two_comp_gelso_v0_1_0_0.pldm --test-cases PldmFwUpdateSingleFDUpdateFlow
         command output
         ---------------------------------------------------
@@ -6440,27 +6516,9 @@ class nic_ctrl():
         PASS       PldmFwUpdateSingleFDUpdateFlow
         """
 
-        # get usb device ID
-        cmd = 'lsusb | grep "Advanced Micro Devices, Inc. Vulcano SuC" | cat'
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_err_msg("lsusb Command '{:s}' Failed".format(cmd))
-            return False
-        cmd_buf = self.nic_get_cmd_buf()
-        device_id = re.findall(r'ID\s+(\d{4}:\d{4})\sAdvanced Micro Devices', cmd_buf)
-        if not device_id:
-            self.nic_set_err_msg("Failed to parse command: {:s} output: {:s}".format(cmd, cmd_buf))
-            return False
-        device_id = device_id[0]
-
-        # get usb device iSerial
-        cmd = "lsusb -v -d {:s} | grep iSerial | cat".format(device_id)
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_err_msg("lsusb Command '{:s}' Failed".format(cmd))
-            return False
-        cmd_buf = self.nic_get_cmd_buf()
-        device_iSerial = re.findall(r'iSerial\s+\d\s+(\w+)', cmd_buf)
+        device_iSerial = self.uc_sucuart_slot2sn_bus_dev()
         if not device_iSerial:
-            self.nic_set_err_msg("Failed to parse command: {:s} output: {:s}".format(cmd, cmd_buf))
+            self.nic_set_err_msg("Failed to get usb device serial number")
             return False
         device_iSerial = device_iSerial[0]
 
@@ -6613,20 +6671,30 @@ class nic_ctrl():
 
     def vulcano_suc_i2c_device_test(self, timeout=300):
         '''
-        nic_test_vul.py suc_i2c_ds4424_test -slot <slot> -index <index>
+        nic_test_vul.py suc_i2c_ds4424_test -slot <slot> -index <index>  index are 0 1 2 here
         nic_test_vul.py suc_i2c_tmp451_test -slot <slot>
         nic_test_vul.py suc_i2c_rc22308_test -slot <slot>
         '''
         suc_i2c_devices = ("suc_i2c_ds4424_test", "suc_i2c_tmp451_test", "suc_i2c_rc22308_test")
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        ds4424_indexes = ('0', '1', '2')
         if not self.mtp_exec_cmd(cmd):
             return False
 
+        cmds = []
         for device in suc_i2c_devices:
-            cmd = MFG_DIAG_CMDS().NIC_TEST_VULCANO_CMD + " {:s} -slot {:s}".format(device, str(self._slot + 1))
+            if device == "suc_i2c_ds4424_test":
+                for index in ds4424_indexes:
+                    cmd = MFG_DIAG_CMDS().NIC_TEST_VULCANO_CMD + " {:s} -slot {:s} -index {:s}".format(device, str(self._slot + 1), index)
+                    cmds.append(cmd)
+            else:
+                cmd = MFG_DIAG_CMDS().NIC_TEST_VULCANO_CMD + " {:s} -slot {:s}".format(device, str(self._slot + 1))
+                cmds.append(cmd)
+
+        for cmd in cmds:
             if not self.mtp_exec_cmd(cmd, timeout=timeout):
                 return False
-            if "error" in self.nic_get_cmd_buf():
+            if "=== test result at Slot {:s}: Passed".format(str(self._slot + 1)) not in self.nic_get_cmd_buf():
                 self.nic_set_err_msg("Error found in command '{:s}'".format(cmd))
                 return False
 
@@ -6977,7 +7045,11 @@ class nic_ctrl():
     def nic_dump_reg(self):
         # dump all registers for information
         cmd = MFG_DIAG_CMDS().MTP_FPGA_UTIL_REGDUMP_FMT
-        if not self.mtp_exec_cmd(cmd, timeout=5):
+        tout = 5
+        if self._nic_type in VULCANO_NIC_TYPE_LIST:
+            cmd = MFG_DIAG_CMDS().NIC_AVS_POST_FMT.format(self._slot + 1)
+            tout = 15
+        if not self.mtp_exec_cmd(cmd, timeout=tout):
             return False
 
         return True
@@ -6990,6 +7062,8 @@ class nic_ctrl():
 
         if self._nic_type in SALINA_NIC_TYPE_LIST:
             cmd = "tclsh get_nic_sts.tcl {:s} {:d} {:s}".format(str(self._sn), self._slot+1, "1")
+        elif self._nic_type in VULCANO_NIC_TYPE_LIST:
+            cmd = "Read ASIC Temp placehold" 
         else:
             cmd = "tclsh get_nic_sts.tcl {:s} {:d}".format(str(self._sn), self._slot+1)
 
