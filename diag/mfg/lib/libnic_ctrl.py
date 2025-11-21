@@ -6671,20 +6671,30 @@ class nic_ctrl():
 
     def vulcano_suc_i2c_device_test(self, timeout=300):
         '''
-        nic_test_vul.py suc_i2c_ds4424_test -slot <slot> -index <index>
+        nic_test_vul.py suc_i2c_ds4424_test -slot <slot> -index <index>  index are 0 1 2 here
         nic_test_vul.py suc_i2c_tmp451_test -slot <slot>
         nic_test_vul.py suc_i2c_rc22308_test -slot <slot>
         '''
         suc_i2c_devices = ("suc_i2c_ds4424_test", "suc_i2c_tmp451_test", "suc_i2c_rc22308_test")
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        ds4424_indexes = ('0', '1', '2')
         if not self.mtp_exec_cmd(cmd):
             return False
 
+        cmds = []
         for device in suc_i2c_devices:
-            cmd = MFG_DIAG_CMDS().NIC_TEST_VULCANO_CMD + " {:s} -slot {:s}".format(device, str(self._slot + 1))
+            if device == "suc_i2c_ds4424_test":
+                for index in ds4424_indexes:
+                    cmd = MFG_DIAG_CMDS().NIC_TEST_VULCANO_CMD + " {:s} -slot {:s} -index {:s}".format(device, str(self._slot + 1), index)
+                    cmds.append(cmd)
+            else:
+                cmd = MFG_DIAG_CMDS().NIC_TEST_VULCANO_CMD + " {:s} -slot {:s}".format(device, str(self._slot + 1))
+                cmds.append(cmd)
+
+        for cmd in cmds:
             if not self.mtp_exec_cmd(cmd, timeout=timeout):
                 return False
-            if "error" in self.nic_get_cmd_buf():
+            if "=== test result at Slot {:s}: Passed".format(str(self._slot + 1)) not in self.nic_get_cmd_buf():
                 self.nic_set_err_msg("Error found in command '{:s}'".format(cmd))
                 return False
 
