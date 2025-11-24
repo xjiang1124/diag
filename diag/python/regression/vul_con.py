@@ -31,8 +31,11 @@ class vul_con:
                     ret = 0
                     break
                 elif index == 1:
-                    print("SUCUART not ready. Retry in {} seconds...".format(retry_delay))
-                    time.sleep(retry_delay)
+                    if attempt < retries - 1:
+                        print("SUCUART not ready. Retry in {} seconds...".format(retry_delay))
+                        time.sleep(retry_delay)
+                    else:
+                        print("SUCUART not ready, exit")
                     ret = -1
                 elif index == 2:
                     print("=== TIMEOUT: Failed to connect console.")

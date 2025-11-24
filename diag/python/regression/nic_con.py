@@ -954,6 +954,8 @@ class nic_con:
              card_type == "LINGUA" or \
              card_type == "POLLARA":
             asic_type = "SALINA"
+        elif card_type == "GELSOP":
+            asic_type = "VULCANO"
         else:
             asic_type = "CAPRI"
         print(("asic_type:", asic_type))

@@ -46,7 +46,8 @@ if {($MTP_TYPE == "MTP_PANAREA")} {
     set slot $slot
 
     if { $card_type == "GELSOP" } {
-        set l1_cmd "vul_l1_screen_diag $sn 0 1 0 1 $vmarg $esecEn $logEn $prbslt"
+        #set l1_cmd "vul_l1_screen_diag $sn 0 1 0 1 $vmarg $esecEn $logEn $prbslt"
+        set l1_cmd "vul_l1_screen_diag $sn"
         source .tclrc.diag.vul
         #source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
     }
@@ -59,29 +60,21 @@ set err_cnt_init [ plog_get_err_count ]
 
 if {$ASIC_TYPE == "VULCANO"} {
     puts "Vulcano L1"
-    set slot $slot
-    set slot $slot
-
     set ::slot $slot
     set ::port $port
+    vul_j2c
 
     puts "_msrd"
     set rtn [eval _msrd]
     puts $rtn
 
-    if {$joo == 0} {
-        vul_ow
-    } else {
-        #vul_j2c
-    }
-
     #reset_to_proto_mode
-    #vul_print_voltage_temp_from_j2c
-    #vul_print_die_id
-    plog_msg "Measuring frequencies:"
+    #vul_print_voltage_temp
+    vul_print_die_id
+    #plog_msg "Measuring frequencies:"
     #vul_get_freq
 
-    #set err_cn [eval $l1_cmd]
+    set err_cn [eval $l1_cmd]
 
     diag_close_j2c_if $port $slot
 }
