@@ -752,6 +752,10 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_i2c_qsfp_salina(nic_list, vmarg=test_kwargs["vmarg"])
                 elif test == "SALINA_I2C_RTC":
                     rlist = mtp_mgmt_ctrl.mtp_i2c_rtc_salina(nic_list, vmarg=test_kwargs["vmarg"])
+                elif test == "I2C_DEVICE_SCREENING":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_i2c_device_screening(nic_list)
+                elif test == "VUL_SUC_I2C_DEVICE_TEST":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_vul_suc_i2c_device_test(nic_list)
                 elif test == "OCP_FRU_SN":
                     rlist = salina_parse_ocp_sn(mtp_mgmt_ctrl, nic_list)
                 elif test == "OCP_RMII":
@@ -1028,7 +1032,7 @@ def main():
 
             ### VULCANO TEST ORDER
             if get_slots_of_type(VULCANO_NIC_TYPE_LIST):
-                test_section_list = ["J2C_SEQ", "VULCANO_SNAKE"]
+                test_section_list = ["I2C", "J2C_SEQ"]
 
             if args.skip_test:
                 test_section_list = libmfg_utils.list_subtract(test_section_list, args.skip_test)
@@ -1321,8 +1325,20 @@ def main():
                     #  NIC I2C_SALINA
                     #
                     ######################################################################
-                    run_regression_test(pass_nic_list, "SALINA_I2C_QSFP", vmarg=vmarg)
-                    run_regression_test(pass_nic_list, "SALINA_I2C_RTC", vmarg=vmarg)
+                    ######################################################################
+                    #  Salina NIC I2C test
+                    ######################################################################
+                    i2c_salina_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+                    run_regression_test(i2c_salina_list, "SALINA_I2C_QSFP", vmarg=vmarg)
+                    run_regression_test(i2c_salina_list, "SALINA_I2C_RTC", vmarg=vmarg)
+
+
+                    ######################################################################
+                    #  Vulcano NIC I2C test
+                    ######################################################################
+                    i2c_vulcano_list = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
+                    run_regression_test(i2c_vulcano_list, "I2C_DEVICE_SCREENING")
+                    run_regression_test(i2c_vulcano_list, "VUL_SUC_I2C_DEVICE_TEST")
 
                 elif test_section == "ALOM_LP_MODE":
                     ######################################################################
