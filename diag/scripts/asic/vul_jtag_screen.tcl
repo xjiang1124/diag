@@ -17,6 +17,50 @@ foreach argname [array names arg] { set $argname $arg($argname) }
 if { $slot == "" } { puts "Missing required --slot arg" ; exit }
 parray arg
 
+proc define_test_list {{override_test_list ""}} {
+    # borrowed from L1 test list format
+
+    plog_msg "Got override_test_list = $override_test_list"
+    
+    if { $override_test_list == "" } {
+        set names_list [list ID MBIST] ; # DEFAULT TEST LIST
+    } else {
+        set names_list [split $override_test_list]
+    }
+
+    set test_list [dict create]
+    foreach test_name $names_list {
+        switch $test_name {
+            # #TEST NAME ##################### RST PRE              COMMAND                       POST
+            MBIST_ORIG_EAST { set cmd_list [list 0 ""               vul_jtag_east_mbist           ""      ] }
+            MBIST_ORIG_WEST { set cmd_list [list 0 ""               vul_jtag_west_mbist           ""      ] }
+            ALGO22_EAST     { set cmd_list [list 0 ""               vul_jtag_east_mbist_algo22    ""      ] }
+            ALGO22_WEST     { set cmd_list [list 0 ""               vul_jtag_west_mbist_algo22    ""      ] }
+
+            default         { set cmd_list [list 0 "" "" ""] }
+        }
+        dict append test_list $test_name $cmd_list
+    }
+    return $test_list
+}
+
+proc display_test_list {{test_list {}}} {
+    # borrow from L1 test display
+    set test_name_list [dict keys $test_list]
+    set fmtStr "%-4s%-25s%-80s%-25s"
+    plog_msg "========================= JTAG: Test List ======================================"
+    plog_msg [ format $fmtStr "RST" "PRE" "CMD" "POST" ]
+    foreach test_name $test_name_list {
+        set cmd_list [dict get $test_list $test_name]
+        set cmd_0 [lindex $cmd_list 0]
+        set cmd_1 [lindex $cmd_list 1]
+        set cmd_2 [lindex $cmd_list 2]
+        set cmd_3 [lindex $cmd_list 3]
+
+        plog_msg [ format $fmtStr $cmd_0 $cmd_1 $cmd_2 $cmd_3 ]
+    }
+    plog_msg "============================================================================="
+}
 
 #source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
 
@@ -57,13 +101,20 @@ if { $logEn == "yes" } {
 
 plog_msg "Opening j2c"
 set err_cnt_init [ plog_get_err_count ]
-#exec jtag_accpcie_vulcano clr $slot
-#vul_j2c
+exec jtag_accpcie_vulcano clr $slot
+vul_j2c
 plog_msg "_msrd"
 plog_msg [eval _msrd]
 
+if { $reset == "cold" } {
+    vul_p450_reset 0
+    vul_p450_show_reset
+} else {
+    #reset_to_proto_mode warm_rot
+}
+
 #vul_set_vmarg $vmarg
-#vul_print_die_id
+vul_print_die_id
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
 if {$err_cnt != 0} {

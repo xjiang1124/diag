@@ -46,6 +46,8 @@ jtag_accpcie_salina: jtag_accpcie.c
 	$(CC) jtag_accpcie.c accpcie_salina.c  -I.. -L. -o jtag_accpcie_salina $(CFLAGS)
 	#mv jtag_accpcie_salina ${GOPATH}/bin/linux_$(ARCH)/cbin/jtag_accpcie_salina
 	cp jtag_accpcie_salina ${GOPATH}/bin/linux_$(ARCH)/cbin/jtag_accpcie_salina
+	cp jtag_accpcie_salina ${GOPATH}/bin/linux_$(ARCH)/cbin/jtag_accpcie_vulcano
+	cp jtag_accpcie_salina jtag_accpcie_vulcano
 
 clean:
-	-rm -f *.o *.a fpga_uart jtag_accpcie jtag_accpcie_salina libaccpcie.a libaccpcie_salina.a
+	-rm -f *.o *.a fpga_uart jtag_accpcie jtag_accpcie_salina jtag_accpcie_vulcano libaccpcie.a libaccpcie_salina.a
