@@ -353,12 +353,12 @@ void *get_rx_buffer(void *inst)
     RING_BUFF *pptr;
 
     /* uart_addr = UART_0_OFFSET + port * UART_INST_OFFSET; */
-    CPU_ZERO(&cpuset);
-    CPU_SET(port + 1, &cpuset);
-    current_thread = pthread_self();
-    pthread_setaffinity_np(current_thread, sizeof(cpuset), &cpuset);
+    // CPU_ZERO(&cpuset);
+    // CPU_SET(port + 1, &cpuset);
+    // current_thread = pthread_self();
+    // pthread_setaffinity_np(current_thread, sizeof(cpuset), &cpuset);
 
-    sprintf(uart_path, "/uart%d", port);
+    sprintf(uart_path, "/puart%d", port);
     fd = shm_open(uart_path, O_RDWR, 0644);
     if ( fd == -1 ) {
         printf("failed to open shared memory\n");
@@ -524,7 +524,7 @@ int main(int argc, char **argv)
         if ( signal(SIGINT, sig_handler) == SIG_ERR )
             printf("can't catch SIGINT, please use ctrl-A, ctrl-X to exit\n");
 
-        sprintf(uart_path, "/uart%d", port);
+        sprintf(uart_path, "/puart%d", port);
         fd = shm_open(uart_path, O_CREAT | O_RDWR, 0644 );
         if ( fd == -1 ) {
             printf("failed to create shared memory\n");
