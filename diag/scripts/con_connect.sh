@@ -57,7 +57,7 @@ then
     then
         # ASIC console still uses old UART reg offset
         # TODO: check if we need taskset -c
-        taskset -c $slot fpga_uart $((slot - 1))
+        fpga_uart $((slot - 1))
     fi
 else
     cpldutil -cpld-wr -addr=0x18 -data=0

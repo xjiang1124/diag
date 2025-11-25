@@ -190,6 +190,22 @@ class nic_test_vul:
         #         common.session_stop(uart_session)
         return ret
 
+    def nic_pc_test(self, args):
+        ret = 0
+        for ite in range(args.iteration):
+            print("=== Ite:", ite, "===")
+            session = common.session_start()
+            common.session_cmd(session, "turn_on_slot.sh off "+str(args.slot), timeout=90)
+            common.session_cmd(session, "turn_on_slot.sh on "+str(args.slot), timeout=90)
+            ret = self.suc_dev_test_common("cpld_reg read 0x54", "CPLD[0x54] = 0xff", args)
+            if ret != 0:
+                print("PC_TEST has failed!", ite)
+                common.session_stop(session)
+                return -1
+            print("PC_TEST has passed!", ite)
+            common.session_stop(session)
+        return ret
+
 if __name__ == "__main__":
     test = nic_test_vul()
 
@@ -225,6 +241,11 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
+
+    parser_nic_pc_test = subparsers.add_parser('nic_pc_test', help='nic power cycle test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_nic_pc_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_nic_pc_test.add_argument("-ite", "--iteration", help="Number of iteration", type=int, default=1)
+    parser_nic_pc_test.set_defaults(func=test.nic_pc_test)
 
     try:
         args = parser.parse_args()
