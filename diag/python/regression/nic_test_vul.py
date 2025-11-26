@@ -70,6 +70,16 @@ class nic_test_vul:
         pass_sig = "RC22308 I2C TEST PASSED"
         return self.suc_dev_test_common(cmd, pass_sig, args)
 
+    def suc_i2c_ina3221_test(self, args):
+        cmd = "voltage ina3221_i2ctest {}".format(int(args.index))
+        pass_sig = "INA3221 I2C TEST PASSED"
+        return self.suc_dev_test_common(cmd, pass_sig, args)
+
+    def suc_osfp_checksum_test(self, args):
+        cmd = "osfp checksumtest"
+        pass_sig = "OSFP CHECKSUM TEST PASSED"
+        return self.suc_dev_test_common(cmd, pass_sig, args)
+
     def nic_snake_mtp(self, args):
         ret = 0
         print("tcl_path:", args.tcl_path)
@@ -226,6 +236,15 @@ if __name__ == "__main__":
     parser_i2c_test = subparsers.add_parser('suc_i2c_rc22308_test', help='i2c rc22308 test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_i2c_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
     parser_i2c_test.set_defaults(func=test.suc_i2c_rc22308_test)
+
+    parser_i2c_test = subparsers.add_parser('suc_i2c_ina3221_test', help='i2c ina3221 test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_i2c_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_i2c_test.add_argument("-index", "--index", help="which INA3221 device to test", type=str, default="")
+    parser_i2c_test.set_defaults(func=test.suc_i2c_ina3221_test)
+
+    parser_i2c_test = subparsers.add_parser('suc_osfp_checksum_test', help='osfp checksum test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_i2c_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_i2c_test.set_defaults(func=test.suc_osfp_checksum_test)
 
     # NIC snake test from mtp
     parser_nic_snake_mtp = subparsers.add_parser('nic_snake_mtp', help='NIC snake test from mtp', formatter_class=argparse.ArgumentDefaultsHelpFormatter)

@@ -7,6 +7,8 @@ import (
     "bytes"
     "strings"
     "strconv"
+    "regexp"
+    "math"
     "common/cli"
     "common/errType"
     "go.bug.st/serial"
@@ -247,7 +249,25 @@ func Suc_dev_vset(slot int, voltage_name string, vboot int, vout int, vmin int, 
             cmd_list = append(cmd_list, cmd_vboot)
         }
         if vout != -1 {
-            //TODO
+            vdd_core_output := suc_single_cmd(slot, "voltage mp2861_sensor", false)
+            re := regexp.MustCompile(`VDD_CORE\s+\|\s+([\d.]+)`)
+            match := re.FindStringSubmatch(string(vdd_core_output))
+            if len(match) > 1 {
+                vboot_str := match[1]
+                vboot_val, err := strconv.ParseFloat(vboot_str, 64)
+                if err != nil {
+                    cli.Println("e", "Error converting VBOOT to float:", err)
+                    return
+                }
+                vboot_mv := int(vboot_val * 1000)
+                pct := int(math.Round((float64(vout - vboot_mv) / float64(vboot_mv)) * 100))
+                cli.Printf("i", "vmarg pct is %d\n", pct)
+                cmd_vmarg := "voltage mp2861_margin " + strconv.Itoa(pct)
+                cmd_list = append(cmd_list, cmd_vmarg)
+            } else {
+                cli.Println("e", "VBOOT value not found")
+                return
+            }
         }
         if vmin != -1 {
             cmd_vmin := "voltage mp2861_set vmin " + strconv.Itoa(vmin)
@@ -258,7 +278,31 @@ func Suc_dev_vset(slot int, voltage_name string, vboot int, vout int, vmin int, 
             cmd_list = append(cmd_list, cmd_vmax)
         }
     } else {
-        //TODO
+        if vout != -1 {
+            //first set margin=0 to read the base value
+            cmd_vmarg := "voltage ds4424_margin " + voltage_name + " 0"
+            suc_single_cmd(slot, cmd_vmarg, true)
+            time.Sleep(time.Duration(100) * time.Millisecond)
+            ds4424_output := suc_single_cmd(slot, "voltage ds4424_info", false)
+            re := regexp.MustCompile(fmt.Sprintf(`%s\s+\|.*?Volt=([\d.]+)V`, voltage_name))
+            match := re.FindStringSubmatch(string(ds4424_output))
+            if len(match) > 1 {
+                volt_str := match[1]
+                volt_val, err := strconv.ParseFloat(volt_str, 64)
+                if err != nil {
+                    cli.Println("e", "Error converting Volt to float:", err)
+                    return
+                }
+                volt_mv := int(volt_val * 1000)
+                pct := int(math.Round((float64(vout - volt_mv) / float64(volt_mv)) * 100))
+                cli.Printf("i", "vmarg pct is %d\n", pct)
+                cmd_vmarg = "voltage ds4424_margin " + voltage_name + " " + strconv.Itoa(pct)
+                cmd_list = append(cmd_list, cmd_vmarg)
+            } else {
+                cli.Println("e", "Volt value not found")
+                return
+            }
+        }
     }
     if cmd_list != nil {
         suc_cmd_list(slot, cmd_list)
