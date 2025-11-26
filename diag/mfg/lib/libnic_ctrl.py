@@ -4618,7 +4618,8 @@ class nic_ctrl():
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.MALFA_PN_FMT)                         #102-P10600-0 XX    MALFA
                 ],
             NIC_Type.POLLARA: [
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.POLLARA_PN_FMT)                       #102-P11100-0 XX    POLLARA
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.POLLARA_PN_FMT),                      #102-P11100-0 XX    POLLARA
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.POLLARA_HPE_PN_FMT)                   #102-P11101-0 XX    POLLARA HPE
                 ],
             NIC_Type.LINGUA: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LINGUA_PN_FMT)                        #102-P11500-0 XX    LINGUA

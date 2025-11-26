@@ -104,6 +104,7 @@ class PART_NUMBERS_MATCH:
     LENI_PN_FMT = r"102-P10800-0[A-Z0-9]{2}(?:\s[A-Z0-9]{1,2})?"                                    #102-P10800-00B 01  LENI
     LENI48G_PN_FMT = r"102-P10801-0[A-Z0-9]{2}(?:\s[A-Z0-9]{1,2})?"                                 #102-P10801-00B 01  LENI48G
     POLLARA_PN_FMT = r"102-P11100-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                               #102-P11100-00B 01  POLLARA
+    POLLARA_HPE_PN_FMT = r"102-P11101-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                           #102-P11101-00B 01  POLLARA HPE
     POLLARA_DELL_PN_FMT = r"0745T9(?:X|A)[0-9]{2}"                                                  #0745T9 X/A         POLLARA DELL PN
     LINGUA_PN_FMT = r"102-P11500-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                                #102-P11500-00B 01  LINGUA
     MALFA_PN_FMT = r"102-P10600-0[0-9]{1}(?:\s[A-Z0-9]{1,2})?"                                      #102-P10600-00 01   MALFA
@@ -152,7 +153,8 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.LENI_PN_FMT:                     "FPK" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.LENI48G_PN_FMT:                  "FPK" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.MALFA_PN_FMT:                    "PFP" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
-        PART_NUMBERS_MATCH.POLLARA_PN_FMT:                  "FPL" + FLX_SN_SUFFIX_FMT + "|" + HPE_SN_FMT,
+        PART_NUMBERS_MATCH.POLLARA_PN_FMT:                  "FPL" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.POLLARA_HPE_PN_FMT:              HPE_SN_FMT,
         PART_NUMBERS_MATCH.GELSOP_PN_FMT:                   "serialnumber" + r"(?:[1-9]|10)",
         PART_NUMBERS_MATCH.LINGUA_PN_FMT:                   "FPM" + FLX_SN_SUFFIX_FMT,
         "DEFAULT":                                          "FPF" + FLX_SN_SUFFIX_FMT
@@ -319,6 +321,7 @@ PN_FORMAT_TABLE = {
         ],
     NIC_Type.POLLARA: [
         PART_NUMBERS_MATCH.POLLARA_PN_FMT,                      #102-P11100-00    POLLARA
+        PART_NUMBERS_MATCH.POLLARA_HPE_PN_FMT,                  #102-P11101-00    POLLARA HPE
         PART_NUMBERS_MATCH.POLLARA_DELL_PN_FMT                  #0745T9 X/A       POLLARA DELL
         ],
     NIC_Type.LINGUA: [
@@ -444,6 +447,8 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
     elif "102-P11500-" in pn:
         product_name = NIC_Type.LINGUA
     elif "102-P11100-" in pn:
+        product_name = NIC_Type.POLLARA
+    elif "102-P11101-" in pn:
         product_name = NIC_Type.POLLARA
     elif "POLLARA-1Q400P" in pn:
         product_name = NIC_Type.POLLARA
