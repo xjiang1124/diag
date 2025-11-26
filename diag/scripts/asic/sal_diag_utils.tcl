@@ -137,6 +137,9 @@ proc reset_to_proto_mode {{reset "cold"}} {
     } elseif { $reset == "warm_rot" } {
         sal_irstn_no_arm warm_rot
         clear_resetcode 0x12
+    } elseif { $reset == "warm_rot_proto" } {
+        sal_irstn_no_arm warm_rot
+        clear_resetcode 0x12
     } elseif { $reset == "cold" } {
         sal_irstn_no_arm cold
         clear_resetcode 0x15
@@ -146,7 +149,7 @@ proc reset_to_proto_mode {{reset "cold"}} {
     }
     # verify ARM is truly in reset
     sal_arm_show_reset
-    if { $reset != "no_proto" && $reset != "warm_rot" } { sal_verify_arm_cntrs }
+    if { $reset != "no_proto" && $reset != "warm_rot" && $reset != "warm_rot_proto" } { sal_verify_arm_cntrs }
     cpld_disable_wdt
     plog_msg [exec inventory -sts -slot $::slot]
 }
