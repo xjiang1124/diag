@@ -271,6 +271,26 @@ def dell_ppid_validate(tmp):
     else:
         return None
 
+def hpe_ct_validate(tmp):
+    # HPE CT format PZGKHFVEE5I50001
+    if re.match(HPE_CT_FMT, tmp) and len(tmp) == 16:
+        return tmp
+    else:
+        return None
+
+def hpe_sn_validate(tmp, mtp_scan_rslt):
+    # HPE SN format 4YA5490001
+    if re.match(HPE_SN_FMT, tmp) and len(tmp) == 10 and mtp_scan_rslt["Serial Number"] == tmp:
+        return tmp
+    else:
+        return None
+
+def hpe_mac_address_validate(tmp, mtp_scan_rslt):
+    if re.match(PEN_MAC_NO_DASHES_FMT, tmp) and (len(tmp) == 12) and mtp_scan_rslt["MAC Address"] == tmp:
+        return tmp
+    else:
+        return None
+
 def serial_number_validate(buf, exact_match=True):
     """
         This is a "LOOSE" validation compared to libnic_ctrl::nic_fru_validate_sn().

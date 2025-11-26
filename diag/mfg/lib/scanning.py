@@ -4,6 +4,7 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import FF_Stage
 from libsku_utils import PART_NUMBERS_MATCH
 from libsku_utils import DELL_SKU_TO_DELL_PN
+from libsku_utils import HPE_SKU
 from barcode_field import *
 import libmfg_utils
 import testlog
@@ -39,30 +40,30 @@ def validate_nic_slot_scan(mtp_mgmt_ctrl, usr_input, mtp_scan_rslt):
     mtp_scan_rslt[usr_input]["VALID"] = False
     return usr_input
 
-def validate_sn(usr_input,already_scanned_list):
+def validate_sn(usr_input,already_scanned_list, mtp_scan_rslt):
     return libmfg_utils.serial_number_validate(usr_input)
 
-def validate_mac(usr_input, already_scanned_list):
+def validate_mac(usr_input, already_scanned_list, mtp_scan_rslt):
     return libmfg_utils.mac_address_validate(usr_input)
 
-def validate_pn(usr_input, already_scanned_list):
+def validate_pn(usr_input, already_scanned_list, mtp_scan_rslt):
     return libmfg_utils.part_number_validate(usr_input)
 
-def validate_swpn(usr_input, already_scanned_list):
+def validate_swpn(usr_input, already_scanned_list, mtp_scan_rslt):
     if re.match("90-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}", usr_input):
         return usr_input
     return None
 
-def validate_rot_sn(usr_input, already_scanned_list):
+def validate_rot_sn(usr_input, already_scanned_list, mtp_scan_rslt):
     return libmfg_utils.rot_cable_serial_number_validate(usr_input)
 
-def validate_dpn(usr_input, already_scanned_list):
+def validate_dpn(usr_input, already_scanned_list, mtp_scan_rslt):
     return usr_input in libmfg_utils.get_all_valid_dpn()
 
-def validate_sku(usr_input, already_scanned_list):
+def validate_sku(usr_input, already_scanned_list, mtp_scan_rslt):
     return usr_input in libmfg_utils.get_all_valid_sku()
 
-def validate_dell_ppid(usr_input, already_scanned_list):
+def validate_dell_ppid(usr_input, already_scanned_list, mtp_scan_rslt):
     # format validation
     dell_ppid = libmfg_utils.dell_ppid_validate(usr_input)
     if not dell_ppid:
@@ -74,7 +75,16 @@ def validate_dell_ppid(usr_input, already_scanned_list):
         return False
     return True
 
-def handle_scan(mtp_mgmt_ctrl, scan_item_str, usr_input, already_scanned_list):
+def validate_hpe_sn(usr_input,already_scanned_list, mtp_scan_rslt):
+    return libmfg_utils.hpe_sn_validate(usr_input, mtp_scan_rslt)
+
+def validate_hpe_ct(usr_input,already_scanned_list, mtp_scan_rslt):
+    return libmfg_utils.hpe_ct_validate(usr_input)
+
+def validate_hpe_mac(usr_input, already_scanned_list, mtp_scan_rslt):
+    return libmfg_utils.hpe_mac_address_validate(usr_input, mtp_scan_rslt)
+
+def handle_scan(mtp_mgmt_ctrl, scan_item_str, usr_input, already_scanned_list, mtp_scan_rslt):
     scan_item_to_validation_func = {
         SN:             validate_sn,
         PN:             validate_pn,
@@ -86,12 +96,15 @@ def handle_scan(mtp_mgmt_ctrl, scan_item_str, usr_input, already_scanned_list):
         ALOM_PN:        validate_pn,
         ROT_SN:         validate_rot_sn,
         DELL_PPID:      validate_dell_ppid,
+        HPE_SN:         validate_hpe_sn,
+        HPE_CT:         validate_hpe_ct,
+        HPE_MAC:        validate_hpe_mac,
     }
     validation_func = scan_item_to_validation_func.get(scan_item_str)
-    if validation_func(usr_input, already_scanned_list):
+    if validation_func(usr_input, already_scanned_list, mtp_scan_rslt):
         if usr_input not in already_scanned_list:
             return True
-        elif usr_input in already_scanned_list and ("Part Number" in scan_item_str or "PN" in scan_item_str or scan_item_str == SKU): #pns are not unique
+        elif usr_input in already_scanned_list and ("Part Number" in scan_item_str or "PN" in scan_item_str or scan_item_str in (SKU, HPE_MAC, HPE_SN)): #pns are not unique
             return True
         else:
             mtp_mgmt_ctrl.cli_log_err("{:s}: {:s} is double scanned, please rescan".format(scan_item_str, usr_input))
@@ -126,7 +139,7 @@ def inner_mtp_barcode_scan(mtp_mgmt_ctrl, stage, skip_scan_list=[], swmtestmode=
         if slot is None:
             continue
 
-        scan_item_list = [SN, MAC, PN, DPN, SKU, DELL_PPID, ROT_SN]
+        scan_item_list = [SN, MAC, PN, DPN, SKU, DELL_PPID, HPE_SN, HPE_CT, HPE_MAC, ROT_SN]
         if swmtestmode == Swm_Test_Mode.ALOM:
             scan_item_list = [ALOM_SN, ALOM_PN]
 
@@ -178,13 +191,41 @@ def inner_mtp_barcode_scan(mtp_mgmt_ctrl, stage, skip_scan_list=[], swmtestmode=
                     continue
                 if mtp_scan_rslt[slot][SKU] not in DELL_SKU_TO_DELL_PN:
                     continue
+
+            if scan_item == HPE_SN:
+                if stage != FF_Stage.FF_SWI:
+                    continue
+                # copy SKU scan condition, if SKU don't scanned, skip DELL_PPID scan
+                if not re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, mtp_scan_rslt[slot][PN]) and not mtp_scan_rslt[slot][PN].startswith("102-"):
+                    continue
+                if mtp_scan_rslt[slot][SKU] not in HPE_SKU:
+                    continue
+
+            if scan_item == HPE_CT:
+                if stage != FF_Stage.FF_SWI:
+                    continue
+                # copy SKU scan condition, if SKU don't scanned, skip DELL_PPID scan
+                if not re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, mtp_scan_rslt[slot][PN]) and not mtp_scan_rslt[slot][PN].startswith("102-"):
+                    continue
+                if mtp_scan_rslt[slot][SKU] not in HPE_SKU:
+                    continue
+
+            if scan_item == HPE_MAC:
+                if stage != FF_Stage.FF_SWI:
+                    continue
+                # copy SKU scan condition, if SKU don't scanned, skip DELL_PPID scan
+                if not re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, mtp_scan_rslt[slot][PN]) and not mtp_scan_rslt[slot][PN].startswith("102-"):
+                    continue
+                if mtp_scan_rslt[slot][SKU] not in HPE_SKU:
+                    continue
+
             ###################################
 
             # scan item loop
             while True:
                 usr_prompt = "Please scan {:s} {:s} Barcode: ".format(slot, scan_item)
                 usr_input = keyboard_input(usr_prompt)
-                if handle_scan(mtp_mgmt_ctrl, scan_item, usr_input, already_scanned_list):
+                if handle_scan(mtp_mgmt_ctrl, scan_item, usr_input, already_scanned_list, mtp_scan_rslt[slot]):
                     mtp_scan_rslt[slot][scan_item] = usr_input
                     already_scanned_list.append(usr_input)
                     break
