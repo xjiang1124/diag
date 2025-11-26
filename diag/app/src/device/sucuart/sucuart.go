@@ -322,13 +322,13 @@ func Suc_cpld_read(slot int, offset byte) (data byte, err int) {
         return 0, err
     }
     defer u.close_suc_uart()
-    cmd := "diag_cpld read " + fmt.Sprintf("0x%02x", offset)
+    cmd := "cpld_reg read " + fmt.Sprintf("0x%02x", offset)
     buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
     if err != errType.SUCCESS {
         return 0, err
     }
     //cli.Println("%s", string(buf))
-    parts := strings.Split(string(buf), "value ") // Split on "value "
+    parts := strings.Split(string(buf), "= ") // Split on "= "
     if len(parts) > 1 {
         hexValue := strings.TrimSpace(parts[1])
         if strings.HasPrefix(hexValue, "0x") {
@@ -351,13 +351,13 @@ func Suc_cpld_write(slot int, offset byte, value byte) (err int) {
         return
     }
     defer u.close_suc_uart()
-    cmd := "diag_cpld write " + fmt.Sprintf("0x%02x ", offset) + fmt.Sprintf("0x%02x", value)
+    cmd := "cpld_reg write " + fmt.Sprintf("0x%02x ", offset) + fmt.Sprintf("0x%02x", value)
     buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
     if err != errType.SUCCESS {
         return
     }
     //cli.Println("%s", string(buf))
-    parts := strings.Split(string(buf), "value ") // Split on "value "
+    parts := strings.Split(string(buf), "= ") // Split on "="
     if len(parts) > 1 {
         return errType.SUCCESS
     } else {
