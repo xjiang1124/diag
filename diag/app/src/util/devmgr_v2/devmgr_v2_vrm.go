@@ -79,6 +79,7 @@ func createSetCommand() *cobra.Command {
     setCmd.Flags().IntP("slot", "s", 0, "UUT Slot")
     setCmd.Flags().StringP("dev", "d", "ALL", "Device name")
     setCmd.Flags().IntP("vboot", "b", -1, "vboot(mv)")
+    setCmd.Flags().IntP("vout", "o", -1, "vout(mv)")
     setCmd.Flags().IntP("vmin", "m", -1, "vmin(mv)")
     setCmd.Flags().IntP("vmax", "n", -1, "vmax(mv)")
     return setCmd
