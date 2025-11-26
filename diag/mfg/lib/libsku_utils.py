@@ -15,6 +15,8 @@ HPE_FSP_SN_FMT = r"(?:2YU|3Y1)"
 HPE_P1_SN_FMT = r"4YA"
 HPE_PART_NUM_FMT = r"([A-Z0-9]{6}-B[0-9]{2})"
 HPE_PROD_NUM_FMT = r"([A-Z0-9]{6}-B[0-9]{2})"
+HPE_CT_FMT = r"PZGKHFVEE5I[0-5]{1}\d{1}[A-F0-9]{3}"
+HPE_SN_FMT = HPE_P1_SN_FMT + HPE_SUFFIX_FMT
 
 # DC: [last digit of year][month 1-9,A-C][day1-9,A-K=10-20,L-V:21-31]
 DELL_PPID_COUNTRY_FMT = r"(?:US|MY)"
@@ -148,7 +150,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.LENI_PN_FMT:                     "FPK" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.LENI48G_PN_FMT:                  "FPK" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.MALFA_PN_FMT:                    "PFP" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
-        PART_NUMBERS_MATCH.POLLARA_PN_FMT:                  "FPL" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.POLLARA_PN_FMT:                  "FPL" + FLX_SN_SUFFIX_FMT + "|" + HPE_SN_FMT,
         PART_NUMBERS_MATCH.GELSOP_PN_FMT:                   "serialnumber" + r"(?:[1-9]|10)",
         PART_NUMBERS_MATCH.LINGUA_PN_FMT:                   "FPM" + FLX_SN_SUFFIX_FMT,
         "DEFAULT":                                          "FPF" + FLX_SN_SUFFIX_FMT
