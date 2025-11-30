@@ -99,7 +99,7 @@ const (
     PN_MTP_PANAREA_MB   string = "102-P11700-00"
     PN_MTP_PANAREA_IOB  string = "102-P11800-00"
     PN_MTP_PANAREA_FPIC string = "102-P11900-00"
-    PN_GELSOP           string = "101-P00001-00"
+    PN_GELSOP           string = "102-P12200-00A"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
@@ -118,7 +118,7 @@ const (
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
     PROD_NAME_LINGUA        string = "POLLARA, single QSFP112, OCP 3.0"
     PROD_NAME_OCP_ADPT      string = "OCP ADAPTOR"
-    PROD_NAME_GELSOP        string = "GELSOP 1x800G OSFP224"
+    PROD_NAME_GELSOP        string = "VULCANO 1X800G OSFP224"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
