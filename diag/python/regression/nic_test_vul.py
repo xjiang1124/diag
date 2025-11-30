@@ -75,6 +75,11 @@ class nic_test_vul:
         pass_sig = "MP2861 I2C TEST PASSED"
         return self.suc_dev_test_common(cmd, pass_sig, args)
 
+    def suc_spi_cpldreg_test(self, args):
+        cmd = "diag_cpld regTest"
+        pass_sig = "CPLD SPI REGISTER TEST PASSED"
+        return self.suc_dev_test_common(cmd, pass_sig, args)
+
     def suc_i2c_ina3221_test(self, args):
         cmd = "voltage ina3221_i2ctest {}".format(int(args.index))
         pass_sig = "INA3221 I2C TEST PASSED"
@@ -245,6 +250,10 @@ if __name__ == "__main__":
     parser_i2c_test = subparsers.add_parser('suc_i2c_mp2861_test', help='i2c mp2861 test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_i2c_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
     parser_i2c_test.set_defaults(func=test.suc_i2c_mp2861_test)
+
+    parser_i2c_test = subparsers.add_parser('suc_spi_cpldreg_test', help='spi cpld register test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_i2c_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_i2c_test.set_defaults(func=test.suc_spi_cpldreg_test)
 
     parser_i2c_test = subparsers.add_parser('suc_i2c_ina3221_test', help='i2c ina3221 test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_i2c_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
