@@ -294,10 +294,16 @@ func present() (err int) {
                 os.Setenv(uutName, presentStr)
             }
 
-            //Temporary work around for Gelsop.   Due to Microcontroller h/w bug, we cannot have an eeprom to program right now
+            //Temporary work around for Gelsop / Mortaro / Saraceno.   Due to Microcontroller h/w bug, we cannot have an eeprom to program right now
             //As a work around to get scripting efforts moving, we will just hard code the part number and serial number 
-            if(presentStr == "GELSOP") {
-                PN = "101-P00001-00A"
+            if( presentStr == "GELSOP") {
+                PN = "102-P12200-00A"
+                SN = "serialnumber"+strconv.Itoa(i)
+            } else if( presentStr == "MORTARO") {
+                PN = "102-P12300-00A"
+                SN = "serialnumber"+strconv.Itoa(i)
+            } else if( presentStr == "SARACENO") {
+                PN = "102-P12500-00A"
                 SN = "serialnumber"+strconv.Itoa(i)
             } else {
                 uutFieldStr = "-uut=" + uutName
