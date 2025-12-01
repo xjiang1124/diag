@@ -127,7 +127,14 @@ func uutPresent(uutName string) (data byte, present bool) {
         present, _ = panareafpga.SLOTpresentUUT(uutName)
         SlotPoweredOn, _ := panareafpga.SLOTpoweredOn(uutName);
         if present == true && SlotPoweredOn == true {
-            return nicCpldCommon.ID_GELSOP, true
+            var err int
+            strLength := len(uutName)
+            slot, _ := strconv.ParseUint(uutName[4:strLength], 0, 32)
+            data, err = sucuart.Suc_cpld_read(int(slot), byte(vulcanoCpld.REG_CPLD_ID))
+            if err != errType.SUCCESS {
+                cli.Printf("e", "Slot-%d Failed to access CPLD to read CPLD_ID register\n", slot)
+                data = 0x00   //Force the data to an unknown card type if an error occurs
+            }
         } else {
             return 0x00, false
         }
@@ -256,6 +263,12 @@ func present() (err int) {
                 presentStr = "NAPLES_MTP"
             case nicCpldCommon.ID_GELSOP:
                 presentStr = "GELSOP"
+            case nicCpldCommon.ID_GELSOX:
+                presentStr = "GELSOX"
+            case nicCpldCommon.ID_MORTARO:
+                presentStr = "MORTARO"
+            case nicCpldCommon.ID_SARACENO:
+                presentStr = "SARACENO"
             default:
                 presentStr = "Unknown"
             }
@@ -574,6 +587,12 @@ func sysDetect() (err int) {
                 presentStr = "LINGUA"
             case nicCpldCommon.ID_GELSOP:
                 presentStr = "GELSOP"
+            case nicCpldCommon.ID_GELSOX:
+                presentStr = "GELSOX"
+            case nicCpldCommon.ID_MORTARO:
+                presentStr = "MORTARO"
+            case nicCpldCommon.ID_SARACENO:
+                presentStr = "SARACENO"
             default:
                 presentStr = "Unknown"
             }

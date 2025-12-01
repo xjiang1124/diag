@@ -42,6 +42,9 @@ const (
     ID_LENI48G         = 0x66
     ID_LINGUA          = 0x67
     ID_GELSOP          = 0x68
+    ID_GELSOX          = 0x69
+    ID_MORTARO         = 0x70
+    ID_SARACENO        = 0x71
     ID_TAORMINA_ELBA   = 0x80    //PENSANDO+HPE SWITCH
     ID_LIPARI_ELBA     = 0x81    //PENSANDO SWITCH
     ID_MTFUJI_ELBA     = 0x82    //CISCO SWITCH

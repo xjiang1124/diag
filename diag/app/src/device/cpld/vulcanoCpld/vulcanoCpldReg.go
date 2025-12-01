@@ -7,5 +7,6 @@ const (
     REG_RESET_REASON1      = 0x36
     REG_RESET_REASON2      = 0x37
     REG_RESET_REASON3      = 0x38
+    REG_CPLD_ID            = 0x40
 )
 
