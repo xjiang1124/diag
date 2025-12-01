@@ -3531,13 +3531,15 @@ class mtp_ctrl():
                 return False
         return True
 
-    def mtp_program_nic_fru(self, slot, date, sn, mac, pn, dpn=None, sku=None):
+    def mtp_program_nic_fru(self, slot, date, sn, mac, pn, dpn=None, sku=None, boardid=''):
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf_lock(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
         if dpn:
             self.cli_log_slot_inf_lock(slot, "Program NIC FRU dpn={:s}".format(dpn))
         if sku:
             self.cli_log_slot_inf_lock(slot, "Program NIC FRU SKU={:s}".format(sku))
+        if boardid:
+            self.cli_log_slot_inf_lock(slot, "Program NIC FRU BOARD ID={:s}".format(sku))
 
         if nic_type == NIC_Type.LINGUA:
             if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=True, dev="cpld_fru"):
@@ -3559,6 +3561,11 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
+                return False
+        elif nic_type in VULCANO_NIC_TYPE_LIST:
+            if not self._nic_ctrl_list[slot].uc_zephyr_fru_boardid_program(date, sn, mac, pn, nic_type, dpn, sku, boardid):
+                self.cli_log_slot_err_lock(slot, "Program VULCANAO NIC FRU Failed")
+                self.mtp_get_nic_err_msg(slot)
                 return False
         else:
             # for Salina cards need program SMBus FRU first, then DPU_FRU/2nd PCIe FRU, put smb_fru to True to program smbus FRU
@@ -3612,7 +3619,7 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     return False
 
-        if nic_type not in SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_read_fru():
+        if nic_type not in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_read_fru():
             self.cli_log_slot_err_lock(slot, "Display NIC FRU failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
@@ -7558,7 +7565,7 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_nic_uc_zephyr_cpld_update(self, slot, cpld_img_file, partition='0'):
+    def mtp_nic_uc_zephyr_cpld_update(self, slot, cpld_img_file, partition='0', dl_step=True):
         """
         update CPLD through micro controller zpher shell cpld command
             Subcommands:
@@ -7582,6 +7589,32 @@ class mtp_ctrl():
             op         : <byte> [<byte>...] Raw reg interface SPI op (hex args)
         """
 
+        nic_type = self.mtp_get_nic_type(slot)
+
+        if nic_type not in VULCANO_NIC_TYPE_LIST:
+            self.cli_log_slot_err(slot, "This cpld update function not meant for this card {:s}".format(nic_type))
+            return False
+
+        if dl_step:
+            stage = FF_Stage.FF_DL
+        else:
+            stage = FF_Stage.FF_SWI
+
+        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        if not nic_cpld_info:
+            self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed, can not retrieve CPLD info")
+            return False
+        cur_ver = nic_cpld_info[0]
+        cur_timestamp = nic_cpld_info[1]
+
+        expected_version = image_control.get_cpld(self, slot, stage)["version"]
+        expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
+
+        if cur_ver == expected_version and cur_timestamp == expected_timestamp:
+            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date")
+            self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
+            return True
+
         support_partitions = ("0", "1")
         if partition not in support_partitions:
             self.cli_log_slot_err_lock(slot, "Please provide correct cpld partion , it should be in {:d}".format(str(support_partitions)))
@@ -7590,6 +7623,9 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Program CPLD Failed")
             self.mtp_get_nic_err_msg(slot)
             return False
+
+        self._nic_ctrl_list[slot].nic_require_cpld_refresh(True)
+
         return True
 
     def mtp_nic_uc_zephyr_boot_check(self, slot, monitor_timeout=40):
@@ -7703,6 +7739,19 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].i2c_device_screening():
             self.cli_log_slot_err_lock(slot, "I2C Device Screening Failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_cpld_register_dump_check(self, slot, check=None):
+        """
+        dump all registers, and compare it's value if check parameter given 
+        check parameter give with address to value dict
+        """
+
+        if not self._nic_ctrl_list[slot].cpld_register_dump_check(check):
+            self.cli_log_slot_err_lock(slot, "CPLD Register dump and check Failed")
             self.mtp_get_nic_err_msg(slot)
             return False
         return True
@@ -8105,6 +8154,8 @@ class mtp_ctrl():
             l1_cmd_tout = MTP_Const.SALINA_AI_ASIC_L1_TEST_TIMEOUT
         if nic_type in SALINA_DPU_NIC_TYPE_LIST:
             l1_cmd_tout = MTP_Const.SALINA_DPU_ASIC_L1_TEST_TIMEOUT
+        if nic_type in VULCANO_NIC_TYPE_LIST:
+            l1_cmd_tout = MTP_Const.VUCANO_ASIC_L1_TEST_TIMEOUT
 
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=l1_cmd_tout):
             rs = False

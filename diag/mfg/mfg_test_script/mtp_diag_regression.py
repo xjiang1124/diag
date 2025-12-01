@@ -754,6 +754,8 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_i2c_rtc_salina(nic_list, vmarg=test_kwargs["vmarg"])
                 elif test == "I2C_DEVICE_SCREENING":
                     rlist = mtp_mgmt_ctrl.mtp_nic_i2c_device_screening(nic_list)
+                elif test == "CPLD_REGISTER_DUMP_CHECK":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_cpld_register_dump_check(nic_list, check=test_kwargs["check"])
                 elif test == "VUL_SUC_I2C_DEVICE_TEST":
                     rlist = mtp_mgmt_ctrl.mtp_nic_vul_suc_i2c_device_test(nic_list)
                 elif test == "OCP_FRU_SN":
