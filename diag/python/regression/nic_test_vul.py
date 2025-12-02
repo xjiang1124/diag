@@ -44,7 +44,7 @@ class nic_test_vul:
                     print("===== FAILED: missing passing signature")
                     ret = -1
                 self.nic_con.uart_session_stop(uart_session)
-                common.session_stop(uart_session)
+            common.session_stop(uart_session)
         except pexpect.TIMEOUT:
             print("=== TIMEOUT: Failed to run cmd on slot {} ===".format(args.slot))
             ret = -1
