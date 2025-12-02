@@ -36,7 +36,7 @@ class nic_test_vul:
             uart_session = common.session_start()
             ret = self.vul_con.usb_uart_session_connect(uart_session, args.slot, uart_id=0)
             if ret == 0:
-                cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, ending="uart:~\$", timeout=30)
+                cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd + "\r\n", ending="uart:~\$", timeout=30)
                 if cmdret != 0:
                     print("Command {} failed".format(cmd))
                     ret = -1
