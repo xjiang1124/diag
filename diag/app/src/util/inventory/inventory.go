@@ -293,56 +293,42 @@ func present() (err int) {
             if os.Getenv(uutName) != presentStr {
                 os.Setenv(uutName, presentStr)
             }
-
-            //Temporary work around for Gelsop / Mortaro / Saraceno.   Due to Microcontroller h/w bug, we cannot have an eeprom to program right now
-            //As a work around to get scripting efforts moving, we will just hard code the part number and serial number 
-            if( presentStr == "GELSOP") {
-                PN = "102-P12200-00A"
-                SN = "serialnumber"+strconv.Itoa(i)
-            } else if( presentStr == "MORTARO") {
-                PN = "102-P12300-00A"
-                SN = "serialnumber"+strconv.Itoa(i)
-            } else if( presentStr == "SARACENO") {
-                PN = "102-P12500-00A"
-                SN = "serialnumber"+strconv.Itoa(i)
+            uutFieldStr = "-uut=" + uutName
+            out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=PN", "-disp", uutFieldStr).Output()
+            if errGo != nil {
+                cli.Println("e", errGo)
+                err = errType.FAIL
+            }
+            outStr = string(out)
+            //cli.Println("i", "Debugging: output of eeutil PN reading -", outStr)
+            if regexPN.MatchString(outStr) {
+                submatchall = regexPN.FindAllStringSubmatch(outStr, -1)
+                for _, element := range submatchall {
+                    PN  = element[1]
+                }
+            } else if regexAN.MatchString(outStr) { // using Assembly Number
+                submatchall = regexAN.FindAllStringSubmatch(outStr, -1)
+                for _, element := range submatchall {
+                    PN  = element[1]
+                }
             } else {
-                uutFieldStr = "-uut=" + uutName
-                out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=PN", "-disp", uutFieldStr).Output()
-                if errGo != nil {
-                    cli.Println("e", errGo)
-                    err = errType.FAIL
-                }
-                outStr = string(out)
-                //cli.Println("i", "Debugging: output of eeutil PN reading -", outStr)
-                if regexPN.MatchString(outStr) {
-                    submatchall = regexPN.FindAllStringSubmatch(outStr, -1)
-                    for _, element := range submatchall {
-                        PN  = element[1]
-                    }
-                } else if regexAN.MatchString(outStr) { // using Assembly Number
-                    submatchall = regexAN.FindAllStringSubmatch(outStr, -1)
-                    for _, element := range submatchall {
-                        PN  = element[1]
-                    }
-                } else {
-                    PN = "NotProgrammed"
-                }
+                PN = "NotProgrammed"
+            }
 
-                out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=SN", "-disp", uutFieldStr).Output()
-                if errGo != nil {
-                    cli.Println("e", errGo)
-                    err = errType.FAIL
+            out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=SN", "-disp", uutFieldStr).Output()
+            if errGo != nil {
+                cli.Println("e", errGo)
+                err = errType.FAIL
+            }
+            outStr = string(out)
+            //cli.Println("i", "Debugging: output of eeutil SN reading -", outStr)
+            if regexSN.MatchString(outStr) {
+                submatchall = regexSN.FindAllStringSubmatch(outStr, -1)
+                for _, element := range submatchall {
+                    SN  = element[1]
                 }
-                outStr = string(out)
-                //cli.Println("i", "Debugging: output of eeutil SN reading -", outStr)
-                if regexSN.MatchString(outStr) {
-                    submatchall = regexSN.FindAllStringSubmatch(outStr, -1)
-                    for _, element := range submatchall {
-                        SN  = element[1]
-                    }
-                } else {
-                    SN = "NotProgrammed"   // not programmed, empty slot show "N/A"
-                }
+            } else {
+                SN = "NotProgrammed"   // not programmed, empty slot show "N/A"
             }
         }
 
