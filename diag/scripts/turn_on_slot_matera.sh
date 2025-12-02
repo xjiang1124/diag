@@ -249,7 +249,9 @@ control_slot_panarea() {
             # PERST
             wValue=$(( $wValue | 0x7 ))
             sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
-
+            
+            #The OCP Adapter CPLD needs a split second to show up on the i2c bus
+            sleep 1
             card_adapter_enable_power $slot_one_based
         done
     fi

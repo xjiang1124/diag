@@ -127,7 +127,14 @@ func uutPresent(uutName string) (data byte, present bool) {
         present, _ = panareafpga.SLOTpresentUUT(uutName)
         SlotPoweredOn, _ := panareafpga.SLOTpoweredOn(uutName);
         if present == true && SlotPoweredOn == true {
-            return nicCpldCommon.ID_GELSOP, true
+            var err int
+            strLength := len(uutName)
+            slot, _ := strconv.ParseUint(uutName[4:strLength], 0, 32)
+            data, err = sucuart.Suc_cpld_read(int(slot), byte(vulcanoCpld.REG_CPLD_ID))
+            if err != errType.SUCCESS {
+                cli.Printf("e", "Slot-%d Failed to access CPLD to read CPLD_ID register\n", slot)
+                data = 0x00   //Force the data to an unknown card type if an error occurs
+            }
         } else {
             return 0x00, false
         }
@@ -256,6 +263,12 @@ func present() (err int) {
                 presentStr = "NAPLES_MTP"
             case nicCpldCommon.ID_GELSOP:
                 presentStr = "GELSOP"
+            case nicCpldCommon.ID_GELSOX:
+                presentStr = "GELSOX"
+            case nicCpldCommon.ID_MORTARO:
+                presentStr = "MORTARO"
+            case nicCpldCommon.ID_SARACENO:
+                presentStr = "SARACENO"
             default:
                 presentStr = "Unknown"
             }
@@ -280,50 +293,42 @@ func present() (err int) {
             if os.Getenv(uutName) != presentStr {
                 os.Setenv(uutName, presentStr)
             }
-
-            //Temporary work around for Gelsop.   Due to Microcontroller h/w bug, we cannot have an eeprom to program right now
-            //As a work around to get scripting efforts moving, we will just hard code the part number and serial number 
-            if(presentStr == "GELSOP") {
-                PN = "101-P00001-00A"
-                SN = "serialnumber"+strconv.Itoa(i)
+            uutFieldStr = "-uut=" + uutName
+            out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=PN", "-disp", uutFieldStr).Output()
+            if errGo != nil {
+                cli.Println("e", errGo)
+                err = errType.FAIL
+            }
+            outStr = string(out)
+            //cli.Println("i", "Debugging: output of eeutil PN reading -", outStr)
+            if regexPN.MatchString(outStr) {
+                submatchall = regexPN.FindAllStringSubmatch(outStr, -1)
+                for _, element := range submatchall {
+                    PN  = element[1]
+                }
+            } else if regexAN.MatchString(outStr) { // using Assembly Number
+                submatchall = regexAN.FindAllStringSubmatch(outStr, -1)
+                for _, element := range submatchall {
+                    PN  = element[1]
+                }
             } else {
-                uutFieldStr = "-uut=" + uutName
-                out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=PN", "-disp", uutFieldStr).Output()
-                if errGo != nil {
-                    cli.Println("e", errGo)
-                    err = errType.FAIL
-                }
-                outStr = string(out)
-                //cli.Println("i", "Debugging: output of eeutil PN reading -", outStr)
-                if regexPN.MatchString(outStr) {
-                    submatchall = regexPN.FindAllStringSubmatch(outStr, -1)
-                    for _, element := range submatchall {
-                        PN  = element[1]
-                    }
-                } else if regexAN.MatchString(outStr) { // using Assembly Number
-                    submatchall = regexAN.FindAllStringSubmatch(outStr, -1)
-                    for _, element := range submatchall {
-                        PN  = element[1]
-                    }
-                } else {
-                    PN = "NotProgrammed"
-                }
+                PN = "NotProgrammed"
+            }
 
-                out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=SN", "-disp", uutFieldStr).Output()
-                if errGo != nil {
-                    cli.Println("e", errGo)
-                    err = errType.FAIL
+            out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=SN", "-disp", uutFieldStr).Output()
+            if errGo != nil {
+                cli.Println("e", errGo)
+                err = errType.FAIL
+            }
+            outStr = string(out)
+            //cli.Println("i", "Debugging: output of eeutil SN reading -", outStr)
+            if regexSN.MatchString(outStr) {
+                submatchall = regexSN.FindAllStringSubmatch(outStr, -1)
+                for _, element := range submatchall {
+                    SN  = element[1]
                 }
-                outStr = string(out)
-                //cli.Println("i", "Debugging: output of eeutil SN reading -", outStr)
-                if regexSN.MatchString(outStr) {
-                    submatchall = regexSN.FindAllStringSubmatch(outStr, -1)
-                    for _, element := range submatchall {
-                        SN  = element[1]
-                    }
-                } else {
-                    SN = "NotProgrammed"   // not programmed, empty slot show "N/A"
-                }
+            } else {
+                SN = "NotProgrammed"   // not programmed, empty slot show "N/A"
             }
         }
 
@@ -574,6 +579,12 @@ func sysDetect() (err int) {
                 presentStr = "LINGUA"
             case nicCpldCommon.ID_GELSOP:
                 presentStr = "GELSOP"
+            case nicCpldCommon.ID_GELSOX:
+                presentStr = "GELSOX"
+            case nicCpldCommon.ID_MORTARO:
+                presentStr = "MORTARO"
+            case nicCpldCommon.ID_SARACENO:
+                presentStr = "SARACENO"
             default:
                 presentStr = "Unknown"
             }
