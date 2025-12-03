@@ -12,6 +12,7 @@ import (
     "common/misc"
     "protocol/smbusNew"
     "device/fpga/materafpga"
+    "device/sucuart"
     "hardware/i2cinfo"
     "hardware/hwinfo"
 )
@@ -100,7 +101,7 @@ const (
     PN_MTP_PANAREA_MB   string = "102-P11700-00"
     PN_MTP_PANAREA_IOB  string = "102-P11800-00"
     PN_MTP_PANAREA_FPIC string = "102-P11900-00"
-    PN_GELSOP           string = "102-P12200-00A"
+    PN_GELSOP           string = "102-P12500"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
@@ -119,7 +120,7 @@ const (
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
     PROD_NAME_LINGUA        string = "POLLARA, single QSFP112, OCP 3.0"
     PROD_NAME_OCP_ADPT      string = "OCP ADAPTOR"
-    PROD_NAME_GELSOP        string = "VULCANO 1X800G OSFP224"
+    PROD_NAME_GELSOP        string = "VULCANO-1O800 100/200/400/800G 1p OSFP224 Card"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -154,7 +155,7 @@ const (
     SKU_LENI48G         string = "DSC3-2Q400-48R64E64P"
     SKU_LINGUA          string = "POLLARA-1Q400P-OCP"
     SKU_OCP_ADPT        string = "DSC3-2Q400-48R64E64P"
-    SKU_GELSOP          string = "GELSOP-1O800P"
+    SKU_GELSOP          string = "100-700000001"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -2056,6 +2057,23 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
         if errGo != nil {
             return errType.FAIL 
         }
+    } else if devName == "SUCFRU" {
+        //Writes FRU data to SUC Microcontroller via it's console
+        fmt.Printf("WRITE TO SUC Microcontroller   Bus=%d   Len=%d\n", bus, len(Data));
+        
+        i2cinfo.SwitchI2cTbl("UUT_NONE")
+        
+        for i:=0; i<len(Data); i++ {
+            command := fmt.Sprintf("fru write %d hex %x", i, Data[i])
+            fmt.Printf("%s\n", command);
+            sucuart.Suc_exec_cmds(int(bus-2), command)
+        }
+        sucuart.Suc_exec_cmds(int(bus-2), "fru save")
+
+        //fru write 377 hex 0xAB
+        //fru save
+        //ds4424_output := suc_single_cmd(slot, "voltage ds4424_info", false)
+        //sucuart.suc_single_cmd(slot int, cmd string, print_output bool) (output []byte) {
     } else {
         var lockName string
         if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
