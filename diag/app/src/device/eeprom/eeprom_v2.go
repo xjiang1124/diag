@@ -10,6 +10,7 @@ import (
     "common/cli"
     "common/errType"
     "common/misc"
+    "encoding/binary"
     "protocol/smbusNew"
     "device/fpga/materafpga"
     "device/sucuart"
@@ -50,6 +51,7 @@ const (
     FIELD_NUM_SKU_3         int = 3
     FIELD_NUM_FRU_ID_7      int = 7
     FIELD_NUM_DPN_9         int = 9
+    FIELD_NUM_BOARD_ID_6    int = 6
 
 
     //Field types; Area field number vs absolute byte offset
@@ -196,6 +198,7 @@ type progInfo struct {
     sku         int
     fruId       int
     dpn         int
+    boardID     int
 }
 
 type fieldInfo struct {
@@ -278,6 +281,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -297,6 +301,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -318,6 +323,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -338,6 +344,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -357,6 +364,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -379,12 +387,14 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_NONE,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
             progInfo {
                 FIELD_TYPE_NUM,
                 AREA_TYPE_BOARD_INFO,
                 FIELD_NUM_NONE,
                 FIELD_NUM_SKU_4,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
@@ -411,11 +421,13 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
             progInfo {
                 FIELD_TYPE_BYTE,
                 AREA_TYPE_PRDT_INFO,
                 FIELD_NUM_SN_5,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
@@ -442,11 +454,13 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
             progInfo {
                 FIELD_TYPE_BYTE,
                 AREA_TYPE_PRDT_INFO,
                 FIELD_NUM_SN_5,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
@@ -473,11 +487,13 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
             progInfo {
                 FIELD_TYPE_BYTE,
                 AREA_TYPE_PRDT_INFO,
                 FIELD_NUM_SN_5,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
@@ -504,11 +520,13 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
             progInfo {
                 FIELD_TYPE_BYTE,
                 AREA_TYPE_PRDT_INFO,
                 FIELD_NUM_SN_5,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
@@ -535,6 +553,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
         },
         lipariElbaExt,
@@ -556,11 +575,13 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
             progInfo {
                 FIELD_TYPE_BYTE,
                 AREA_TYPE_PRDT_INFO,
                 BYTE_OFFSET_SN_ORACLE,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
@@ -588,6 +609,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -609,6 +631,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -716,6 +739,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -737,6 +761,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -758,6 +783,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -779,6 +805,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -800,6 +827,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -821,6 +849,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -842,6 +871,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_NONE,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -852,6 +882,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -874,6 +905,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -895,6 +927,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -916,6 +949,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -938,6 +972,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -948,6 +983,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1004,6 +1040,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1014,6 +1051,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1037,6 +1075,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1047,6 +1086,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1070,6 +1110,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1080,6 +1121,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1103,6 +1145,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1113,6 +1156,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1135,6 +1179,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
@@ -1157,6 +1202,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1167,6 +1213,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1190,6 +1237,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1200,6 +1248,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1223,6 +1272,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1233,6 +1283,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1256,6 +1307,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1266,6 +1318,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1289,6 +1342,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1299,6 +1353,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1321,6 +1376,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1331,6 +1387,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1353,6 +1410,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1363,6 +1421,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1385,6 +1444,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_BOARD_ID_6,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1395,6 +1455,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1417,6 +1478,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_BOARD_ID_6,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1427,6 +1489,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
@@ -1691,14 +1754,13 @@ func updateChkSum() {
     }
 }
 
-func updateFields(sn string, pn string, sku string, mac string, date string, dpn string, skuMode bool) (err int) {
+func updateFields(sn string, pn string, sku string, mac string, date string, dpn string, skuMode bool, boardID uint32) (err int) {
     //Updates serial number, part number, MAC address, and date in Data
     var snOff, snLen, pnOff, pnLen, macOff, macLen, dateOff, dateLen int
-    var prodNameOff, prodNameLen, skuOff, skuLen, fruIdOff, fruIdLen, dpnOff, dpnLen int
+    var prodNameOff, prodNameLen, skuOff, skuLen, fruIdOff, fruIdLen, dpnOff, dpnLen, boardidOff, boardidLen int
     var skuField string
     var identifier string
     var areaOffset, areaLen, areaHdrLen int
-
     //Checks PN validity and sets card type
     if skuMode == true {
         identifier = sku
@@ -1842,6 +1904,10 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
             if entry.dpn != FIELD_NUM_NONE {
                 dpnInt := entry.dpn
                 dpnOff, dpnLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, dpnInt, areaHdrLen)
+            }
+            if entry.boardID != FIELD_NUM_NONE {
+                boardidInt := entry.boardID
+                boardidOff, boardidLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, boardidInt, areaHdrLen)
             }
         }
 
@@ -2020,6 +2086,11 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
                 }
                 incrementVar = 0
             }
+            if (offset == boardidOff) && (entry.boardID != FIELD_NUM_NONE) {
+                var start int = offset
+                var end int  = offset + boardidLen + 1
+                binary.BigEndian.PutUint32(Data[start:end], boardID)
+            }
         }
     }
 
@@ -2060,9 +2131,7 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
     } else if devName == "SUCFRU" {
         //Writes FRU data to SUC Microcontroller via it's console
         fmt.Printf("WRITE TO SUC Microcontroller   Bus=%d   Len=%d\n", bus, len(Data));
-        
         i2cinfo.SwitchI2cTbl("UUT_NONE")
-        
         for i:=0; i<len(Data); i++ {
             command := fmt.Sprintf("fru write %d hex %x", i, Data[i])
             fmt.Printf("%s\n", command);
@@ -2412,6 +2481,10 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
                 if dataName != "DPN (Diagnostic Part Number)" {
                     continue
                 }
+            } else if field == "BOARDID" {
+                if dataName != "Board ID" {
+                    continue
+                }
             }
         }
         //Formats and displays FRU value
@@ -2461,7 +2534,7 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
     return
 }
 
-func ProgData(devName string, bus uint32, devAddr byte, sn string, pn string, sku string, mac string, date string, dpn string, skuMode bool) (err int){
+func ProgData(devName string, bus uint32, devAddr byte, sn string, pn string, sku string, mac string, date string, dpn string, skuMode bool, boardID uint32) (err int){
     //Creates data slice of EEPROM table, updates data and checksums, and writes to FRU
     //Opens connections
 
@@ -2479,7 +2552,7 @@ func ProgData(devName string, bus uint32, devAddr byte, sn string, pn string, sk
         return 
     }
     //Updates the byte data slice with specified data
-    err = updateFields(sn, pn, sku, mac, date, dpn, skuMode)
+    err = updateFields(sn, pn, sku, mac, date, dpn, skuMode, boardID)
     if err != errType.SUCCESS {
         cli.Printf("e", "ERROR: Failed to program to FRU. Update failed.")
         err = errType.FAIL
