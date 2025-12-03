@@ -45,12 +45,10 @@ if {($MTP_TYPE == "MTP_PANAREA")} {
     set port $slot
     set slot $slot
 
-    if { $card_type == "GELSOP" } {
-        #set l1_cmd "vul_l1_screen_diag $sn 0 1 0 1 $vmarg $esecEn $logEn $prbslt"
-        set l1_cmd "vul_l1_screen_diag $sn"
-        source .tclrc.diag.vul
-        #source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
-    }
+    #set l1_cmd "vul_l1_screen_diag $sn 0 1 0 1 $vmarg $esecEn $logEn $prbslt"
+    set l1_cmd "vul_l1_screen_diag $sn"
+    source .tclrc.diag.vul
+    #source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
 } else {
    plog_err "INVALID PLATFORM/MTP TYPE: $MTP_TYPE\n"
    exit -1
