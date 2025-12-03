@@ -100,7 +100,7 @@ const (
     PN_MTP_PANAREA_MB   string = "102-P11700-00"
     PN_MTP_PANAREA_IOB  string = "102-P11800-00"
     PN_MTP_PANAREA_FPIC string = "102-P11900-00"
-    PN_GELSOP           string = "102-P12500-00"
+    PN_GELSOP           string = "102-P12500"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
