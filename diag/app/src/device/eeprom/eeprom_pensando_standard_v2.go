@@ -437,5 +437,5 @@ var PenStandardV2GelsoXProdInfoTbl = []entry {
     entry{"Flex I/O Optional Function",             INT8,       374,        1,    []byte{0x02}},
     entry{"PCIe CEM Pin#",                          INT8,       375,        1,    []byte{0x06}},
     entry{"Alternate FN Signal Enum",               INT8,       376,        1,    []byte{0x01}},
-    entry{"Input Voltage Behavior",                 INT8,       377,        1,    []byte{0x01}},
+    entry{"Input Voltage Behavior",                 INT8,       377,        1,    []byte{0x00}},
 }
