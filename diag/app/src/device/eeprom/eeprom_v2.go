@@ -87,6 +87,7 @@ const (
     PN_DESCHUTES     string = "73-21612-01"
     PN_MALFA         string = "102-P10600-00"
     PN_POLLARA       string = "102-P11100"
+    PN_POLLARA_HPE   string = "102-P11101"
     PN_LENI          string = "102-P10800"
     PN_LENI48G       string = "102-P10801"
     PN_LINGUA        string = "102-P11500"
@@ -952,6 +953,39 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    PN_POLLARA_HPE: updateInfo {
+        //PenStandardV2NewTbl,
+        PenStandardV2ProdInfoTbl,
+        PROD_NAME_POLLARA,
+        SKU_POLLARA,
+        FRU_ID_POLLARA,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
     SKU_POLLARA: updateInfo {
         //PenStandardV2NewTbl,
         PenStandardV2ProdInfoTbl,
@@ -1430,6 +1464,7 @@ var CardTypes = []card{
     card{"MALFA",                   PN_MALFA},
     card{"MALFA_SKU",               SKU_MALFA},
     card{"POLLARA",                 PN_POLLARA},
+    card{"POLLARA_H",               PN_POLLARA_HPE},
     card{"POLLARA_SKU",             SKU_POLLARA},
     card{"POLLARA_ORACLE",          SKU_POLLARA_ORACLE},
     card{"POLLARA_DELL",            SKU_POLLARA_DELL},
