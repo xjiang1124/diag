@@ -1128,7 +1128,6 @@ func FindUutTypeMtp(uutName string) (uutType string, err int) {
     if uutName == "UUT_NONE" {
         return "UUT_NONE", errType.SUCCESS
     }
- 
     uutType, found = os.LookupEnv(uutName)
     if found == false {
         cli.Println("e", "Cannot find uutType with uutName", uutName)
@@ -1207,7 +1206,6 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = I2cTbl
         return
     }
-
     if uutType == "NAPLES_MTP" {
         CurI2cTbl = NaplesMtpTbl
     } else if uutType == "NAPLES100" {
@@ -1281,6 +1279,12 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = LeniMtpTbl
         CurSensorTbl = LeniSensorTbl
     } else if uutType == "GELSOP" {
+        CurI2cTbl = GelsopMtpTbl
+    } else if uutType == "GELSOX" {
+        CurI2cTbl = GelsopMtpTbl
+    } else if uutType == "MORTARO" {
+        CurI2cTbl = GelsopMtpTbl
+} else if uutType == "SARACENO" {
         CurI2cTbl = GelsopMtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
