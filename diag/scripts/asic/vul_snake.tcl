@@ -1,47 +1,72 @@
 #! /usr/bin/tclsh
+source /home/diag/diag/scripts/asic/cmdline.tcl
 
-set slot        [lindex $argv 0]
-set test_type   [lindex $argv 1]
-set dura        [lindex $argv 2]
-set card_type   [lindex $argv 3]
-set vmarg       [lindex $argv 4]
-set int_lpbk    [lindex $argv 5]
-set mtp_clk     [lindex $argv 6]
+set usage {
+    {slot.arg           ""                  "Slot number"}
+    {vmarg.arg          "normal"            "Voltage margin"}
+    {snake_num.arg      1                   "snake number"}
+    {tcl_path.arg       ""                  "ASIC lib location"}
+}
+# rename argv variables to call them more easily
+array set arg [cmdline::getoptions argv $usage]
+foreach argname [array names arg] { set $argname $arg($argname) }
+if { $slot == "" } { puts "Missing required --slot arg" ; exit -1 }
+parray arg
 
-set ASIC_SRC $::env(ASIC_SRC)
+### initialize asic lib
 set ::VEL_SHELL 0
-
-cd $ASIC_SRC/ip/cosim/tclsh
+set ::SHELL_MODE mtp
+set ::MTP_SHELL 1
+set ::JCS_SHELL 0
+if { $tcl_path != "" } {
+    set ASIC_LIB_BUNDLE "$tcl_path"
+} elseif { $::env(ASIC_LIB_BUNDLE) != "" } {
+    set ASIC_LIB_BUNDLE $::env(ASIC_LIB_BUNDLE)
+} else {
+    set ASIC_LIB_BUNDLE "/home/diag/diag/asic"
+}
+set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
+set env(ASIC_LIB_BUNDLE) "$ASIC_LIB_BUNDLE"
+set env(ASIC_LIB) "$ASIC_LIB_BUNDLE/asic_lib"
+set env(ASIC_SRC) "$ASIC_LIB_BUNDLE/asic_src"
+set env(ASIC_GEN) "$ASIC_LIB_BUNDLE/asic_src"
+set env(LD_LIBRARY_PATH) "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:${::env(LD_LIBRARY_PATH)}"
+cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 source .tclrc.diag.vul
-#source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
 
-set port $slot
+### initialize card properties
 set slot $slot
-set ::slot  $slot
-set ::port  $port
-#exec jtag_accpcie_vulcano clr $slot
-diag_close_j2c_if $port $slot
-diag_open_j2c_if $port $slot
-
-set ::env(MTP_PCIE_USE_REFCLK_0) $mtp_clk
+set port $slot
+set ::slot $slot
+set ::port $port
+set uut "UUT_$slot"
+set card_type $::env($uut)
+plog_msg "card type: $card_type; UUT: $uut"
+exec jtag_accpcie_vulcano clr $slot
+vul_j2c
+plog_msg "_msrd"
+plog_msg [eval _msrd]
 
 set err_cnt_init [ plog_get_err_count ]
 set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
-set fn "snake_slot${slot}_${cur_time}.log"
-pwd
+set fn "vul_snake_slot${slot}_${cur_time}.log"
 plog_start $fn
+
+plog_msg "calling vul_pll_fix"
+vul_pll_fix
+after 10000
 
 #set card_type [vul_get_card_type]
 #set cpld_id [ vul_cpld_read 0x80 ]
-plog_msg "card_type = $card_type"
+#plog_msg "card_type = $card_type"
 #plog_msg "cpld_id = $cpld_id"
 #vul_print_die_id
 #vul_set_vmarg $vmarg
 
-plog_msg "snake test_type: $test_type"
-plog_msg "pcie done"
-#vul_snake_test $card_type $test_type $dura $int_lpbk $mtp_clk
-
+plog_msg "start snake"
+vul_l1_snake 1
+plog_msg "check result"
+vul_print_pass_fail vul_l1_snake $err_cnt_init
 plog_stop
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt  [ expr ( $err_cnt_fnl - $err_cnt_init ) ]
