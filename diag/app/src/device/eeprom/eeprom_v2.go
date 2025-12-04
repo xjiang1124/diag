@@ -104,6 +104,8 @@ const (
     PN_MTP_PANAREA_IOB  string = "102-P11800-00"
     PN_MTP_PANAREA_FPIC string = "102-P11900-00"
     PN_GELSOP           string = "102-P12500"
+    PN_MORTARO          string = "102-P12300"
+    //PN_SARACENO          string = "102-P12500"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
@@ -123,6 +125,8 @@ const (
     PROD_NAME_LINGUA        string = "POLLARA, single QSFP112, OCP 3.0"
     PROD_NAME_OCP_ADPT      string = "OCP ADAPTOR"
     PROD_NAME_GELSOP        string = "VULCANO-1O800 100/200/400/800G 1p OSFP224 Card"
+    PROD_NAME_MORTARO       string = "VULCANO-1O800-OCP 100/200/400/800G 1p OSFP224 Card"
+    //PROD_NAME_SARACENO      string = "VULCANO-1O800 100/200/400/800G 1p OSFP224 Card"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -158,6 +162,8 @@ const (
     SKU_LINGUA          string = "POLLARA-1Q400P-OCP"
     SKU_OCP_ADPT        string = "DSC3-2Q400-48R64E64P"
     SKU_GELSOP          string = "100-700000001"
+    SKU_MORTARO         string = "100-700000004"
+    //SKU_SARACENO        string = "100-700000003"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -183,6 +189,7 @@ const (
     FRU_ID_LINGUA        string = "02/04/25"
     FRU_ID_OCP_ADPT      string = "02/24/25"
     FRU_ID_GELSOP        string = "09/26/25"
+    FRU_ID_MORTARO       string = "12/04/25"
 
     // Byte offset
     BYTE_OFFSET_SN_ORACLE      int = 5
@@ -1498,6 +1505,73 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    PN_MORTARO: updateInfo {
+        PenStandardV2VulcanoOCPProdInfoTbl,
+        PROD_NAME_MORTARO,
+        SKU_MORTARO,
+        FRU_ID_MORTARO,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                FIELD_NUM_BOARD_ID_6,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
+    SKU_MORTARO: updateInfo {
+        PenStandardV2VulcanoOCPProdInfoTbl,
+        PROD_NAME_MORTARO,
+        SKU_MORTARO,
+        FRU_ID_MORTARO,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                FIELD_NUM_BOARD_ID_6,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
     //                                                    FIELD_NUM_SN_3, 
@@ -1546,6 +1620,8 @@ var CardTypes = []card{
     card{"DESCHUTES",               PN_DESCHUTES},
     card{"GELSOP",                  PN_GELSOP},
     card{"GELSOP_SKU",              SKU_GELSOP},
+    card{"MORTARO",                 PN_MORTARO},
+    card{"MORTARO_SKU",             SKU_MORTARO},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
