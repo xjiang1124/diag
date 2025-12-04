@@ -589,6 +589,7 @@ func main() {
     verifyPtr  := flag.Bool  ("verify", false,      "Verify eeprom checksums")
     erasePtr   := flag.Bool  ("erase",  false,      "Erase all fields")
     dumpPtr    := flag.Bool  ("dump",    false,     "Dump FRU")
+    boardidPtr := flag.Uint  ("boardid",0x01000000, "Board ID")
     macPtr     := flag.String("mac",    "",         "MAC address")
     snPtr      := flag.String("sn",     "",         "Serial number")
     sn2Ptr     := flag.String("pcbsn",  "",         "Serial number in product info area")
@@ -614,6 +615,7 @@ func main() {
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
+    boardid := *boardidPtr
     mac := strings.ToUpper(*macPtr)
     sn := strings.ToUpper(*snPtr)
     pn := strings.ToUpper(*pnPtr)
@@ -800,7 +802,7 @@ func main() {
                 //cli.Printf("i", "skuMode: %t, identifier: %s, dpn: %s\n", *skuModePtr, identifier, dpn)
                 found, _ = eeprom.CardInListNew(identifier, *skuModePtr)
                 if found == true {
-                    hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, pn, sku, mac, date, dpn, *skuModePtr)
+                    hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, pn, sku, mac, date, dpn, *skuModePtr, uint32(boardid))
                     misc.SleepInUSec(500000)
                     return
                 } else {
