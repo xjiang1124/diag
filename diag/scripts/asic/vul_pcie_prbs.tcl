@@ -7,6 +7,7 @@ set usage {
     {pcie_gen.arg       1                   "Test duration"}
     {int_lpbk.arg       0                   "PMA Internal loopback (1 or 0)"}
     {prbs_pattern.arg   7                   "prbs pattern"}
+    {margin_code.arg    0                   "VRM margin code (0, 1 or 2)"}
     {tcl_path.arg       ""                  "ASIC lib location"}
 }
 # rename argv variables to call them more easily
@@ -54,8 +55,10 @@ plog_start $fn
 #vul_print_die_id
 #vul_set_vmarg $vmarg 
 
-vul_card_rst 1 1
-vul_pcie_sd_prbs_check $pcie_gen $int_lpbk $prbs_pattern
+set ::board_rev [vul_get_board_rev]
+
+#vul_card_rst 1 1
+vul_pcie_sd_prbs_check $pcie_gen $int_lpbk $prbs_pattern 1 $margin_code
 
 set err_cnt  [ expr ( [plog_get_err_count] - $err_cnt_init ) ]
 if {$err_cnt != 0} {

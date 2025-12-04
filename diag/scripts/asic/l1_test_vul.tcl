@@ -66,6 +66,12 @@ if {$ASIC_TYPE == "VULCANO"} {
     set rtn [eval _msrd]
     puts $rtn
 
+    set ::board_rev [vul_get_board_rev]
+
+    plog_msg "calling vul_pll_fix"
+    vul_pll_fix
+    after 10000
+
     #reset_to_proto_mode
     #vul_print_voltage_temp
     vul_print_die_id
