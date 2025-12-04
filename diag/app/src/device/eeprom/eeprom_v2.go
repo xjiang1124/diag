@@ -1007,6 +1007,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
@@ -1017,6 +1018,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 FIELD_NUM_NONE,
                 },
         },
