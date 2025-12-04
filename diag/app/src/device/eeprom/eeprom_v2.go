@@ -2130,7 +2130,7 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
         }
     } else if devName == "SUCFRU" {
         //Writes FRU data to SUC Microcontroller via it's console
-        fmt.Printf("WRITE TO SUC Microcontroller   Bus=%d   Len=%d\n", bus, len(Data));
+        fmt.Printf("WRITE TO SUC Microcontroller  Bus=%d  Len=%d\n", bus, len(Data));
         i2cinfo.SwitchI2cTbl("UUT_NONE")
         for i:=0; i<len(Data); i++ {
             command := fmt.Sprintf("fru write %d hex %x", i, Data[i])
@@ -2138,11 +2138,6 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
             sucuart.Suc_exec_cmds(int(bus-2), command)
         }
         sucuart.Suc_exec_cmds(int(bus-2), "fru save")
-
-        //fru write 377 hex 0xAB
-        //fru save
-        //ds4424_output := suc_single_cmd(slot, "voltage ds4424_info", false)
-        //sucuart.suc_single_cmd(slot int, cmd string, print_output bool) (output []byte) {
     } else {
         var lockName string
         if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
