@@ -326,7 +326,9 @@ var PenStandardV2ocpProdInfoTbl = []entry {
 }
 
 
-var PenStandardV2GelsoXProdInfoTbl = []entry {
+//Base FRU for cards with Vulcano ASIC.
+//This fru adds a Flex I/O Multi-record area vs pensando generic fru.
+var PenStandardV2vulcanoProdInfoTbl = []entry {
     entry{"Common Format Version",                  INT8,        0,        1,    []byte{0x01}},
     entry{"Internal Use Area Offset",               INT8,        1,        1,    []byte{0x00}},
     entry{"Chassis Area Offset",                    INT8,        2,        1,    []byte{0x00}},
