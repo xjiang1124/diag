@@ -413,7 +413,7 @@ var PenStandardV2vulcanoProdInfoTbl = []entry {
     entry{"Assembly Number",                        STRING,      319,      20,   []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                                                                         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
     entry{"DPN Type/Length",                        INT8,        339,      1,    []byte{0xCA}},
-    entry{"DPN (Diagnostic Part Number)",           STRING,      340,      10,   []byte{0x35, 0x38, 0x2D, 0x30, 0x30, 0x31, 0x32, 0x2D, 0x30, 0x31}},
+    entry{"DPN (Diagnostic Part Number)",           STRING,      340,      10,   []byte{0x30, 0x30, 0x2d, 0x30, 0x30, 0x30, 0x30, 0x2d, 0x30, 0x30}},
     entry{"End of Field",                           INT8,        350,      1,    []byte{0xC1}},
     entry{"Product Info Area Checksum",             INT8,        351,      1,    []byte{0x00}},
     //multi-record Flex I/O
@@ -527,7 +527,7 @@ var PenStandardV2VulcanoOCPProdInfoTbl = []entry {
     entry{"Assembly Number",                        STRING,      319,      20,   []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                                                                         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
     entry{"DPN Type/Length",                        INT8,        339,      1,    []byte{0xCA}},
-    entry{"DPN (Diagnostic Part Number)",           STRING,      340,      10,   []byte{0x35, 0x38, 0x2D, 0x30, 0x30, 0x31, 0x35, 0x2D, 0x30, 0x31}},
+    entry{"DPN (Diagnostic Part Number)",           STRING,      340,      10,   []byte{0x30, 0x30, 0x2d, 0x30, 0x30, 0x30, 0x30, 0x2d, 0x30, 0x30}},
     entry{"End of Field",                           INT8,        350,      1,    []byte{0xC1}},
     entry{"Product Info Area Checksum",             INT8,        351,      1,    []byte{0x00}},
     //multi-record Flex I/O
