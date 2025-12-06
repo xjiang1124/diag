@@ -931,6 +931,12 @@ var PanareaI2cTbl = []I2cInfo {
 
 var GelsopMtpTbl = []I2cInfo {
     //       name               comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"FRU",            "AT24C02C",  0x3,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"SUCFRU",         "AT24C02C",  0x3,   0xFF,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+}
+
+var SaracenoMtpTbl = []I2cInfo {
+    //       name               comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"FRU",            "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"SUCFRU",         "AT24C02C",  0x3,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 }
@@ -1285,7 +1291,7 @@ func SwitchI2cTbl(uutName string) (err int) {
     } else if uutType == "MORTARO" {
         CurI2cTbl = GelsopMtpTbl
 } else if uutType == "SARACENO" {
-        CurI2cTbl = GelsopMtpTbl
+        CurI2cTbl = SaracenoMtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM
