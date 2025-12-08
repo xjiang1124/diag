@@ -3532,7 +3532,7 @@ class mtp_ctrl():
                 return False
         return True
 
-    def mtp_program_nic_fru(self, slot, date, sn, mac, pn, dpn=None, sku=None, dsp=None):
+    def mtp_program_nic_fru(self, slot, date, sn, mac, pn, dpn=None, sku=None, stage=None):
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf_lock(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
         if dpn:
@@ -3547,7 +3547,7 @@ class mtp_ctrl():
             return False
         cpldId = nic_cpld_info[2]
         boardId, pciSubSysId = PN_CPLD2BOARDID_PCI_SUBSYS_ID.get((pnIn6Digits, cpldId), (None, None))
-        if dsp == FF_Stage.FF_SWI:
+        if stage == FF_Stage.FF_SWI:
             boardId, pciSubSysId = SKU2BOARDID_PCI_SUBSYS_ID.get(sku, (None, None))
         if boardId:
             self.cli_log_slot_inf_lock(slot, "Program NIC FRU BOARD ID={:s}".format(boardId))
@@ -3574,27 +3574,33 @@ class mtp_ctrl():
                 self.mtp_dump_nic_err_msg(slot)
                 return False
         elif nic_type in VULCANO_NIC_TYPE_LIST:
-            # for Vucano cards need program micron controller FRU first, then DPU_FRU
+            # for Vucano cards need program Smb FRU and micron controller FRU
+            smb_fru = True if nic_type in SALINA_NIC_TYPE_LIST else False
+            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru, boardid=boardId):
+                self.cli_log_slot_err_lock(slot, "Program VULCANAO Smbus FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
             if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=True, dev="SUCFRU", boardid=boardId):
                 self.cli_log_slot_err_lock(slot, "Program VULCANAO NIC SUC FRU Failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
-            # if nic_type in SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_power_cycle():
-            #     self.cli_log_slot_err_lock(slot, "Failed to Power cycle after FRU program")
-            #     self.mtp_get_nic_err_msg(slot)
-            #     self.mtp_dump_nic_err_msg(slot)
-            #     return False
+            if self._nic_ctrl_list[slot].nic_power_cycle():
+                self.cli_log_slot_err_lock(slot, "Failed to Power cycle after FRU program")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
             if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True):
                 self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
-            # if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True):
-            #     self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
-            #     self.mtp_get_nic_err_msg(slot)
-            #     self.mtp_dump_nic_err_msg(slot)
-            #     return False
+            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True):
+                self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
         else:
             # for Salina cards need program SMBus FRU first, then DPU_FRU/2nd PCIe FRU, put smb_fru to True to program smbus FRU
             smb_fru = True if nic_type in SALINA_NIC_TYPE_LIST else False

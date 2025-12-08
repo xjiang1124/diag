@@ -1278,8 +1278,7 @@ class NIC_IMAGES:
     fail_cpld_ver["GELSOP"] = "0x1"
     fail_cpld_dat["GELSOP"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
     fea_cpld_img["GELSOP"] = "gelso.fea"
-    # microcontroller_img["GELSOP"] = "vulcano/gelsop/interim-v1.0.49_v0.2.0.0.pldm"
-    microcontroller_img["GELSOP"] = "vulcano/gelsop/ainic_fw_vulcano_diag1202.pldmfw"
+    microcontroller_img["GELSOP"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
     cpld_img["58-0012-01"] = "gelso_cpld_cfg0_rev0104.jed"
     cpld_ver["58-0012-01"] = "0x1"
@@ -1291,8 +1290,7 @@ class NIC_IMAGES:
     fail_cpld_ver["58-0012-01"] = "0x1"
     fail_cpld_dat["58-0012-01"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0012-01"] = "gelso.fea"
-    # microcontroller_img["58-0012-01"] = "vulcano/gelsop/interim-v1.0.49_v0.2.0.0.pldm"
-    microcontroller_img["58-0012-01"] = "vulcano/gelsop/ainic_fw_vulcano_diag1202.pldmfw"
+    microcontroller_img["58-0012-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
     # GELSOX is AINIC
     cpld_img["GELSOPX"] = "gelsoX_cfg0_0101.jed"
@@ -1305,7 +1303,7 @@ class NIC_IMAGES:
     fail_cpld_ver["GELSOPX"] = "0x1"
     fail_cpld_dat["GELSOPX"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
     fea_cpld_img["GELSOPX"] = "gelsoX.fea"
-    microcontroller_img["GELSOPX"] = "vulcano/gelsop/ainic_fw_vulcano_diag1202.pldmfw"
+    microcontroller_img["GELSOPX"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
     cpld_img["58-0013-01"] = "gelsoX_cfg0_0101.jed"
     cpld_ver["58-0013-01"] = "0x1"
@@ -1317,7 +1315,32 @@ class NIC_IMAGES:
     fail_cpld_ver["58-0013-01"] = "0x1"
     fail_cpld_dat["58-0013-01"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0013-01"] = "gelsoX.fea"
-    microcontroller_img["58-0013-01"] = "vulcano/gelsop/ainic_fw_vulcano_diag1202.pldmfw"
+    microcontroller_img["58-0013-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
+
+    # SARACENO is AINIC
+    cpld_img["SARACENO"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_ver["SARACENO"] = "0x1"
+    cpld_dat["SARACENO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    sec_cpld_img["SARACENO"] = "mortaro_rev01_01_dc1203_1528.jed"
+    sec_cpld_ver["SARACENO"] = "0x1"
+    sec_cpld_dat["SARACENO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fail_cpld_img["SARACENO"] = "gelso_cpld_cfg1-rev01_04.jed"
+    fail_cpld_ver["SARACENO"] = "0x1"
+    fail_cpld_dat["SARACENO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fea_cpld_img["SARACENO"] = "mortaro_impl1.fea"
+    microcontroller_img["SARACENO"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
+
+    cpld_img["58-0014-01"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_ver["58-0014-01"] = "0x1"
+    cpld_dat["58-0014-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0014-01"] = "mortaro_rev01_01_dc1203_1528.jed"
+    sec_cpld_ver["58-0014-01"] = "0x1"
+    sec_cpld_dat["58-0014-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0014-01"] = "gelso_cpld_cfg1-rev01_04.jed"
+    fail_cpld_ver["58-0014-01"] = "0x1"
+    fail_cpld_dat["58-0014-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fea_cpld_img["58-0014-01"] = "mortaro_impl1.fea"
+    microcontroller_img["58-0014-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
     # MORTARO is AINIC
     cpld_img["MORTARO"] = "mortaro_rev01_01_dc1203_1528.jed"
@@ -1330,7 +1353,7 @@ class NIC_IMAGES:
     fail_cpld_ver["MORTARO"] = "0x1"
     fail_cpld_dat["MORTARO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
     fea_cpld_img["MORTARO"] = "mortaro_impl1.fea"
-    microcontroller_img["MORTARO"] = "vulcano/gelsop/ainic_fw_vulcano_diag1202.pldmfw"
+    microcontroller_img["MORTARO"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
     cpld_img["58-0015-01"] = "mortaro_rev01_01_dc1203_1528.jed"
     cpld_ver["58-0015-01"] = "0x1"
@@ -1342,7 +1365,7 @@ class NIC_IMAGES:
     fail_cpld_ver["58-0015-01"] = "0x1"
     fail_cpld_dat["58-0015-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0015-01"] = "mortaro_impl1.fea"
-    microcontroller_img["58-0015-01"] = "vulcano/gelsop/ainic_fw_vulcano_diag1202.pldmfw"
+    microcontroller_img["58-0015-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
 
 class MTP_IMAGES:

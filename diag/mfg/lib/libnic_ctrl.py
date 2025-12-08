@@ -6865,14 +6865,23 @@ class nic_ctrl():
         nic_test_vul.py suc_i2c_tmp451_test -slot <slot>
         nic_test_vul.py suc_i2c_rc22308_test -slot <slot>
         '''
-        suc_i2c_devices = ("suc_i2c_ds4424_test", "suc_i2c_tmp451_test", "suc_i2c_rc22308_test")
+
         suc_i2c_devices = ("suc_osfp_checksum_test", "suc_i2c_rc22308_test", "suc_i2c_ina3221_test",  "suc_i2c_ds4424_test", "suc_i2c_tmp451_test", "suc_i2c_mp2861_test", "suc_spi_cpldreg_test")
+        if self._nic_type in (NIC_Type.SARACENO, NIC_Type.MORTARO):
+            #For both Saraceno and Mortero, can you remove the ina3221 tests.
+            suc_i2c_devices = ("suc_osfp_checksum_test", "suc_i2c_rc22308_test", "suc_i2c_ds4424_test", "suc_i2c_tmp451_test", "suc_i2c_mp2861_test", "suc_spi_cpldreg_test")
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         device2indexes = {
             'suc_i2c_ds4424_test' : ('0', '1', '2'),
             'suc_i2c_ina3221_test' : ('0', '1'),
         }
-        ina3221_indexes = ('0', '1')
+        if self._nic_type in (NIC_Type.SARACENO, NIC_Type.MORTARO):
+            # for the ds4424, only device 0 is valid on both Saraceno and Mortero
+            device2indexes = {
+                'suc_i2c_ds4424_test' : ('0'),
+                'suc_i2c_ina3221_test' : ('0', '1'),
+            }
+
         if not self.mtp_exec_cmd(cmd):
             return False
 

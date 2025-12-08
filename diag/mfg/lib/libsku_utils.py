@@ -160,6 +160,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.POLLARA_PN_FMT:                  "FPL" + FLX_SN_SUFFIX_FMT + "|" + HPE_SN_FMT,
         PART_NUMBERS_MATCH.LINGUA_PN_FMT:                   "FPM" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.MORTARO_PN_FMT:                  "FPQ" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.SARACENO_PN_FMT:                 "FPR" + FLX_SN_SUFFIX_FMT,
         "DEFAULT":                                          "FPF" + FLX_SN_SUFFIX_FMT
     },
     Factory.FSP: {

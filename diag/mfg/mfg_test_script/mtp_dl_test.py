@@ -286,9 +286,8 @@ def dl_fru_program(mtp_mgmt_ctrl, slot, swmtestmode):
     pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
     dpn = mtp_mgmt_ctrl.get_scanned_dpn(slot)
     prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
-    dsp = FF_Stage.FF_DL
 
-    ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, dsp)
+    ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, stage=FF_Stage.FF_DL)
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     #skip ALOM programming if Naples25 SWM test mode is SWM only
     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:  
