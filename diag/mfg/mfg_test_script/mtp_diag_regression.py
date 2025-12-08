@@ -59,6 +59,7 @@ def check_compatability(mtp_mgmt_ctrl, slot, mtp_capability):
         mtp_exp_capability = 0x5
     else:
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC Type {:s}'s MTP compatibility unknown".format(nic_type), level=0)
+        return False
     if not mtp_capability & mtp_exp_capability:
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "MTP capability 0x{:x} doesn't support {:s}".format(mtp_capability, nic_type))
         return False
@@ -767,6 +768,8 @@ def main():
 
                 elif test == "VULCANO_JTAG_MBIST":
                     rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"], test_type="warm")
+                elif test == "VULCANO_PCIE_PRBS":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_pcie_prbs(nic_list, vmarg=test_kwargs["vmarg"])
                 elif test == "SNAKE_VULCANO_MAX_PWR_MTP":
                     rlist = mtp_mgmt_ctrl.mtp_snake_mtp_vulcano(nic_list, snake_type=test_kwargs["snake_type"], vmarg=test_kwargs["vmarg"], dura=test_kwargs["dura"], timeout=test_kwargs["timeout"], asic_dir_path=test_kwargs["asic_dir_path"], int_lpbk=test_kwargs["int_lpbk"])
 
@@ -1034,7 +1037,7 @@ def main():
 
             ### VULCANO TEST ORDER
             if get_slots_of_type(VULCANO_NIC_TYPE_LIST):
-                test_section_list = ["I2C", "J2C_SEQ"]
+                test_section_list = ["STRESS", "I2C", "J2C_SEQ", "VULCANO_SNAKE"]
 
             if args.skip_test:
                 test_section_list = libmfg_utils.list_subtract(test_section_list, args.skip_test)
@@ -1406,6 +1409,35 @@ def main():
                     ######################################################################
                     run_regression_test(google_stress_list, "SALINA_GOOGLE_STRESS_EMMC", vmarg=vmarg, iterations=1, seconds2run=60)
 
+                    ######################################################################
+                    #  Vucono NIC Power cycle test
+                    ######################################################################
+                    # power cycle
+                    for i in range(50):
+                        mtp_mgmt_ctrl.cli_log_inf(f"Power Cycle Stress Test Iteration {i}/50", level=0)
+                        run_test(pass_nic_list, "NIC_PWRCYC")
+                        cpld_address_value = {
+                            '35' : '00',      # RESET_REASON0
+                            '36' : '00',      # RESET_REASON1
+                            '37' : '00',      # RESET_REASON2
+                            '38' : '00',      # RESET_REASON3
+                        }
+                        expected_version = image_control.get_cpld(mtp_mgmt_ctrl, slot, stage)["version"]
+                        expected_timestamp = image_control.get_cpld(mtp_mgmt_ctrl, slot, stage)["timestamp"]
+                        cpld_datetime= datetime.datetime.strptime(expected_timestamp, '%m-%d-%y_%H:%M')
+                        cpld_address_value['00'] = "{:02x}".format(int(expected_version, 16))
+                        cpld_address_value['46'] = "{:02x}".format(int(cpld_datetime.strftime("%y"), 16))
+                        cpld_address_value['45'] = "{:02x}".format(int(cpld_datetime.strftime("%m"), 16))
+                        cpld_address_value['44'] = "{:02x}".format(int(cpld_datetime.strftime("%d"), 16))
+                        cpld_address_value['43'] = "{:02x}".format(int(cpld_datetime.strftime("%H"), 16))
+                        cpld_address_value['42'] = "{:02x}".format(int(cpld_datetime.strftime("%M"), 16))
+                        run_regression_test(pass_nic_list, "CPLD_REGISTER_DUMP_CHECK", check=cpld_address_value)
+
+                    # warm reset
+                        # to be done
+                    # gpio3 reset
+                        # to be dne
+
                 elif test_section == "SALINA_ESEC_IN_P2C":
                     run_regression_test(pass_nic_list, "SEC_KEY_PROG")
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NIC_BOOT_STAGE", bootstage='linux')
@@ -1469,6 +1501,10 @@ def main():
                             dir_path = '/home/diag/diag/asic' + str(slot)
                         slot2asicdir[slot] = dir_path
                     run_regression_test(vulcano_max_power_snake, "SNAKE_VULCANO_MAX_PWR_MTP", snake_type="esam_pktgen_max_power_pcie_sor", asic_dir_path=slot2asicdir, vmarg=vmarg, dura=900, timeout=3600, int_lpbk='0')
+
+                    # run PCIE PRBS
+                    pcie_prbs_list = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
+                    run_regression_test(pcie_prbs_list, "VULCANO_PCIE_PRBS", vmarg=vmarg)
 
                 # print temperature after the test
                 if GLB_CFG_MFG_TEST_MODE:

@@ -895,7 +895,7 @@ class nic_ctrl():
 
     def nic_vulcano_jtag_mbist(self, vmarg="normal", test_type="warm"):
         '''
-        run mbist from jtag, salina cards only
+        run pcie prbs, vulcano cards only
         '''
 
         if not self.nic_power_cycle(delay=10):
@@ -907,6 +907,28 @@ class nic_ctrl():
             return False
 
         cmd = MFG_DIAG_CMDS().PANAREA_MTP_VULCANO_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+            return False
+
+        return True
+
+    def nic_vulcano_pcie_prbs(self, vmarg="normal", test_duration="1", int_lpbk='0'):
+        '''
+        run mbist from jtag, vulcano cards only
+        {slot.arg           ""                  "Slot number"}
+        {vmarg.arg          "normal"            "Voltage margin"}
+        {pcie_gen.arg       1                   "Test duration"}
+        {int_lpbk.arg       0                   "PMA Internal loopback (1 or 0)"}
+        {prbs_pattern.arg   7                   "prbs pattern"}
+        {tcl_path.arg       ""                  "ASIC lib location"}
+        '''
+
+        # goto the asic dir
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS().PANAREA_MTP_VULCANO_NIC_PCIE_PRBS.format(str(self._slot+1), test_duration, int_lpbk, vmarg)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             return False
 
@@ -2606,7 +2628,7 @@ class nic_ctrl():
             cmd_buf = self.nic_get_cmd_buf()
             sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
             if "Done!".lower() not in sanitized_cmd_buf.lower():
-                self.nic_set_err_msg("Zephyr CPLD refreshFailed")
+                self.nic_set_err_msg("Zephyr CPLD refresh Failed")
                 self.nic_set_err_msg(cmd_buf)
                 return False
         else:
@@ -4639,10 +4661,19 @@ class nic_ctrl():
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LINGUA_PN_FMT)                        #102-P11500-0 XX    LINGUA
                 ],
             NIC_Type.GELSOP: [
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GELSOP_PN_FMT)                        #101-P00001-00A XX    GELSOP
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GELSOP_PN_FMT)                        #102-P12100-00C 04  GELSOP
                 ],
-
+            NIC_Type.GELSOX: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GELSOX_PN_FMT)                        #102-P12200-00A 04  GELSOX
+                ],
+            NIC_Type.MORTARO: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.MORTARO_PN_FMT)                       #102-P12300-00B 04  MORTARO
+                ],
+            NIC_Type.SARACENO: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.SARACENO_PN_FMT)                      #102-P12500-00A 04  SARACENO
+                ],
         }
+
         if self._nic_type not in list(pn_table.keys()):
             self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
             return False
@@ -4884,7 +4915,7 @@ class nic_ctrl():
 
         return fru_buf
 
-    def nic_write_fru(self, date, sn, mac, pn, nic_type=None, dpn=False, sku=False, smb_fru=False, dev=None):
+    def nic_write_fru(self, date, sn, mac, pn, nic_type=None, dpn=False, sku=False, smb_fru=False, dev=None, boardid=None):
         eeutil_cmd_lookup = {
             PART_NUMBERS_MATCH.N100_PEN_PN_FMT:         "eeutil -dev=fru -update",
             PART_NUMBERS_MATCH.N100_NET_PN_FMT:         "eeutil -dev=fru -update",
@@ -4919,7 +4950,7 @@ class nic_ctrl():
                 self.nic_set_err_msg("FRU not initialized correctly")
                 return False
             cmd = eeutil_cmd_lookup[self._pn_format]
-        elif nic_type in SALINA_NIC_TYPE_LIST:
+        elif nic_type in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             cmd = "eeutil -update"
         else:
             cmd = "eeutil -dev=fru -update -erase -numBytes=512"
@@ -4938,6 +4969,13 @@ class nic_ctrl():
                     cmd += " -dev=" + dev
                 else:
                     cmd += " -dev=FRU"
+            if nic_type in VULCANO_NIC_TYPE_LIST:
+                cmd += " -dev=" + dev
+                if not boardid:
+                    self.nic_set_err_msg("For Vulcano cards, please Provide Board ID")
+                    return False
+                cmd += " -boardid=" + boardid
+            print(cmd)
             cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
         else:
             if nic_type in SALINA_NIC_TYPE_LIST:
@@ -4946,6 +4984,16 @@ class nic_ctrl():
                     self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
                     return False
                 cmd = MFG_DIAG_CMDS().MATERA_MTP_PROG_DPU_DRU_FMT.format(str(self._slot+1))
+                if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
+                    self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
+                    return False
+                cmd_buf = self.nic_get_cmd_buf()
+            elif nic_type in VULCANO_NIC_TYPE_LIST:
+                cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+                if not self.mtp_exec_cmd(cmd):
+                    self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
+                    return False
+                cmd = MFG_DIAG_CMDS().PANAREA_MTP_PROG_DPU_DRU_FMT.format(str(self._slot+1))
                 if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
                     self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
                     return False
@@ -6635,7 +6683,7 @@ class nic_ctrl():
 
         # program uC with MTCP
         cmd = MFG_DIAG_CMDS().PANAREA_SUC_IMAGE_PROG.format(device_iSerial, uc_img)
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             self.nic_set_err_msg("Program uC image Command '{:s}' Failed".format(cmd))
             return False
         if "No such file or directory" in self.nic_get_cmd_buf() or "No suitable USB devices found" in  self.nic_get_cmd_buf():

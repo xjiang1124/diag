@@ -102,7 +102,8 @@ def swi_fru_program(mtp_mgmt_ctrl, slot):
     dpn = mtp_mgmt_ctrl.mtp_get_nic_dpn(slot)
     sku = mtp_mgmt_ctrl.get_scanned_sku(slot) if mtp_mgmt_ctrl.get_scanned_sku(slot) not in ("POLLARA-1Q400P-D", "POLLARA-1Q400P-H") else "POLLARA-1Q400P"
     prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
-    return mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, sku)
+    dsp = FF_Stage.FF_SWI
+    return mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, sku, dsp)
 
 @parallelize.parallel_nic_using_ssh
 def swi_cpld_program(mtp_mgmt_ctrl, slot):

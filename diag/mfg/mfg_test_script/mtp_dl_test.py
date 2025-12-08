@@ -29,6 +29,7 @@ from libsku_cfg import PART_NUMBERS_MATCH
 from libmfg_cfg import MTP_HEALTH_MONITOR
 from libmfg_cfg import DRY_RUN
 from libmfg_cfg import SALINA_NIC_TYPE_LIST
+from libmfg_cfg import VULCANO_NIC_TYPE_LIST
 from libmfg_cfg import SALINA_DPU_NIC_TYPE_LIST
 from libmfg_cfg import SALINA_AI_NIC_TYPE_LIST
 from libdefs import MTP_TYPE
@@ -285,8 +286,9 @@ def dl_fru_program(mtp_mgmt_ctrl, slot, swmtestmode):
     pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
     dpn = mtp_mgmt_ctrl.get_scanned_dpn(slot)
     prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
+    dsp = FF_Stage.FF_DL
 
-    ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn)
+    ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, dsp)
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     #skip ALOM programming if Naples25 SWM test mode is SWM only
     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:  
@@ -768,7 +770,8 @@ def main():
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "I2C_DEVICE_SCREENING")
             run_dl_test(pass_nic_list, "VUL_SUC_I2C_DEVICE_TEST")
-            # run_dl_test(pass_nic_list, "OSFP_SN_READ_TEST")
+            run_dl_test(pass_nic_list, "OSFP_SN_READ_TEST")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "FRU_PROG")
 
         else:

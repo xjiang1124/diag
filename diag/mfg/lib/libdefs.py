@@ -40,6 +40,9 @@ class NIC_Type:
     POLLARA = "POLLARA"
     LINGUA = "LINGUA"
     GELSOP = "GELSOP"
+    GELSOX = "GELSOX"
+    MORTARO = "MORTARO"
+    SARACENO = "SARACENO"
     UNKNOWN = "Unknown"
 
 class PRODUCT_SKU(Enum):
@@ -552,8 +555,8 @@ class MFG_DIAG_CMDS:
     PANAREA_SUC_UTIL_RAW_CMD = PANAREA_SUC_UTIL + " exec"
     PANAREA_SUC_UTIL_OSFP_READ_SN = PANAREA_SUC_UTIL_RAW_CMD + ' -c "osfp serialnumber" '
     PANAREA_SUC_USB_TOOL = "/home/diag/usb/suc_usb_tool.py"
-    PANAREA_SUC_CNS_PMCI_TEST_ALL = "/home/diag/cns-pmci/test_all.py"
-    PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc  --detach-usb-kernel-driver --allow-early-completion --usb {:s}:3 --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
+    PANAREA_SUC_CNS_PMCI_TEST_ALL = "cd /home/diag/cns-pmci; ./test_all.py"
+    PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc  --detach-usb-kernel-driver --allow-early-update-completion --usb {:s}:3 --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
 
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
@@ -670,6 +673,7 @@ class MFG_DIAG_CMDS:
     MATERA_NIC_PCIE_PRBS_FMT         = "nic_test_v2.py pcie_prbs -slot {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}'"
     MATERA_MTP_NIC_BOOT_TO = "python3 sal_con.py --boot_to {:s} --slot {:s}"
     MATERA_MTP_PROG_DPU_DRU_FMT = "nic_test_v2.py prog_dpu_fru -slot {:s}  -skip_fru2"
+    PANAREA_MTP_PROG_DPU_DRU_FMT = " Place Holder: nic_test_v2.py prog_dpu_fru -slot {:s}"
     MATERA_MTP_SALINA_NIC_JTAG_MBIST = "tclsh jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s} -reset {:s}"
     MATERA_MTP_SALINA_NIC_JTAG_MBIST_WITH_TEST_LIST = "tclsh jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s} -reset {:s} -test_list {:s}"
     MATERA_MTP_SALINA_NIC_VRM_FIX_FMT = "nic_test_v2.py fix_sal_vrm -slot {:s}"
@@ -684,6 +688,7 @@ class MFG_DIAG_CMDS:
 
     #PANAREA MTP
     PANAREA_MTP_VULCANO_NIC_JTAG_MBIST = "tclsh vul_jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s}"
+    PANAREA_MTP_VULCANO_NIC_PCIE_PRBS = "tclsh vul_pcie_prbs.tcl -slot {:s} -pcie_gen {:s} -int_lpbk {:s} -vmarg {:s}"
     PANAREA_SNAKE_MTP_FMT       = "nic_test_vul.py nic_snake_mtp -slot {:s} -timeout {:d} -dura {:d} -snake_type {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}' -int_lpbk {:s}"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
@@ -904,3 +909,6 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_POLLARA = r"\bUUT_(\d+) +POLLARA\b"
     MFG_NIC_TYPE_LINGUA = r"\bUUT_(\d+) +LINGUA\b"
     MFG_NIC_TYPE_GELSOP = r"\bUUT_(\d+) +GELSOP\b"
+    MFG_NIC_TYPE_GELSOX = r"\bUUT_(\d+) +GELSOX\b"
+    MFG_NIC_TYPE_MORTARO = r"\bUUT_(\d+) +MORTARO\b"
+    MFG_NIC_TYPE_SARACENO = r"\bUUT_(\d+) +SARACENO\b"
