@@ -10,20 +10,26 @@ set logEn    [lindex $argv 5]
 set pct      [lindex $argv 6]
 set joo      [lindex $argv 7]
 set prbslt   [lindex $argv 8]
+set tcl_path [lindex $argv 9]
 set port 10
 
 if {$logEn == ""} {
     set logEn 1
 }
 
-puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; pct: $pct; joo: $joo; esecEn: $esecEn; logEn: $logEn; prbslt:$prbslt"
+puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; pct: $pct; joo: $joo; esecEn: $esecEn; logEn: $logEn; prbslt:$prbslt; tcl_path: $tcl_path"
 set err_cnt 0
-
-#set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
-set ASIC_LIB_BUNDLE $::env(ASIC_LIB_BUNDLE)
+if { $tcl_path != "" } {
+    set ASIC_LIB_BUNDLE "$tcl_path"
+} elseif { $::env(ASIC_LIB_BUNDLE) != "" } {
+    set ASIC_LIB_BUNDLE $::env(ASIC_LIB_BUNDLE)
+} else {
+    set ASIC_LIB_BUNDLE "/home/diag/diag/asic"
+}
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
 set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
 set ASIC_GEN "$ASIC_SRC"
+set LD_LIBRARY_PATH "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:${::env(LD_LIBRARY_PATH)}"
 
 set MTP_TYPE $::env(MTP_TYPE)
 set ASIC_TYPE $::env(ASIC_TYPE)
@@ -35,6 +41,8 @@ set G_SLOT $slot
 set arm_freq 3000
 
 puts "sn: $sn; slot: $slot"
+puts "ASIC_LIB_BUNDLE: $ASIC_LIB_BUNDLE"
+puts "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 cd $ASIC_SRC/ip/cosim/tclsh
 
 if {($MTP_TYPE == "MTP_PANAREA")} {

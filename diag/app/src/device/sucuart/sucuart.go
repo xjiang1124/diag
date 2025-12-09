@@ -28,6 +28,25 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
     lock_path := fmt.Sprintf("/var/lock/sucuart%d.lock", slot)
     uut_uart := fmt.Sprintf("/dev/SUCUART%d", slot)
 
+    //wait for the /dev/sucuart device to come up
+    for i = 0; i < 20; i++ {
+        _, err_o := os.Stat(uut_uart)
+        if err_o != nil {
+            if os.IsNotExist(err_o) {
+                //cli.Printf("i", "error: %v", err_o)
+                time.Sleep(time.Duration(1) * time.Second)
+            } else {
+                cli.Printf("e", "failed to open SUCUART for slot %d: %v\n", slot, err_o)
+                return nil, errType.FAIL
+            }
+        } else {
+            break
+        }
+    }
+    if i == 20 {
+        cli.Printf("e", "SUCUART not exist for slot %d\n", slot)
+        return nil, errType.FAIL
+    }
     //check that the /dev/sucuart device is not already opened.
     //Strange things can happen otherwise including the code getting stuck.
     cmdStr := fmt.Sprintf("lsof %s\n", uut_uart)
