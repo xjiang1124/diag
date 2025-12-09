@@ -549,6 +549,66 @@ class nic_test_debug:
                 print("=== emmc_tuning PASSED {} ==".format(i))
         return
 
+    def read_qsfp_from_arm(self, args):
+        ret = 0
+        for ite in range(args.num_ite):
+            print("=== Ite: {} ===".format(ite))
+
+            session = common.session_start()
+            if args.pc:
+                if self.nic_test_v2.sal_boot_to_vmarg(session, args):
+                    print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+                    return -1
+
+            print("Start test on Zephyr")
+            card_type = self.nic_con.get_card_type(args.slot)
+            if card_type == "POLLARA" or card_type == "LINGUA":
+                ports = ("0")
+            else:
+                ports = ("0", "1")
+
+            ports = ("1")
+
+
+            for port in ports:
+                cmd = "i2cset -y {} 0x4A 0x2 0x3c".format(int(args.slot) + 2)
+                common.session_cmd(session, cmd)
+                cmd = "i2cget -y {} 0x4a 0x2".format(int(args.slot) + 2)
+                cmdret, output = common.session_cmd_w_ot(session, cmd)
+                uart_session = common.session_start()
+                ret = self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
+                if ret != 0:
+                    print("=== FAILED to connect")
+                    return ret
+                for cmd_ite in range(500):
+                    print("=== cmd_ite: {} ===".format(cmd_ite))
+                    for eeprom_address in (
+                            "0x80",):
+#                        "0x90",
+#                        "0xa0",
+#                        "0xb0",
+#                        "0xc0",
+#                        "0xd0",
+#                        "0xe0",
+#                        "0xf0"):
+                        cmd = "i2c read cpld-i2c@{} 0x50 {} 1".format(port, eeprom_address)
+                        cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, ending="uart:~\$")
+                        if "Failed to read" in output:
+                            print("=== Command {} failed".format(cmd))
+                            ret = -1
+                            break
+                    if ret != 0:
+                        break
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
+            common.session_stop(session)
+
+        if ret == 0:
+            print("QSFP READ TEST PASSED")
+        else:
+            print("QSFP READ TEST FAILED")
+        return ret
+
 if __name__ == "__main__":
 
     test = nic_test_debug()
@@ -638,6 +698,15 @@ if __name__ == "__main__":
     parser_emmc_tuning.add_argument("-p_ite", "--p_ite", help="Iteratin", type=int, default=1)
     parser_emmc_tuning.add_argument("-r_ite", "--r_ite", help="Reload iteration", type=int, default=1)
     parser_emmc_tuning.set_defaults(func=test.debug_cpld_reload)
+
+    # Test QSFP I2C
+    parser_spi_cpld_test = subparsers.add_parser('test_i2c', help='Test SPI-to-CPLD from ARM on QSFP loopbacks', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_spi_cpld_test.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_spi_cpld_test.add_argument("-num_ite", "--num_ite", help="Number of iterations", type=int, default=1)
+    parser_spi_cpld_test.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_spi_cpld_test.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
+    parser_spi_cpld_test.add_argument("-pc", "--pc", help="Power cycle", action='store_true')
+    parser_spi_cpld_test.set_defaults(func=test.read_qsfp_from_arm)
 
     try:
         args = parser.parse_args()
