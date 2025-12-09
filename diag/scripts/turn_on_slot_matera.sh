@@ -30,11 +30,21 @@ card_adapter_enable_power() {
     then
         #power it up via CPLD reg 0x40 (BIT0=AUX_PWR_EN  BIT1=MAIN_PWR_EN)
         register40=$(i2cget -y ${slotI2Cmap[$slot]} 0x4b 0x40)
-        register40=$(( $register40 | 0x1 ))
+        if [[ $MTP_TYPE == "MTP_MATERA" ]]
+        then
+            register40=$(( $register40 | 0x1 ))
+        else
+            register40=$(( $register40 | 0xC1 )) 
+        fi
         i2cset -y ${slotI2Cmap[$slot]} 0x4b 0x40 $register40
         sleep 0.5
         adapter_card_check_nic_power_good $slot
-        register40=$(( $register40 | 0x2 ))
+        if [[ $MTP_TYPE == "MTP_MATERA" ]]
+        then
+            register40=$(( $register40 | 0x2 ))
+        else 
+            register40=$(( $register40 | 0xC2 )) 
+        fi
         i2cset -y ${slotI2Cmap[$slot]} 0x4b 0x40 $register40
         sleep 0.5
         adapter_card_check_nic_power_good $slot
