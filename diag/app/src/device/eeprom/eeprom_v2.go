@@ -1970,8 +1970,21 @@ func updateChkSum() {
         Data[cHdrStrt + productInfoAreaOff + productInfoAreaLen - 1] = productInfoChkSum
     }
     //If the multi record area is present, finds and updates multi record area checksums here
+
+    // Handle one or more multirecord area's 
     if multiRecordAreaOff != 0 {
         mraChkSum(cHdrStrt, cHdrStrt + multiRecordAreaOff)
+        for i:=0;i<10;i++ {
+            var start, mroffset int;
+            start = cHdrStrt;
+            mroffset = cHdrStrt + multiRecordAreaOff
+            if  (Data[start+mroffset + 1] & 0x80) != 0x80 {
+                multiRecordAreaOff = multiRecordAreaOff + 5 + int(Data[start+mroffset + 2])
+                mraChkSum(cHdrStrt, cHdrStrt + multiRecordAreaOff)
+            } else {
+                break
+            }
+        }
     }
 }
 
@@ -2349,11 +2362,19 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
         if errGo != nil {
             return errType.FAIL 
         }
-    } else if devName == "SUCFRU" {
-        //Writes FRU data to SUC Microcontroller via it's console
+    } else if devName == "SUCFRU" {   //Writes FRU data to SUC Microcontroller via it's console
+        var Length int = 378
         fmt.Printf("WRITE TO SUC Microcontroller  Bus=%d  Len=%d\n", bus, len(Data));
         i2cinfo.SwitchI2cTbl("UUT_NONE")
-        for i:=0; i<len(Data); i++ {
+        fmt.Printf("TBL LEN=%d\n", Length);
+        //HACK: If OCP Card is being programmed in the SUC it os longer than 378 bytes the SUC provides for programming the FRU
+        //This is based on PenStandardV2vulcanoProdInfoTbl table.
+        //Switch the flex I/O multi-record entry to the last Multi-record for OCP and don't program OCP 3.0 portion as it doesn't fit
+        if Data[353] != 0x82 {
+            Data[353] = Data[353] + 0x80  //mark record format with 0x80 which is end of record (last multirecord)
+            Data[356] = Data[356] + 0x80  //adjust the header checksum
+        }
+        for i:=0; i<Length; i++ {
             command := fmt.Sprintf("fru write %d hex %x", i, Data[i])
             fmt.Printf("%s\n", command);
             sucuart.Suc_exec_cmds(int(bus-2), command)
