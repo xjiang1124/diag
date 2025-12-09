@@ -3,6 +3,7 @@ package sucuart
 import (
     "fmt"
     "time"
+    "os"
     "bufio"
     "bytes"
     "strings"
@@ -198,12 +199,23 @@ func Suc_dev_list(slot int) () {
 }
 
 func Suc_dev_status(slot int) () {
-    cmd_list := []string{"tmp451 temperature", "voltage mp2861_sensor", "voltage ina3221_sensor"}
+    var cmd_list []string
+    var ds4424_output []byte
+    var rails []string
+    uutName := "UUT_"+strconv.Itoa(slot)
+    cardType := os.Getenv(uutName)
+    if cardType == "GELSOP" || cardType == "GELSOX" {
+        cmd_list = []string{"tmp451 temperature", "voltage mp2861_sensor", "voltage ina3221_sensor"}
+        ds4424_output = suc_single_cmd(slot, "voltage ds4424_info", false)
+        rails = []string{"VDDIO_P1V2", "VDDAN_P1V8_PX", "VDDAN_P1V8_ETH", "VDDPL_P1V2", "VDDPL_P1V1_PX", "VDDPL_P1V1_ETH", "VDDPL_0P75"}
+    } else if cardType == "MORTARO" || cardType == "SARACENO" {
+        cmd_list = []string{"tmp451 temperature", "voltage mp2861_sensor"}
+        ds4424_output = suc_single_cmd(slot, "voltage ds4424_info", false)
+        rails = []string{"VDDCR_0P75"}
+    }
     suc_cmd_list(slot, cmd_list)
     cli.Println("i")
     //print the voltages for those not monitored by ina3221
-    ds4424_output := suc_single_cmd(slot, "voltage ds4424_info", false)
-    rails := []string{"VDDIO_P1V2", "VDDAN_P1V8_PX", "VDDAN_P1V8_ETH", "VDDPL_P1V2", "VDDPL_P1V1_PX", "VDDPL_P1V1_ETH", "VDDPL_0P75"}
     results := make(map[string]string)
     lines := strings.Split(string(ds4424_output), "\r\n")
     for _, line := range lines {
