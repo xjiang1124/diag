@@ -532,7 +532,7 @@ var PenStandardV2VulcanoOCPProdInfoTbl = []entry {
     entry{"Product Info Area Checksum",             INT8,        351,      1,    []byte{0x00}},
     //multi-record Flex I/O
     entry{"Multi-Record Area",                      INT8,       352,        1,    []byte{0xC0}},
-    entry{"Record Format",                          INT8,       353,        1,    []byte{0x82}},
+    entry{"Record Format",                          INT8,       353,        1,    []byte{0x02}},
     entry{"Record Length",                          INT8,       354,        1,    []byte{0x15}},
     entry{"Record Checksum",                        INT8,       355,        1,    []byte{0x00}},
     entry{"Header Checksum",                        INT8,       356,        1,    []byte{0x00}},
@@ -553,9 +553,6 @@ var PenStandardV2VulcanoOCPProdInfoTbl = []entry {
     entry{"PCIe CEM Pin#",                          INT8,       375,        1,    []byte{0x06}},
     entry{"Alternate FN Signal Enum",               INT8,       376,        1,    []byte{0x01}},
     entry{"Input Voltage Behavior",                 INT8,       377,        1,    []byte{0x00}},
-// Suc FRU does not have enough space allocated to the fru for the ocp section right now
-// Will add this back in once the Microcontroller image is fixed        
-/*
     //multi-record OCP 3.0
     entry{"Multi-Record Area",                      INT8,       378,        1,    []byte{0xC0}},
     entry{"Record Format",                          INT8,       379,        1,    []byte{0x82}},
@@ -588,6 +585,5 @@ var PenStandardV2VulcanoOCPProdInfoTbl = []entry {
     entry{"Reserved",                               INT8,       412,        2,    []byte{0xFF, 0xFF}},
     entry{"Number of Physical Controllers",         INT8,       414,        1,    []byte{0x01}},
     entry{"Controller 1 UDID",                      INT8,       415,       16,    []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
-*/
 }
 
