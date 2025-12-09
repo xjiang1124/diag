@@ -10,10 +10,11 @@ JOO=1
 MODE="hod"
 PCT=0
 #PRBSLT=1
+TCL_PATH=""
 
 usage () {
     echo "=========================="
-    echo "./run_l1.sh -sn <> -slot <> -joo <> -m <> -i <> -v <> -o <> -e <> -s <> -ite <>"
+    echo "./run_l1.sh -sn <> -slot <> -joo <> -m <> -i <> -v <> -o <> -e <> -s <> -t <> -ite <>"
     echo "sn:   SN"
     echo "slot: Slot number"
     echo "joo:  J2C or OW; J2C; 1: OW: 0; default: 1"
@@ -22,6 +23,7 @@ usage () {
     echo "v:    Voltage margin: normal/low/high; default: normal"
     echo "e:    0: esecure test disabled; 1: esecure test enabled; default: 1"
     echo "s:    0: simplified test disabled; 1: simlified test enabled; default: 0"
+    echo "t:    Tcl_path"
     echo "ite:  Number of iterations"
     echo "=========================="
 }
@@ -81,6 +83,12 @@ case $key in
     shift # past value
     ;;
     #-------------
+    -t|--tcl_path)
+    TCL_PATH=${2}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
     -ite)
     ITE=${2}
     shift # past argument
@@ -100,7 +108,7 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-echo "sn: $SN; slot: $SLOT; INT_LPBK: $INT_LPBK; VMARG: $VMARG; ESEC_EN: $ESEC_EN; SIMPLIfY: $SIMPLIFY; JOO: $JOO"
+echo "sn: $SN; slot: $SLOT; INT_LPBK: $INT_LPBK; VMARG: $VMARG; ESEC_EN: $ESEC_EN; SIMPLIfY: $SIMPLIFY; JOO: $JOO; TCL_PATH: $TCL_PATH"
 if [[ $VMARG == "normal" ]]
 then
     PCT=0
@@ -120,8 +128,8 @@ do
     echo "jtag_accpcie_vulcano clr $SLOT"
     jtag_accpcie_vulcano clr $SLOT
 
-    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 0 $PCT $JOO 1\""
-    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 0 $PCT $JOO 1"
+    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 0 $PCT $JOO 1 $TCL_PATH\""
+    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 0 $PCT $JOO 1 $TCL_PATH"
     ret=$?
     sync
     num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1 TEST FAILED" | wc | awk -F " " '{print $1}')
