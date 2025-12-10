@@ -261,7 +261,7 @@ func Suc_dev_status(slot int) () {
 
 func Suc_dev_margin(slot int, voltage_name string, pct int) () {
     var cmd_vmarg string
-    if voltage_name != "VDD_CORE" {
+    if voltage_name != "VDDCR_0P65" {
         cmd_vmarg = "voltage ds4424_margin " + voltage_name + " " + strconv.Itoa(pct)
     } else {
         cmd_vmarg = "voltage mp2861_margin " + strconv.Itoa(pct)
@@ -274,15 +274,15 @@ func Suc_dev_margin(slot int, voltage_name string, pct int) () {
 
 func Suc_dev_vset(slot int, voltage_name string, vboot int, vout int, vmin int, vmax int) () {
     var cmd_list []string
-    if voltage_name == "VDD_CORE" {
+    if voltage_name == "VDDCR_0P65" {
         if vboot != -1 {
             cmd_vboot := "voltage mp2861_set vboot " + strconv.Itoa(vboot)
             cmd_list = append(cmd_list, cmd_vboot)
         }
         if vout != -1 {
-            vdd_core_output := suc_single_cmd(slot, "voltage mp2861_sensor", false)
-            re := regexp.MustCompile(`VDD_CORE\s+\|\s+([\d.]+)`)
-            match := re.FindStringSubmatch(string(vdd_core_output))
+            vddcr_0p65_output := suc_single_cmd(slot, "voltage mp2861_sensor", false)
+            re := regexp.MustCompile(`VDDCR_0P65\s+\|\s+([\d.]+)`)
+            match := re.FindStringSubmatch(string(vddcr_0p65_output))
             if len(match) > 1 {
                 vboot_str := match[1]
                 vboot_val, err := strconv.ParseFloat(vboot_str, 64)
