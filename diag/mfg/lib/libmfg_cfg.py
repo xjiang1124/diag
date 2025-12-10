@@ -1036,7 +1036,7 @@ class NIC_IMAGES:
     arm_a_zephyr_b_img["58-0010-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
     arm_a_zephyr_gold_img["58-0010-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
     qspi_prog_sh_img["58-0010-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_prog.sh"
-    qspi_verify_sh_img["58-0010-10"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_verify.sh"
+    qspi_verify_sh_img["58-0010-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_verify.sh"
     qspi_snake_img["58-0010-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218.tar.gz"
 
     cpld_img["58-0016-01"] = "salina_cfg0-rev3_16_1101-1218_cut_dw_bus_on_warm_reboot.bin"
@@ -1268,52 +1268,104 @@ class NIC_IMAGES:
     fipg_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.117.3-a-61/goldfw/secure/salina/fip.img"
 
     # GELSOP is AINIC
-    cpld_img["GELSOP"] = "gelso_test_8415.jed"
-    cpld_ver["GELSOP"] = "0x3"
-    cpld_dat["GELSOP"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    sec_cpld_img["GELSOP"] = "gelso_test_8415.jed"
-    sec_cpld_ver["GELSOP"] = "0x3"
-    sec_cpld_dat["GELSOP"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    fail_cpld_img["GELSOP"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
-    fail_cpld_ver["GELSOP"] = "0x3"
-    fail_cpld_dat["GELSOP"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    fea_cpld_img["GELSOP"] = "salina.fea"
-    ufm1_img["GELSOP"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
-    arm_a_boot0_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_boot0.img"
-    arm_a_uboota_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_uboota.img"
-    arm_a_ubootb_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_ubootb.img"
-    arm_a_ubootg_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_ubootg.img"
-    arm_a_zephyr_a_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
-    arm_a_zephyr_b_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
-    arm_a_zephyr_gold_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
-    qspi_prog_sh_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_prog.sh"
-    qspi_snake_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218.tar.gz"
-    qspi_verify_sh_img["GELSOP"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_verify.sh"
-    mbist_boot0_img["GELSOP"] = "salina/pollara/ainic_boot0_ctle-iters-7-20250218.tar.gz"
-    microcontroller_img["GELSOP"] = "vulcano/gelsop/two_comp_gelso_v0_1_0_0.pldm"
+    cpld_img["GELSOP"] = "gelso_cpld_cfg0_rev0104.jed"
+    cpld_ver["GELSOP"] = "0x1"
+    cpld_dat["GELSOP"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    sec_cpld_img["GELSOP"] = "gelso_cpld_cfg0_rev0104.jed"
+    sec_cpld_ver["GELSOP"] = "0x1"
+    sec_cpld_dat["GELSOP"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    fail_cpld_img["GELSOP"] = "gelso_cpld_cfg1-rev01_04.jed"
+    fail_cpld_ver["GELSOP"] = "0x1"
+    fail_cpld_dat["GELSOP"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    fea_cpld_img["GELSOP"] = "gelso.fea"
+    microcontroller_img["GELSOP"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
-    cpld_img["58-0013-01"] = "gelso_test_8415.jed"
-    cpld_ver["58-0013-01"] = "0x3"
-    cpld_dat["58-0013-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0013-01"] = "gelso_test_8415.jed"
-    sec_cpld_ver["58-0013-01"] = "0x3"
-    sec_cpld_dat["58-0013-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0013-01"] = "salina_cfg1-rev3_8_0728-1922_fix_pseq_debounce_rei_en.bin"
-    fail_cpld_ver["58-0013-01"] = "0x3"
-    fail_cpld_dat["58-0013-01"] = "07-28-25_19:22" #mm-dd-YY_HH:MM
-    fea_cpld_img["58-0013-01"] = "salina.fea"
-    ufm1_img["58-0013-01"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
-    arm_a_boot0_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_boot0.img"
-    arm_a_uboota_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_uboota.img"
-    arm_a_ubootb_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_ubootb.img"
-    arm_a_ubootg_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_ubootg.img"
-    arm_a_zephyr_a_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
-    arm_a_zephyr_b_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
-    arm_a_zephyr_gold_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
-    qspi_prog_sh_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_prog.sh"
-    qspi_verify_sh_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_verify.sh"
-    qspi_snake_img["58-0013-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218.tar.gz"
-    microcontroller_img["58-0013-01"] = "vulcano/gelsop/two_comp_gelso_v0_1_0_0.pldm"
+    cpld_img["58-0012-01"] = "gelso_cpld_cfg0_rev0104.jed"
+    cpld_ver["58-0012-01"] = "0x1"
+    cpld_dat["58-0012-01"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0012-01"] = "gelso_cpld_cfg0_rev0104.jed"
+    sec_cpld_ver["58-0012-01"] = "0x1"
+    sec_cpld_dat["58-0012-01"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0012-01"] = "gelso_cpld_cfg1-rev01_04.jed"
+    fail_cpld_ver["58-0012-01"] = "0x1"
+    fail_cpld_dat["58-0012-01"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    fea_cpld_img["58-0012-01"] = "gelso.fea"
+    microcontroller_img["58-0012-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
+
+    # GELSOX is AINIC
+    cpld_img["GELSOPX"] = "gelsoX_cfg0_0101.jed"
+    cpld_ver["GELSOPX"] = "0x1"
+    cpld_dat["GELSOPX"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    sec_cpld_img["GELSOPX"] = "gelsoX_cfg0_0101.jed"
+    sec_cpld_ver["GELSOPX"] = "0x1"
+    sec_cpld_dat["GELSOPX"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    fail_cpld_img["GELSOPX"] = "gelsX_cfg1_0101.jed"
+    fail_cpld_ver["GELSOPX"] = "0x1"
+    fail_cpld_dat["GELSOPX"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    fea_cpld_img["GELSOPX"] = "gelsoX.fea"
+    microcontroller_img["GELSOPX"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
+
+    cpld_img["58-0013-01"] = "gelsoX_cfg0_0101.jed"
+    cpld_ver["58-0013-01"] = "0x1"
+    cpld_dat["58-0013-01"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0013-01"] = "gelsoX_cfg0_0101.jed"
+    sec_cpld_ver["58-0013-01"] = "0x1"
+    sec_cpld_dat["58-0013-01"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0013-01"] = "gelsX_cfg1_0101.jed"
+    fail_cpld_ver["58-0013-01"] = "0x1"
+    fail_cpld_dat["58-0013-01"] = "11-23-25_14:19" #mm-dd-YY_HH:MM
+    fea_cpld_img["58-0013-01"] = "gelsoX.fea"
+    microcontroller_img["58-0013-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
+
+    # SARACENO is AINIC
+    cpld_img["SARACENO"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_ver["SARACENO"] = "0x1"
+    cpld_dat["SARACENO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    sec_cpld_img["SARACENO"] = "mortaro_rev01_01_dc1203_1528.jed"
+    sec_cpld_ver["SARACENO"] = "0x1"
+    sec_cpld_dat["SARACENO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fail_cpld_img["SARACENO"] = "gelso_cpld_cfg1-rev01_04.jed"
+    fail_cpld_ver["SARACENO"] = "0x1"
+    fail_cpld_dat["SARACENO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fea_cpld_img["SARACENO"] = "mortaro_impl1.fea"
+    microcontroller_img["SARACENO"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
+
+    cpld_img["58-0014-01"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_ver["58-0014-01"] = "0x1"
+    cpld_dat["58-0014-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0014-01"] = "mortaro_rev01_01_dc1203_1528.jed"
+    sec_cpld_ver["58-0014-01"] = "0x1"
+    sec_cpld_dat["58-0014-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0014-01"] = "gelso_cpld_cfg1-rev01_04.jed"
+    fail_cpld_ver["58-0014-01"] = "0x1"
+    fail_cpld_dat["58-0014-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fea_cpld_img["58-0014-01"] = "mortaro_impl1.fea"
+    microcontroller_img["58-0014-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
+
+    # MORTARO is AINIC
+    cpld_img["MORTARO"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_ver["MORTARO"] = "0x1"
+    cpld_dat["MORTARO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    sec_cpld_img["MORTARO"] = "mortaro_rev01_01_dc1203_1528.jed"
+    sec_cpld_ver["MORTARO"] = "0x1"
+    sec_cpld_dat["MORTARO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fail_cpld_img["MORTARO"] = "gelso_cpld_cfg1-rev01_04.jed"
+    fail_cpld_ver["MORTARO"] = "0x1"
+    fail_cpld_dat["MORTARO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fea_cpld_img["MORTARO"] = "mortaro_impl1.fea"
+    microcontroller_img["MORTARO"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
+
+    cpld_img["58-0015-01"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_ver["58-0015-01"] = "0x1"
+    cpld_dat["58-0015-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0015-01"] = "mortaro_rev01_01_dc1203_1528.jed"
+    sec_cpld_ver["58-0015-01"] = "0x1"
+    sec_cpld_dat["58-0015-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0015-01"] = "gelso_cpld_cfg1-rev01_04.jed"
+    fail_cpld_ver["58-0015-01"] = "0x1"
+    fail_cpld_dat["58-0015-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fea_cpld_img["58-0015-01"] = "mortaro_impl1.fea"
+    microcontroller_img["58-0015-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
 
 class MTP_IMAGES:
@@ -1630,7 +1682,7 @@ MFG_VALID_NIC_TYPE_LIST = [
     NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25SWMDELL,
     NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
     NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOL, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS,
-    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA, NIC_Type.GELSOP
+    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA, NIC_Type.GELSOP,  NIC_Type.GELSOX, NIC_Type.MORTARO, NIC_Type.SARACENO
 ]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.ORTANO]
 
@@ -1651,7 +1703,7 @@ MTP_MATERA_CAPABLE_NIC_TYPE_LIST = [
 ]
 
 MTP_PANAREA_CAPABLE_NIC_TYPE_LIST = [
-    NIC_Type.GELSOP
+    NIC_Type.GELSOP, NIC_Type.GELSOX, NIC_Type.SARACENO, NIC_Type.MORTARO
 ]
 
 CAPRI_NIC_TYPE_LIST = [
@@ -1674,7 +1726,7 @@ SALINA_AI_NIC_TYPE_LIST = [
 ]
 
 VULCANO_NIC_TYPE_LIST = [
-    NIC_Type.GELSOP
+    NIC_Type.GELSOP, NIC_Type.GELSOX, NIC_Type.SARACENO, NIC_Type.MORTARO
 ]
 
 SALINA_NIC_TYPE_LIST = SALINA_DPU_NIC_TYPE_LIST + SALINA_AI_NIC_TYPE_LIST
@@ -1785,6 +1837,10 @@ PN_CPLD2BOARDID_PCI_SUBSYS_ID = {
     ("102-P11100", "0x65")    : ("0x04650001", "0x5201"),
     ("102-P11101", "0x65")    : ("0x04650001", "0x5201"),
     ("102-P11500", "0x67")    : ("0x04670001", "0x5201"),
+    ("102-P12100", "0x68")    : ("0x05680002", "0x5300"),
+    ("102-P12200", "0x69")    : ("0x05690001", "0x5301"),
+    ("102-P12500", "0x71")    : ("0x05710001", "0x5303"),
+    ("102-P12300", "0x70")    : ("0x05700001", "0x5304"),
 }
 
 # SKU To Board Id and PCI subsys ID Mapping Table, This is for SWI only
@@ -1831,6 +1887,10 @@ SKU2BOARDID_PCI_SUBSYS_ID = {
     "VULCANO-1Q800P":                   ("0x04650001", "0x5201"),
     "VULCANO-1Q800P-O":                 ("0x04650001", "0x5201"),
     "VULCANO-1Q800P-OCP":               ("0x04650001", "0x5201"),
+    "100-700000001":                    ("0x05680002", "0x5300"),
+    "100-700000002":                    ("0x05690001", "0x5301"),
+    "100-700000003":                    ("0x05710001", "0x5303"),
+    "100-700000004":                    ("0x05700001", "0x5304"),
 }
 
 #get softRom file name

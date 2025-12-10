@@ -29,6 +29,7 @@ from libsku_cfg import PART_NUMBERS_MATCH
 from libmfg_cfg import MTP_HEALTH_MONITOR
 from libmfg_cfg import DRY_RUN
 from libmfg_cfg import SALINA_NIC_TYPE_LIST
+from libmfg_cfg import VULCANO_NIC_TYPE_LIST
 from libmfg_cfg import SALINA_DPU_NIC_TYPE_LIST
 from libmfg_cfg import SALINA_AI_NIC_TYPE_LIST
 from libdefs import MTP_TYPE
@@ -209,7 +210,11 @@ def dl_uc_boot_check(mtp_mgmt_ctrl, slot):
 def dl_fail_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
-    return mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, failsafe_cpld_img_file)
+
+    if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+        return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_cpld_update(slot, failsafe_cpld_img_file, partition='1')
+    else:
+        return mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, failsafe_cpld_img_file)
 
 @parallelize.parallel_nic_using_ssh
 def dl_fea_cpld_program(mtp_mgmt_ctrl, slot):
@@ -282,7 +287,7 @@ def dl_fru_program(mtp_mgmt_ctrl, slot, swmtestmode):
     dpn = mtp_mgmt_ctrl.get_scanned_dpn(slot)
     prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
 
-    ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn)
+    ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, stage=FF_Stage.FF_DL)
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     #skip ALOM programming if Naples25 SWM test mode is SWM only
     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:  
@@ -750,15 +755,23 @@ def main():
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
 
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
-
+            run_dl_test(pass_nic_list, "NIC_TYPE")
+            run_dl_test(pass_nic_list, "NIC_INIT")
             run_dl_test(pass_nic_list, "uC_BOOTING_CHK")
+            run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_PROG")
+            run_dl_test(pass_nic_list, "CPLD_REF")
+            run_dl_test(pass_nic_list, "CPLD_VERIFY")
+            run_dl_test(pass_nic_list, "FSAFE_CPLD_PROG")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            run_dl_test(pass_nic_list, "uC_IMG_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "I2C_DEVICE_SCREENING")
             run_dl_test(pass_nic_list, "VUL_SUC_I2C_DEVICE_TEST")
             run_dl_test(pass_nic_list, "OSFP_SN_READ_TEST")
-            run_dl_test(pass_nic_list, "uC_IMG_PROG")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            run_dl_test(pass_nic_list, "FRU_PROG")
 
         else:
             # power cycle all nic

@@ -895,7 +895,7 @@ class nic_ctrl():
 
     def nic_vulcano_jtag_mbist(self, vmarg="normal", test_type="warm"):
         '''
-        run mbist from jtag, salina cards only
+        run pcie prbs, vulcano cards only
         '''
 
         if not self.nic_power_cycle(delay=10):
@@ -907,6 +907,28 @@ class nic_ctrl():
             return False
 
         cmd = MFG_DIAG_CMDS().PANAREA_MTP_VULCANO_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+            return False
+
+        return True
+
+    def nic_vulcano_pcie_prbs(self, vmarg="normal", test_duration="1", int_lpbk='0'):
+        '''
+        run mbist from jtag, vulcano cards only
+        {slot.arg           ""                  "Slot number"}
+        {vmarg.arg          "normal"            "Voltage margin"}
+        {pcie_gen.arg       1                   "Test duration"}
+        {int_lpbk.arg       0                   "PMA Internal loopback (1 or 0)"}
+        {prbs_pattern.arg   7                   "prbs pattern"}
+        {tcl_path.arg       ""                  "ASIC lib location"}
+        '''
+
+        # goto the asic dir
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS().PANAREA_MTP_VULCANO_NIC_PCIE_PRBS.format(str(self._slot+1), test_duration, int_lpbk, vmarg)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
             return False
 
@@ -2596,13 +2618,27 @@ class nic_ctrl():
         return True
 
     def nic_refresh_cpld(self, dontwait=False):
-        # Capri-based:
-        nic_cpld_ref_cmd = MFG_DIAG_CMDS().NIC_CPLD_REF_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        # Elba-based:
-        if self._nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and self._nic_type not in FPGA_TYPE_LIST:
-            nic_cpld_ref_cmd = MFG_DIAG_CMDS().NIC_CPLD_REF_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        if not self.nic_exec_rst_cmd(nic_cpld_ref_cmd, timeout=MTP_Const.OS_CMD_DELAY, dontwait=dontwait):
-            return False
+
+        if self._nic_type in VULCANO_NIC_TYPE_LIST:
+            # program cpld partition
+            cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_REFRESH
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
+                return False
+            cmd_buf = self.nic_get_cmd_buf()
+            sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+            if "Done!".lower() not in sanitized_cmd_buf.lower():
+                self.nic_set_err_msg("Zephyr CPLD refresh Failed")
+                self.nic_set_err_msg(cmd_buf)
+                return False
+        else:
+            # Capri-based:
+            nic_cpld_ref_cmd = MFG_DIAG_CMDS().NIC_CPLD_REF_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+            # Elba-based:
+            if self._nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and self._nic_type not in FPGA_TYPE_LIST:
+                nic_cpld_ref_cmd = MFG_DIAG_CMDS().NIC_CPLD_REF_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+            if not self.nic_exec_rst_cmd(nic_cpld_ref_cmd, timeout=MTP_Const.OS_CMD_DELAY, dontwait=dontwait):
+                return False
 
         return True
 
@@ -4625,10 +4661,19 @@ class nic_ctrl():
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LINGUA_PN_FMT)                        #102-P11500-0 XX    LINGUA
                 ],
             NIC_Type.GELSOP: [
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GELSOP_PN_FMT)                        #101-P00001-00A XX    GELSOP
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GELSOP_PN_FMT)                        #102-P12100-00C 04  GELSOP
                 ],
-
+            NIC_Type.GELSOX: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GELSOX_PN_FMT)                        #102-P12200-00A 04  GELSOX
+                ],
+            NIC_Type.MORTARO: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.MORTARO_PN_FMT)                       #102-P12300-00B 04  MORTARO
+                ],
+            NIC_Type.SARACENO: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.SARACENO_PN_FMT)                      #102-P12500-00A 04  SARACENO
+                ],
         }
+
         if self._nic_type not in list(pn_table.keys()):
             self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
             return False
@@ -4870,7 +4915,7 @@ class nic_ctrl():
 
         return fru_buf
 
-    def nic_write_fru(self, date, sn, mac, pn, nic_type=None, dpn=False, sku=False, smb_fru=False, dev=None):
+    def nic_write_fru(self, date, sn, mac, pn, nic_type=None, dpn=False, sku=False, smb_fru=False, dev=None, boardid=None):
         eeutil_cmd_lookup = {
             PART_NUMBERS_MATCH.N100_PEN_PN_FMT:         "eeutil -dev=fru -update",
             PART_NUMBERS_MATCH.N100_NET_PN_FMT:         "eeutil -dev=fru -update",
@@ -4905,7 +4950,7 @@ class nic_ctrl():
                 self.nic_set_err_msg("FRU not initialized correctly")
                 return False
             cmd = eeutil_cmd_lookup[self._pn_format]
-        elif nic_type in SALINA_NIC_TYPE_LIST:
+        elif nic_type in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             cmd = "eeutil -update"
         else:
             cmd = "eeutil -dev=fru -update -erase -numBytes=512"
@@ -4924,6 +4969,13 @@ class nic_ctrl():
                     cmd += " -dev=" + dev
                 else:
                     cmd += " -dev=FRU"
+            if nic_type in VULCANO_NIC_TYPE_LIST:
+                cmd += " -dev=" + dev
+                if not boardid:
+                    self.nic_set_err_msg("For Vulcano cards, please Provide Board ID")
+                    return False
+                cmd += " -boardid=" + boardid
+            print(cmd)
             cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
         else:
             if nic_type in SALINA_NIC_TYPE_LIST:
@@ -4932,6 +4984,16 @@ class nic_ctrl():
                     self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
                     return False
                 cmd = MFG_DIAG_CMDS().MATERA_MTP_PROG_DPU_DRU_FMT.format(str(self._slot+1))
+                if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
+                    self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
+                    return False
+                cmd_buf = self.nic_get_cmd_buf()
+            elif nic_type in VULCANO_NIC_TYPE_LIST:
+                cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+                if not self.mtp_exec_cmd(cmd):
+                    self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
+                    return False
+                cmd = MFG_DIAG_CMDS().PANAREA_MTP_PROG_DPU_DRU_FMT.format(str(self._slot+1))
                 if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
                     self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
                     return False
@@ -5034,6 +5096,34 @@ class nic_ctrl():
             return False
 
     def nic_cpld_init(self, smb=False):
+
+        # Panarea and vulcano cards
+        if self._nic_type in VULCANO_NIC_TYPE_LIST:
+            # dump cpld reg
+            if not self.nic_dump_reg():
+                self.nic_set_err_msg("Dump CPLD Register Failed")
+                return False
+            dump_info = self.nic_get_cmd_buf()
+            # parse dumpped info
+            parsed_dump = {}
+            found_match = re.findall(r'Addr:\s+0x([0-9a-fA-F]{2});\s+Value:\s+0x([0-9a-fA-F]{2})', dump_info)
+            if found_match:
+                for k, v in found_match:
+                    parsed_dump[k] = v
+            timestamp_registers = ['46', '45', '44', '43', '42']
+            for register in timestamp_registers + ['00', '01', '40']:
+                if register not in parsed_dump:
+                    self.nic_set_err_msg("Parse CPLD Register Failed")
+                    return False
+            self._cpld_id = "0x{:X}".format(int(parsed_dump['40'], 16))
+            self._cpld_ver = "0x{:X}".format(int(parsed_dump['00'], 16))
+            date_time = []
+            for register in timestamp_registers:
+                date_time.append("{:02X}".format(int(parsed_dump[register], 16)))
+            self._cpld_timestamp = f'{date_time[1]}-{date_time[2]}-{date_time[0]}_{date_time[3]}:{date_time[4]}'
+            return True
+
+        # Matera plus Salina and Turbo plus elba 
         read_data = [0]
         if smb:
             rc = self.nic_read_cpld_via_smbus(0x00, read_data)
@@ -6423,6 +6513,74 @@ class nic_ctrl():
         devid = match[0]
         return devid
 
+    def uc_zephyr_fru_boardid_program(self, date, sn, mac, pn, nic_type, dpn, sku, boardid):
+        """
+        uart:~$ fru
+            Subcommands:
+            write  : Write FRU data to cache at a starting address.
+                    Usage: fru write <address> <format> <data>
+                    Where format is 'string' or 'hex'
+                    E.g
+                    fru write 75 string XXXYYWW0000
+                    E.g
+                fru write 146 hex 123456
+
+            save   : Update FRU cache to partition. Only performable once after booting.
+            uart:~$ fru write 75 string GELSOPSN001
+            At address: 75
+            String to write:
+            "GELSOPSN001"
+            Hex to write:
+            0x47 0x45 0x4c 0x53 0x4f 0x50 0x53 0x4e 0x30 0x30 0x31
+            Write completed
+            uart:~$ fru write 143 hex 049081268B79
+            At address: 143
+            String to write:
+            "049081268B79"
+            Hex to write:
+            0x04 0x90 0x81 0x26 0x8b 0x79
+            Write completed
+            uart:~$ fru write 132 hex 05710001
+            At address: 132
+            String to write:
+            "05710001"
+            Hex to write:
+            0x05 0x71 0x00 0x01
+            Write completed
+            uart:~$ fru save
+            Partition write completed
+        """
+
+        fru_write_cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_FRU_WRITE
+        # write serial number
+        cmd = f'{fru_write_cmd} 75 string {sn}'
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("uC Zephyr fru write serial number command: '{:s}' Failed".format(cmd))
+            return False
+        # write mac address
+        cmd = f'{fru_write_cmd} 143 hex {mac}'
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("uC Zephyr fru write mac address command: '{:s}' Failed".format(cmd))
+            return False
+        # write board id
+        cmd = f'{fru_write_cmd} 132 hex {boardid}'
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("uC Zephyr fru write serial number command: '{:s}' Failed".format(cmd))
+            return False
+        # Update FRU cache to partition
+        fru_save_cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_FRU_SAVE
+        if not self.nic_exec_cmd_from_zephyr_console(fru_save_cmd):
+            self.nic_set_err_msg("uC Zephyr Update FRU cache to partition command: '{:s}' Failed".format(fru_save_cmd))
+            return False
+        # FRU partition dump
+        fru_dump_cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_FRU_DUMP
+        if not self.nic_exec_cmd_from_zephyr_console(fru_dump_cmd):
+            self.nic_set_err_msg("uC Zephyr Dump FRU partition command: '{:s}' Failed".format(fru_dump_cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        print(cmd_buf)
+        return True
+
     def uc_sucuart_slot2sn_bus_dev(self):
         """
         according to rule /etc/udev/rules.d/99-suc-uart.rules, which map usb UART to slot
@@ -6503,7 +6661,7 @@ class nic_ctrl():
         Get usb device iserial according to self._slot, which mapping to device /dev/SUCUART(self._slot+1).
         For the usb device interface, so far we hardcode 3 here, unless uC firmware change it in the future
         Command example:
-        ./test_all.py --board-type AinicSuc --usb B4A7BA2756444B028820F0E180B0F82E:3 --print-hdrs --print-msgs -vvv --util pldmfwpkg=/home/diag/two_comp_gelso_v0_1_0_0.pldm --test-cases PldmFwUpdateSingleFDUpdateFlow
+        /home/diag/cns-pmci/test_all.py --board-type AinicSuc --detach-usb-kernel-driver --allow-early-completion --usb 6453473646CF48AFA1C9EF3AA09994E7:3  --test-cases PldmFwUpdateSingleFDUpdateFlow --util pldmfwpkg=/home/diag/iteterev/ainic_fw_vulcano.pldmfw
         command output
         ---------------------------------------------------
         Test case PldmFwUpdateSingleFDUpdateFlow has PASSED
@@ -6525,7 +6683,7 @@ class nic_ctrl():
 
         # program uC with MTCP
         cmd = MFG_DIAG_CMDS().PANAREA_SUC_IMAGE_PROG.format(device_iSerial, uc_img)
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_POWER_ON_DELAY):
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             self.nic_set_err_msg("Program uC image Command '{:s}' Failed".format(cmd))
             return False
         if "No such file or directory" in self.nic_get_cmd_buf() or "No suitable USB devices found" in  self.nic_get_cmd_buf():
@@ -6670,22 +6828,67 @@ class nic_ctrl():
 
         return True
 
+    def cpld_register_dump_check(self, check=None):
+        """
+        dump all registers, and compare it's value if check parameter given 
+        check parameter give with address to value dict
+        """
+
+        # dump cpld reg
+        if not self.nic_dump_reg():
+            self.nic_set_err_msg("Dump CPLD Register Failed")
+            return False
+        dump_info = self.nic_get_cmd_buf()
+        # parse dumpped info
+        parsed_dump = {}
+        if self._nic_type in VULCANO_NIC_TYPE_LIST:
+            found_match = re.findall(r'Addr:\s+0x([0-9a-fA-F]{2});\s+Value:\s+0x([0-9a-fA-F]{2})', dump_info)
+            if found_match:
+                for k, v in found_match:
+                    parsed_dump[k] = v
+
+        rc = True
+        if check:
+            for k, v in check.items():
+                if k not in parsed_dump:
+                    self.nic_set_err_msg(f"CPLD Register {k} not found in dump data")
+                    rc = False
+                    continue
+                if v != parsed_dump[k]:
+                    self.nic_set_err_msg(f"CPLD Register {k} check Failed, expect {v} while got {parsed_dump[k]}")
+                    rc = False
+        return rc
+
     def vulcano_suc_i2c_device_test(self, timeout=300):
         '''
         nic_test_vul.py suc_i2c_ds4424_test -slot <slot> -index <index>  index are 0 1 2 here
         nic_test_vul.py suc_i2c_tmp451_test -slot <slot>
         nic_test_vul.py suc_i2c_rc22308_test -slot <slot>
         '''
-        suc_i2c_devices = ("suc_i2c_ds4424_test", "suc_i2c_tmp451_test", "suc_i2c_rc22308_test")
+
+        suc_i2c_devices = ("suc_osfp_checksum_test", "suc_i2c_rc22308_test", "suc_i2c_ina3221_test",  "suc_i2c_ds4424_test", "suc_i2c_tmp451_test", "suc_i2c_mp2861_test", "suc_spi_cpldreg_test")
+        if self._nic_type in (NIC_Type.SARACENO, NIC_Type.MORTARO):
+            #For both Saraceno and Mortero, can you remove the ina3221 tests.
+            suc_i2c_devices = ("suc_osfp_checksum_test", "suc_i2c_rc22308_test", "suc_i2c_ds4424_test", "suc_i2c_tmp451_test", "suc_i2c_mp2861_test", "suc_spi_cpldreg_test")
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        ds4424_indexes = ('0', '1', '2')
+        device2indexes = {
+            'suc_i2c_ds4424_test' : ('0', '1', '2'),
+            'suc_i2c_ina3221_test' : ('0', '1'),
+        }
+        if self._nic_type in (NIC_Type.SARACENO, NIC_Type.MORTARO):
+            # for the ds4424, only device 0 is valid on both Saraceno and Mortero
+            device2indexes = {
+                'suc_i2c_ds4424_test' : ('0'),
+                'suc_i2c_ina3221_test' : ('0', '1'),
+            }
+
         if not self.mtp_exec_cmd(cmd):
             return False
 
         cmds = []
         for device in suc_i2c_devices:
-            if device == "suc_i2c_ds4424_test":
-                for index in ds4424_indexes:
+            if device in ("suc_i2c_ds4424_test", "suc_i2c_ina3221_test"):
+                for index in device2indexes[device]:
                     cmd = MFG_DIAG_CMDS().NIC_TEST_VULCANO_CMD + " {:s} -slot {:s} -index {:s}".format(device, str(self._slot + 1), index)
                     cmds.append(cmd)
             else:
@@ -7049,7 +7252,7 @@ class nic_ctrl():
         tout = 5
         if self._nic_type in VULCANO_NIC_TYPE_LIST:
             cmd = MFG_DIAG_CMDS().NIC_AVS_POST_FMT.format(self._slot + 1)
-            tout = 15
+            tout = 60
         if not self.mtp_exec_cmd(cmd, timeout=tout):
             return False
 

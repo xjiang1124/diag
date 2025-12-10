@@ -955,26 +955,27 @@ class mtp_ctrl():
         current_process_cores = len(os.sched_getaffinity(0))
         # Toggle comment or uncomment this snippet with above depends on the need of David's Matera UART new driver implement
         # #####-->
-        # using enviroment variable CARD_TYPE as a indicator to create a remote ssh session or a local bash session
-        running_on_mtp = True if os.getenv('CARD_TYPE') and 'MTP' in os.getenv('CARD_TYPE') else False
-        if running_on_mtp:
-            # assign task sshd to cpu core 0
-            pid_cmd = """ppid=$(ps -o ppid= -p $$) && ps -elf | grep " $ppid " | grep sshd | awk '{print $4}' | cat """
-            if not self.mtp_mgmt_exec_cmd(pid_cmd):
-                self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
-                return False
-            sshd_pid_match = re.findall(r'(\d+)', self.mtp_get_cmd_buf())
-            if not sshd_pid_match:
-                self.cli_log_err("Failed to Get sshd pid")
-                return False
-            sshd_pid = sshd_pid_match[0]
-            if not self.mtp_mgmt_exec_cmd(pid_cmd):
-                self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
-                return False
-            pid_cmd = 'ps -o pid,psr,comm -p {:s}'.format(sshd_pid)
-            if not self.mtp_mgmt_exec_cmd(pid_cmd):
-                self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
-                return False
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
+            # using enviroment variable CARD_TYPE as a indicator to create a remote ssh session or a local bash session
+            running_on_mtp = True if os.getenv('CARD_TYPE') and 'MTP' in os.getenv('CARD_TYPE') else False
+            if running_on_mtp:
+                # assign task sshd to cpu core 0
+                pid_cmd = """ppid=$(ps -o ppid= -p $$) && ps -elf | grep " $ppid " | grep sshd | awk '{print $4}' | cat """
+                if not self.mtp_mgmt_exec_cmd(pid_cmd):
+                    self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
+                    return False
+                sshd_pid_match = re.findall(r'(\d+)', self.mtp_get_cmd_buf())
+                if not sshd_pid_match:
+                    self.cli_log_err("Failed to Get sshd pid")
+                    return False
+                sshd_pid = sshd_pid_match[0]
+                if not self.mtp_mgmt_exec_cmd(pid_cmd):
+                    self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
+                    return False
+                pid_cmd = 'ps -o pid,psr,comm -p {:s}'.format(sshd_pid)
+                if not self.mtp_mgmt_exec_cmd(pid_cmd):
+                    self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
+                    return False
         # <--#####
 
         for index, slot in enumerate(slot_list):
@@ -3531,13 +3532,25 @@ class mtp_ctrl():
                 return False
         return True
 
-    def mtp_program_nic_fru(self, slot, date, sn, mac, pn, dpn=None, sku=None):
+    def mtp_program_nic_fru(self, slot, date, sn, mac, pn, dpn=None, sku=None, stage=None):
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf_lock(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
         if dpn:
             self.cli_log_slot_inf_lock(slot, "Program NIC FRU dpn={:s}".format(dpn))
         if sku:
             self.cli_log_slot_inf_lock(slot, "Program NIC FRU SKU={:s}".format(sku))
+
+        pnIn6Digits = "-".join(pn.split('-')[0:2]) if "-" in pn[0:6] else pn[0:6]
+        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        if not nic_cpld_info:
+            self.cli_log_slot_err_lock(slot, "Failed to retrieve CPLD ID info")
+            return False
+        cpldId = nic_cpld_info[2]
+        boardId, pciSubSysId = PN_CPLD2BOARDID_PCI_SUBSYS_ID.get((pnIn6Digits, cpldId), (None, None))
+        if stage == FF_Stage.FF_SWI:
+            boardId, pciSubSysId = SKU2BOARDID_PCI_SUBSYS_ID.get(sku, (None, None))
+        if boardId:
+            self.cli_log_slot_inf_lock(slot, "Program NIC FRU BOARD ID={:s}".format(boardId))
 
         if nic_type == NIC_Type.LINGUA:
             if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=True, dev="cpld_fru"):
@@ -3556,6 +3569,34 @@ class mtp_ctrl():
                 self.mtp_dump_nic_err_msg(slot)
                 return False
             if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True, dev="fru"):
+                self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+        elif nic_type in VULCANO_NIC_TYPE_LIST:
+            # for Vucano cards need program Smb FRU and micron controller FRU
+            smb_fru = True if nic_type in SALINA_NIC_TYPE_LIST else False
+            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru, boardid=boardId):
+                self.cli_log_slot_err_lock(slot, "Program VULCANAO Smbus FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=True, dev="SUCFRU", boardid=boardId):
+                self.cli_log_slot_err_lock(slot, "Program VULCANAO NIC SUC FRU Failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if self._nic_ctrl_list[slot].nic_power_cycle():
+                self.cli_log_slot_err_lock(slot, "Failed to Power cycle after FRU program")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True):
+                self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True):
                 self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
@@ -3612,7 +3653,7 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     return False
 
-        if nic_type not in SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_read_fru():
+        if nic_type not in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_read_fru():
             self.cli_log_slot_err_lock(slot, "Display NIC FRU failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
@@ -5237,24 +5278,15 @@ class mtp_ctrl():
 
     def mtp_nic_sn_init(self, slot, fpo=False):
         if not self._nic_ctrl_list[slot]._sn:
-            if self._mtp_type != MTP_TYPE.PANAREA:
-                if not self._nic_ctrl_list[slot].nic_smb_fru_init(self._factory_location, fpo=fpo):
-                    return False
-            else:
-                self._nic_ctrl_list[slot]._sn = "serialnumber" + str(int(slot+1))
-                self._nic_ctrl_list[slot]._pn = "101-P00001-00A"
-                self._nic_ctrl_list[slot]._mac = "049081AAAAA" + str(int(slot+1))
-                self._nic_ctrl_list[slot]._date = None
+            if not self._nic_ctrl_list[slot].nic_smb_fru_init(self._factory_location, fpo=fpo):
+                return False
             self.mtp_set_nic_sn(slot, self._nic_ctrl_list[slot]._sn)
         return True
 
     def mtp_nic_dpn_init(self, slot, fpo=False):
         if not self._nic_ctrl_list[slot]._dpn:
-            if self._mtp_type != MTP_TYPE.PANAREA:
-                if not self._nic_ctrl_list[slot].nic_smb_dpn_fru_init(self._factory_location, fpo=fpo):
-                    return False
-            else:
-                self._dpn = "58-0013-01"
+            if not self._nic_ctrl_list[slot].nic_smb_dpn_fru_init(self._factory_location, fpo=fpo):
+                return False
         return True
 
     def mtp_nic_cpld_init(self, slot, smb=False):
@@ -6030,6 +6062,18 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_vulcano_pcie_prbs(self, slot, vmarg="normal", test_duration="1", int_lpbk='0'):
+
+        if not self._nic_ctrl_list[slot].nic_vulcano_pcie_prbs(vmarg, test_duration, int_lpbk):
+            self.cli_log_slot_err(slot, "NIC PCIE PRBS FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        else:
+            self.cli_log_slot_inf(slot, "NIC PCIE PRBS PASS")
+
+        return True
+
     def mtp_l1_pre_setup(self, slot):
 
         failed_slot_list = []
@@ -6394,6 +6438,9 @@ class mtp_ctrl():
             NIC_Type.POLLARA:         MFG_DIAG_RE.MFG_NIC_TYPE_POLLARA,
             NIC_Type.LINGUA:          MFG_DIAG_RE.MFG_NIC_TYPE_LINGUA,
             NIC_Type.GELSOP:          MFG_DIAG_RE.MFG_NIC_TYPE_GELSOP,
+            NIC_Type.GELSOX:          MFG_DIAG_RE.MFG_NIC_TYPE_GELSOX,
+            NIC_Type.MORTARO:         MFG_DIAG_RE.MFG_NIC_TYPE_MORTARO,
+            NIC_Type.SARACENO:        MFG_DIAG_RE.MFG_NIC_TYPE_SARACENO,
         }
 
         for nic_type in list(regex_dict.keys()):
@@ -7558,7 +7605,7 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_nic_uc_zephyr_cpld_update(self, slot, cpld_img_file, partition='0'):
+    def mtp_nic_uc_zephyr_cpld_update(self, slot, cpld_img_file, partition='0', dl_step=True):
         """
         update CPLD through micro controller zpher shell cpld command
             Subcommands:
@@ -7582,6 +7629,32 @@ class mtp_ctrl():
             op         : <byte> [<byte>...] Raw reg interface SPI op (hex args)
         """
 
+        nic_type = self.mtp_get_nic_type(slot)
+
+        if nic_type not in VULCANO_NIC_TYPE_LIST:
+            self.cli_log_slot_err(slot, "This cpld update function not meant for this card {:s}".format(nic_type))
+            return False
+
+        if dl_step:
+            stage = FF_Stage.FF_DL
+        else:
+            stage = FF_Stage.FF_SWI
+
+        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        if not nic_cpld_info:
+            self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed, can not retrieve CPLD info")
+            return False
+        cur_ver = nic_cpld_info[0]
+        cur_timestamp = nic_cpld_info[1]
+
+        expected_version = image_control.get_cpld(self, slot, stage)["version"]
+        expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
+
+        if cur_ver == expected_version and cur_timestamp == expected_timestamp:
+            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date")
+            self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
+            return True
+
         support_partitions = ("0", "1")
         if partition not in support_partitions:
             self.cli_log_slot_err_lock(slot, "Please provide correct cpld partion , it should be in {:d}".format(str(support_partitions)))
@@ -7590,6 +7663,9 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Program CPLD Failed")
             self.mtp_get_nic_err_msg(slot)
             return False
+
+        self._nic_ctrl_list[slot].nic_require_cpld_refresh(True)
+
         return True
 
     def mtp_nic_uc_zephyr_boot_check(self, slot, monitor_timeout=40):
@@ -7703,6 +7779,19 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].i2c_device_screening():
             self.cli_log_slot_err_lock(slot, "I2C Device Screening Failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_cpld_register_dump_check(self, slot, check=None):
+        """
+        dump all registers, and compare it's value if check parameter given 
+        check parameter give with address to value dict
+        """
+
+        if not self._nic_ctrl_list[slot].cpld_register_dump_check(check):
+            self.cli_log_slot_err_lock(slot, "CPLD Register dump and check Failed")
             self.mtp_get_nic_err_msg(slot)
             return False
         return True
@@ -8105,6 +8194,8 @@ class mtp_ctrl():
             l1_cmd_tout = MTP_Const.SALINA_AI_ASIC_L1_TEST_TIMEOUT
         if nic_type in SALINA_DPU_NIC_TYPE_LIST:
             l1_cmd_tout = MTP_Const.SALINA_DPU_ASIC_L1_TEST_TIMEOUT
+        if nic_type in VULCANO_NIC_TYPE_LIST:
+            l1_cmd_tout = MTP_Const.VUCANO_ASIC_L1_TEST_TIMEOUT
 
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=l1_cmd_tout):
             rs = False
