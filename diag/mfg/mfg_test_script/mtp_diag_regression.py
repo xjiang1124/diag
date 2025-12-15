@@ -772,7 +772,8 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_pcie_prbs(nic_list, vmarg=test_kwargs["vmarg"])
                 elif test == "SNAKE_VULCANO_MAX_PWR_MTP":
                     rlist = mtp_mgmt_ctrl.mtp_snake_mtp_vulcano(nic_list, snake_type=test_kwargs["snake_type"], vmarg=test_kwargs["vmarg"], dura=test_kwargs["dura"], timeout=test_kwargs["timeout"], asic_dir_path=test_kwargs["asic_dir_path"], int_lpbk=test_kwargs["int_lpbk"])
-
+                elif test == "VULCANO_SNAKE_4CHAMBER_TEST":
+                    rlist = mtp_mgmt_ctrl.mtp_vulcano_snake_tmp(nic_list, snake_num=test_kwargs["snake_num"], vmarg=test_kwargs["vmarg"], timeout=test_kwargs["timeout"])
                 elif test == "L1":
                     rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, str(stage), test_kwargs["l1_sequence"], ddr=test_kwargs["ddr"])
                 elif test == "L1_OW":
@@ -1489,6 +1490,9 @@ def main():
                     # run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
 
                 elif test_section == "VULCANO_SNAKE":
+                    # chamber test snake
+                    run_regression_test(get_slots_of_type(VULCANO_NIC_TYPE_LIST), "VULCANO_SNAKE_4CHAMBER_TEST", snake_num=4, vmarg=vmarg, timeout=3600)
+
                     # run snake test
                     vulcano_max_power_snake = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
                     run_regression_test(vulcano_max_power_snake, "SNAKE_VULCANO_ASIC_WORK_DIR_PREPARE")

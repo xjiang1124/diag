@@ -15,7 +15,7 @@ HPE_FSP_SN_FMT = r"(?:2YU|3Y1)"
 HPE_P1_SN_FMT = r"4YA"
 HPE_PART_NUM_FMT = r"([A-Z0-9]{6}-B[0-9]{2})"
 HPE_PROD_NUM_FMT = r"([A-Z0-9]{6}-B[0-9]{2})"
-HPE_CT_FMT = r"PZGKHFVEE5I[0-5]{1}\d{1}[A-F0-9]{3}"
+HPE_CT_FMT = r"PZGKH0A5I\w{2}[A-Z0-9]{3}"
 HPE_SN_FMT = HPE_P1_SN_FMT + HPE_SUFFIX_FMT
 
 # DC: [last digit of year][month 1-9,A-C][day1-9,A-K=10-20,L-V:21-31]

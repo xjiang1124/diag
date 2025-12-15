@@ -755,13 +755,14 @@ def main():
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
 
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+            run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_dl_test(pass_nic_list, "NIC_TYPE")
             run_dl_test(pass_nic_list, "NIC_INIT")
             run_dl_test(pass_nic_list, "uC_BOOTING_CHK")
-            run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_PROG")
             run_dl_test(pass_nic_list, "CPLD_REF")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_VERIFY")
             run_dl_test(pass_nic_list, "FSAFE_CPLD_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")

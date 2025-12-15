@@ -1318,54 +1318,54 @@ class NIC_IMAGES:
     microcontroller_img["58-0013-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
     # SARACENO is AINIC
-    cpld_img["SARACENO"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_img["SARACENO"] = "saraceno_cpld_cfg0_rev0102.jed"
     cpld_ver["SARACENO"] = "0x1"
-    cpld_dat["SARACENO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
-    sec_cpld_img["SARACENO"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_dat["SARACENO"] = "12-08-25_15:27" #mm-dd-YY_HH:MM
+    sec_cpld_img["SARACENO"] = "saraceno_cpld_cfg0_rev0102.jed"
     sec_cpld_ver["SARACENO"] = "0x1"
-    sec_cpld_dat["SARACENO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
-    fail_cpld_img["SARACENO"] = "gelso_cpld_cfg1-rev01_04.jed"
+    sec_cpld_dat["SARACENO"] = "12-08-25_15:27" #mm-dd-YY_HH:MM
+    fail_cpld_img["SARACENO"] = "saraceno_cpld_cfg1_rev01_02.jed"
     fail_cpld_ver["SARACENO"] = "0x1"
-    fail_cpld_dat["SARACENO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
-    fea_cpld_img["SARACENO"] = "mortaro_impl1.fea"
+    fail_cpld_dat["SARACENO"] = "12-08-25_15:27" #mm-dd-YY_HH:MM
+    fea_cpld_img["SARACENO"] = "saraceno.fea"
     microcontroller_img["SARACENO"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
-    cpld_img["58-0014-01"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_img["58-0014-01"] = "saraceno_cpld_cfg0_rev0102.jed"
     cpld_ver["58-0014-01"] = "0x1"
-    cpld_dat["58-0014-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0014-01"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_dat["58-0014-01"] = "12-08-25_15:27" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0014-01"] = "saraceno_cpld_cfg0_rev0102.jed"
     sec_cpld_ver["58-0014-01"] = "0x1"
-    sec_cpld_dat["58-0014-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0014-01"] = "gelso_cpld_cfg1-rev01_04.jed"
+    sec_cpld_dat["58-0014-01"] = "12-08-25_15:27" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0014-01"] = "saraceno_cpld_cfg1_rev01_02.jed"
     fail_cpld_ver["58-0014-01"] = "0x1"
-    fail_cpld_dat["58-0014-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
-    fea_cpld_img["58-0014-01"] = "mortaro_impl1.fea"
+    fail_cpld_dat["58-0014-01"] = "12-08-25_15:27" #mm-dd-YY_HH:MM
+    fea_cpld_img["58-0014-01"] = "saraceno.fea"
     microcontroller_img["58-0014-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
 
     # MORTARO is AINIC
-    cpld_img["MORTARO"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_img["MORTARO"] = "mortaro_rev01_02_cfg0.jed"
     cpld_ver["MORTARO"] = "0x1"
-    cpld_dat["MORTARO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
-    sec_cpld_img["MORTARO"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_dat["MORTARO"] = "12-10-25_12:08" #mm-dd-YY_HH:MM
+    sec_cpld_img["MORTARO"] = "mortaro_rev01_02_cfg0.jed"
     sec_cpld_ver["MORTARO"] = "0x1"
-    sec_cpld_dat["MORTARO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
-    fail_cpld_img["MORTARO"] = "gelso_cpld_cfg1-rev01_04.jed"
+    sec_cpld_dat["MORTARO"] = "12-10-25_12:08" #mm-dd-YY_HH:MM
+    fail_cpld_img["MORTARO"] = "mortaro_rev01_02_cfg1.jed"
     fail_cpld_ver["MORTARO"] = "0x1"
-    fail_cpld_dat["MORTARO"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fail_cpld_dat["MORTARO"] = "12-10-25_12:08" #mm-dd-YY_HH:MM
     fea_cpld_img["MORTARO"] = "mortaro_impl1.fea"
-    microcontroller_img["MORTARO"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
+    microcontroller_img["MORTARO"] = "vulcano/gelsop/ainic_fw_vulcano_1209_2025.pldmfw"
 
-    cpld_img["58-0015-01"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_img["58-0015-01"] = "mortaro_rev01_02_cfg0.jed"
     cpld_ver["58-0015-01"] = "0x1"
-    cpld_dat["58-0015-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0015-01"] = "mortaro_rev01_01_dc1203_1528.jed"
+    cpld_dat["58-0015-01"] = "12-10-25_12:08" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0015-01"] = "mortaro_rev01_02_cfg0.jed"
     sec_cpld_ver["58-0015-01"] = "0x1"
-    sec_cpld_dat["58-0015-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0015-01"] = "gelso_cpld_cfg1-rev01_04.jed"
+    sec_cpld_dat["58-0015-01"] = "12-10-25_12:08" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0015-01"] = "mortaro_rev01_02_cfg1.jed"
     fail_cpld_ver["58-0015-01"] = "0x1"
-    fail_cpld_dat["58-0015-01"] = "12-03-25_15:28" #mm-dd-YY_HH:MM
+    fail_cpld_dat["58-0015-01"] = "12-10-25_12:08" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0015-01"] = "mortaro_impl1.fea"
-    microcontroller_img["58-0015-01"] = "vulcano/gelsop/ainic_fw_vulcano_1208_2025.pldmfw"
+    microcontroller_img["58-0015-01"] = "vulcano/gelsop/ainic_fw_vulcano_1209_2025.pldmfw"
 
 
 class MTP_IMAGES:
@@ -1412,8 +1412,8 @@ class MTP_IMAGES:
     # mtp_fpga_img["MATERA"] = "to_be_define.bin"
     mtp_fpga_ver["MATERA"] = "a012"
     mtp_fpga_date["MATERA"] = "12222024"    #mmddYYYY
-    mtp_fpga_ver["PANAREA"] = "a005"
-    mtp_fpga_date["PANAREA"] = "09162025"    #mmddYYYY
+    mtp_fpga_ver["PANAREA"] = "a00a"
+    mtp_fpga_date["PANAREA"] = "11212025"    #mmddYYYY
 
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"

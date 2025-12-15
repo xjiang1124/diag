@@ -3575,7 +3575,7 @@ class mtp_ctrl():
                 return False
         elif nic_type in VULCANO_NIC_TYPE_LIST:
             # for Vucano cards need program Smb FRU and micron controller FRU
-            smb_fru = True if nic_type in SALINA_NIC_TYPE_LIST else False
+            smb_fru = True
             if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru, boardid=boardId):
                 self.cli_log_slot_err_lock(slot, "Program VULCANAO Smbus FRU failed")
                 self.mtp_get_nic_err_msg(slot)
@@ -3586,17 +3586,17 @@ class mtp_ctrl():
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
-            if self._nic_ctrl_list[slot].nic_power_cycle():
+            if not self._nic_ctrl_list[slot].nic_power_cycle():
                 self.cli_log_slot_err_lock(slot, "Failed to Power cycle after FRU program")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
-            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True):
+            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True, dev="FRU"):
                 self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
-            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True):
+            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True, dev="SUCFRU"):
                 self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
@@ -6177,6 +6177,19 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].snake_mtp_vulcano(snake_type, vmarg, dura, timeout, slot_asic_dir_path, ite, int_lpbk):
             self.cli_log_slot_err_lock(slot, "nic_test_vul.py nic_snake {:s} TEST FAILED".format(snake_type))
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_vulcano_snake_tmp(self, slot, snake_num=4, vmarg="normal", timeout=3600):
+        '''
+        This is to support the chamber test, may temporary 
+        run yanming updated vul_snake.tcl with command  "stdbuf -i0 -o0 -e0 tclsh vul_snake.tcl -slot 1 -snake_num 4 -vmarg high/low/nom"
+        '''
+    
+        if not self._nic_ctrl_list[slot].snake_vulcano_tmp(snake_num, vmarg, timeout):
+            self.cli_log_slot_err_lock(slot, "tclsh vul_snake.tcl TEST FAILED")
             return False
 
         return True

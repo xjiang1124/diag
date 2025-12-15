@@ -272,8 +272,8 @@ def dell_ppid_validate(tmp):
         return None
 
 def hpe_ct_validate(tmp):
-    # HPE CT format PZGKHFVEE5I50001
-    if re.match(HPE_CT_FMT, tmp) and len(tmp) == 16:
+    # HPE CT format PZGKH0A5ILS017
+    if re.match(HPE_CT_FMT, tmp) and len(tmp) == 14:
         return tmp
     else:
         return None

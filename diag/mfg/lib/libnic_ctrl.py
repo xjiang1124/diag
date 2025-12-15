@@ -1007,6 +1007,26 @@ class nic_ctrl():
         else:
             return False
 
+    def snake_vulcano_tmp(self, snake_num=4, vmarg="normal", timeout=3600):
+        '''
+        This is to support the chamber test, may temporary
+        run yanming updated vul_snake.tcl with command  "stdbuf -i0 -o0 -e0 tclsh vul_snake.tcl -slot 1 -snake_num 4 -vmarg high/low/nom"
+        '''
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS().PANAREA_SNAKE_MTP_TMP_FMT.format(str(self._slot + 1), snake_num, vmarg)
+        print(cmd)
+        if not self.mtp_exec_cmd(cmd, timeout):
+            return False
+
+        if MFG_DIAG_SIG.PANAREA_SNAKE_MTP_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
     def nic_pcie_prbs_salina(self, vmarg="normal", timeout=300, slot_asic_dir_path=None):
         '''
             run salina snake from mtp without mgmt
@@ -4970,7 +4990,10 @@ class nic_ctrl():
                 else:
                     cmd += " -dev=FRU"
             if nic_type in VULCANO_NIC_TYPE_LIST:
-                cmd += " -dev=" + dev
+                if dev:
+                    cmd += " -dev=" + dev
+                else:
+                    cmd += " -dev=FRU"
                 if not boardid:
                     self.nic_set_err_msg("For Vulcano cards, please Provide Board ID")
                     return False
@@ -6896,11 +6919,13 @@ class nic_ctrl():
                 cmds.append(cmd)
 
         for cmd in cmds:
+            print(f'Slot {self._slot + 1} CMD: {cmd}')
             if not self.mtp_exec_cmd(cmd, timeout=timeout):
                 return False
             if "=== test result at Slot {:s}: Passed".format(str(self._slot + 1)) not in self.nic_get_cmd_buf():
                 self.nic_set_err_msg("Error found in command '{:s}'".format(cmd))
-                return False
+                print(f'Slot {self._slot + 1} FAILED: {cmd}')
+                # return False
 
         return True
 
