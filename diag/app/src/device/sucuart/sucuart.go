@@ -251,6 +251,8 @@ func Suc_dev_status(slot int) () {
         cmd_list = []string{"tmp451 temperature", "voltage mp2861_sensor"}
         ds4424_output = suc_single_cmd(slot, "voltage ds4424_info", false)
         rails = []string{"VDDCR_0P75"}
+    } else {
+        cli.Println("e", "Environment UUT_<slot> not set for this card.  Please run ./start_diag.sh + source ~/.bash_profile to set the UUT_<slot>")
     }
     suc_cmd_list(slot, cmd_list)
     cli.Println("i")
