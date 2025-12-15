@@ -8,16 +8,15 @@ set vmarg    [lindex $argv 3]
 set esecEn   [lindex $argv 4]
 set logEn    [lindex $argv 5]
 set pct      [lindex $argv 6]
-set joo      [lindex $argv 7]
-set prbslt   [lindex $argv 8]
-set tcl_path [lindex $argv 9]
+set prbslt   [lindex $argv 7]
+set tcl_path [lindex $argv 8]
 set port 10
 
 if {$logEn == ""} {
     set logEn 1
 }
 
-puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; pct: $pct; joo: $joo; esecEn: $esecEn; logEn: $logEn; prbslt:$prbslt; tcl_path: $tcl_path"
+puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; esecEn: $esecEn; logEn: $logEn; prbslt:$prbslt; tcl_path: $tcl_path"
 set err_cnt 0
 if { $tcl_path != "" } {
     set ASIC_LIB_BUNDLE "$tcl_path"
@@ -27,9 +26,11 @@ if { $tcl_path != "" } {
     set ASIC_LIB_BUNDLE "/home/diag/diag/asic"
 }
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
-set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
-set ASIC_GEN "$ASIC_SRC"
-set LD_LIBRARY_PATH "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:${::env(LD_LIBRARY_PATH)}"
+set env(ASIC_LIB_BUNDLE) "$ASIC_LIB_BUNDLE"
+set env(ASIC_LIB) "$ASIC_LIB_BUNDLE/asic_lib"
+set env(ASIC_SRC) "$ASIC_LIB_BUNDLE/asic_src"
+set env(ASIC_GEN) "$ASIC_LIB_BUNDLE/asic_src"
+set env(LD_LIBRARY_PATH) "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:${::env(LD_LIBRARY_PATH)}"
 
 set MTP_TYPE $::env(MTP_TYPE)
 set ASIC_TYPE $::env(ASIC_TYPE)
@@ -37,13 +38,9 @@ set ::VEL_SHELL 0
 
 source /home/diag/diag/scripts/asic/asic_tests.tcl
 
-set G_SLOT $slot
-set arm_freq 3000
 
 puts "sn: $sn; slot: $slot"
-puts "ASIC_LIB_BUNDLE: $ASIC_LIB_BUNDLE"
-puts "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
-cd $ASIC_SRC/ip/cosim/tclsh
+cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 
 if {($MTP_TYPE == "MTP_PANAREA")} {
     set uut "UUT_$slot"
@@ -53,8 +50,8 @@ if {($MTP_TYPE == "MTP_PANAREA")} {
     set port $slot
     set slot $slot
 
-    #set l1_cmd "vul_l1_screen_diag $sn 0 1 0 1 $vmarg $esecEn $logEn $prbslt"
-    set l1_cmd "vul_l1_screen_diag $sn"
+    set l1_cmd "vul_l1_screen_diag $sn 0 1 1 1 $vmarg $esecEn $logEn $prbslt"
+    #set l1_cmd "vul_l1_screen_diag $sn"
     source .tclrc.diag.vul
     #source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
 } else {
