@@ -1414,7 +1414,7 @@ def main():
                     # power cycle
                     for i in range(50):
                         mtp_mgmt_ctrl.cli_log_inf(f"Power Cycle Stress Test Iteration {i}/50", level=0)
-                        run_test(pass_nic_list, "NIC_PWRCYC")
+                        run_test(get_slots_of_type(VULCANO_NIC_TYPE_LIST), "NIC_PWRCYC")
                         cpld_address_value = {
                             '35' : '00',      # RESET_REASON0
                             '36' : '00',      # RESET_REASON1
@@ -1429,7 +1429,7 @@ def main():
                         cpld_address_value['44'] = "{:02x}".format(int(cpld_datetime.strftime("%d"), 16))
                         cpld_address_value['43'] = "{:02x}".format(int(cpld_datetime.strftime("%H"), 16))
                         cpld_address_value['42'] = "{:02x}".format(int(cpld_datetime.strftime("%M"), 16))
-                        run_regression_test(pass_nic_list, "CPLD_REGISTER_DUMP_CHECK", check=cpld_address_value)
+                        run_regression_test(get_slots_of_type(VULCANO_NIC_TYPE_LIST), "CPLD_REGISTER_DUMP_CHECK", check=cpld_address_value)
 
                     # warm reset
                         # to be done
