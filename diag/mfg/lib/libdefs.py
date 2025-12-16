@@ -500,7 +500,7 @@ class MFG_DIAG_CMDS:
     NIC_L1_ESEC_PROG_FMT = "tclsh ./esec_l1_prog_elba.tcl -slot {:d}"
     NIC_L1_ESEC_GIGLIO_PROG_FMT = "tclsh ./esec_l1_prog_giglio.tcl -slot {:d}"
     NIC_MATERA_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s} -joo {:s} -i {:s} -o {:s} -e {:s} -s {:s} -ite {:s} -lt {:s}"
-    NIC_PANAREA_RUN_ASIC_L1_FMT = "./run_l1_vul.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -joo {:s} -i {:s} -e {:s} -s {:s} -ite {:s}"
+    NIC_PANAREA_RUN_ASIC_L1_FMT = "./run_l1_vul.sh -sn {:s} -slot {:d} -v {:s} -i {:s} -e {:s} -ite {:s}"
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s} {:s}"
@@ -689,8 +689,7 @@ class MFG_DIAG_CMDS:
     #PANAREA MTP
     PANAREA_MTP_VULCANO_NIC_JTAG_MBIST = "tclsh vul_jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s}"
     PANAREA_MTP_VULCANO_NIC_PCIE_PRBS = "tclsh vul_pcie_prbs.tcl -slot {:s} -pcie_gen {:s} -int_lpbk {:s} -vmarg {:s}"
-    PANAREA_SNAKE_MTP_FMT       = "nic_test_vul.py nic_snake_mtp -slot {:s} -timeout {:d} -dura {:d} -snake_type {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}' -int_lpbk {:s}"
-    PANAREA_SNAKE_MTP_TMP_FMT       = "stdbuf -i0 -o0 -e0 tclsh vul_snake.tcl -slot {:s} -snake_num {:d} -vmarg {:s}"
+    PANAREA_SNAKE_MTP_FMT       = "stdbuf -i0 -o0 -e0 tclsh vul_snake.tcl -slot {:s} -snake_num {:d} -vmarg {:s} -duration {:d} -int_lpbk {:d}"
     VULCANO_NIC_PCIE_PRBS_TMP_FMT = "stdbuf -i0 -o0 -e0 tclsh vul_pcie_prbs.tcl -slot {:s} -pcie_gen {:s} -int_lpbk {:s}"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"

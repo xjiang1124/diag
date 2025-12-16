@@ -662,6 +662,7 @@ def main():
             dl_display_program_matrix(mtp_mgmt_ctrl, slot, swmtestmode)
 
         if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
+            run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
 
             # power cycle all nic
             run_dl_test(pass_nic_list, "NIC_PWRCYC")

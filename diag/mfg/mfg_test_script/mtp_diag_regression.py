@@ -747,7 +747,7 @@ def main():
                     rlist = salina_erase_qspi(mtp_mgmt_ctrl, nic_list)
                 elif test == "SALINA_SET_PCIEAWD_ENV":
                     rlist = mtp_mgmt_ctrl.mtp_set_piceawd_env_salina(nic_list)
-                elif test in ("SNAKE_SALINA_ASIC_WORK_DIR_PREPARE", "SNAKE_VULCANO_ASIC_WORK_DIR_PREPARE"):
+                elif test in ("SNAKE_SALINA_ASIC_WORK_DIR_PREPARE",):
                     rlist = mtp_mgmt_ctrl.mtp_make_copies_of_asic_dir(nic_list)
                 elif test == "SALINA_I2C_QSFP":
                     rlist = mtp_mgmt_ctrl.mtp_i2c_qsfp_salina(nic_list, vmarg=test_kwargs["vmarg"])
@@ -770,10 +770,8 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"], test_type="warm")
                 elif test == "VULCANO_PCIE_PRBS":
                     rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_pcie_prbs(nic_list, vmarg=test_kwargs["vmarg"])
-                elif test == "SNAKE_VULCANO_MAX_PWR_MTP":
-                    rlist = mtp_mgmt_ctrl.mtp_snake_mtp_vulcano(nic_list, snake_type=test_kwargs["snake_type"], vmarg=test_kwargs["vmarg"], dura=test_kwargs["dura"], timeout=test_kwargs["timeout"], asic_dir_path=test_kwargs["asic_dir_path"], int_lpbk=test_kwargs["int_lpbk"])
-                elif test == "VULCANO_SNAKE_4CHAMBER_TEST":
-                    rlist = mtp_mgmt_ctrl.mtp_vulcano_snake_tmp(nic_list, snake_num=test_kwargs["snake_num"], vmarg=test_kwargs["vmarg"], timeout=test_kwargs["timeout"])
+                elif test == "VULCANO_SNAKE":
+                    rlist = mtp_mgmt_ctrl.mtp_snake_mtp_vulcano(nic_list, snake_num=test_kwargs["snake_num"], vmarg=test_kwargs["vmarg"], dura=test_kwargs["dura"], int_lpbk=test_kwargs["int_lpbk"], timeout=test_kwargs["timeout"])
                 elif test == "L1":
                     rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, str(stage), test_kwargs["l1_sequence"], ddr=test_kwargs["ddr"])
                 elif test == "L1_OW":
@@ -1038,7 +1036,7 @@ def main():
 
             ### VULCANO TEST ORDER
             if get_slots_of_type(VULCANO_NIC_TYPE_LIST):
-                test_section_list = ["STRESS", "I2C", "J2C_SEQ", "VULCANO_SNAKE"]
+                test_section_list = ["STRESS", "I2C", "J2C_SEQ", "VULCANO_SNAKE_SECTION"]
 
             if args.skip_test:
                 test_section_list = libmfg_utils.list_subtract(test_section_list, args.skip_test)
@@ -1421,7 +1419,6 @@ def main():
                             '35' : '00',      # RESET_REASON0
                             '36' : '00',      # RESET_REASON1
                             '37' : '00',      # RESET_REASON2
-                            '38' : '00',      # RESET_REASON3
                         }
                         expected_version = image_control.get_cpld(mtp_mgmt_ctrl, slot, stage)["version"]
                         expected_timestamp = image_control.get_cpld(mtp_mgmt_ctrl, slot, stage)["timestamp"]
@@ -1489,22 +1486,14 @@ def main():
                     # run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
                     # run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
 
-                elif test_section == "VULCANO_SNAKE":
-                    # chamber test snake
-                    run_regression_test(get_slots_of_type(VULCANO_NIC_TYPE_LIST), "VULCANO_SNAKE_4CHAMBER_TEST", snake_num=4, vmarg=vmarg, timeout=3600)
+                elif test_section == "VULCANO_SNAKE_SECTION":
 
                     # run snake test
-                    vulcano_max_power_snake = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
-                    run_regression_test(vulcano_max_power_snake, "SNAKE_VULCANO_ASIC_WORK_DIR_PREPARE")
-
-                    slot2asicdir = dict()
-                    for slot in vulcano_max_power_snake:
-                        if slot == 0:
-                            dir_path = '/home/diag/diag/asic'
-                        else:
-                            dir_path = '/home/diag/diag/asic' + str(slot)
-                        slot2asicdir[slot] = dir_path
-                    run_regression_test(vulcano_max_power_snake, "SNAKE_VULCANO_MAX_PWR_MTP", snake_type="esam_pktgen_max_power_pcie_sor", asic_dir_path=slot2asicdir, vmarg=vmarg, dura=900, timeout=3600, int_lpbk='0')
+                    vulcano_snake_slots = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
+                    # if p2c using internal loopback, set int_lpbk to 1, if 4c using external lookback, set int_lpbk to 0
+                    lpbk_type = 1 if stage in (FF_Stage.FF_P2C,  FF_Stage.FF_2C_H, FF_Stage.FF_2C_L) else 0
+                    nvmarg = 'nom' if vmarg == 'normal' else vmarg
+                    run_regression_test(vulcano_snake_slots, "VULCANO_SNAKE", snake_num=4, vmarg=nvmarg, dura=60, int_lpbk=lpbk_type, timeout=3600)
 
                     # run PCIE PRBS
                     pcie_prbs_list = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
