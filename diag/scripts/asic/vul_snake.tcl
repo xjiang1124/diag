@@ -54,6 +54,8 @@ set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
 set fn "vul_snake_slot${slot}_${cur_time}.log"
 plog_start $fn
 
+set ::board_rev [vul_get_board_rev]
+
 plog_msg "calling vul_pll_fix"
 vul_pll_fix
 after 10000
