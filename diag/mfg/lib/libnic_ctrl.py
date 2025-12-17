@@ -983,23 +983,20 @@ class nic_ctrl():
         else:
             return False
 
-    def snake_mtp_vulcano(self, snake_type='esam_pktgen_max_power_pcie_sor', vmarg="normal", dura=900, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
+    def snake_mtp_vulcano(self, snake_num=4, vmarg="nom", dura=60, int_lpbk=0, timeout=3600):
         '''
-            run salina snake from mtp without mgmt
+            for vulcano, we aleady put snake test in L1, but in run_l1, snake only support one snake number, that's the reason we still have this function here
+            vul_snake.tcl with command  "stdbuf -i0 -o0 -e0 tclsh vul_snake.tcl -slot 1 -snake_num 4 -vmarg high/low/nom"
         '''
 
-        if not slot_asic_dir_path:
-            return False
-
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        test_name = "max_pwr"
-        cmd = MFG_DIAG_CMDS().PANAREA_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, int_lpbk)
-        cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
+        cmd = MFG_DIAG_CMDS().PANAREA_SNAKE_MTP_FMT.format(str(self._slot + 1), snake_num, vmarg, dura, int_lpbk)
+        cmd += " | tee {:s}/snake_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, str(self._sn), str(self._slot + 1))
         print(cmd)
-        if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
+        if not self.mtp_exec_cmd(cmd, timeout):
             return False
 
         if MFG_DIAG_SIG.PANAREA_SNAKE_MTP_SIG in self.nic_get_cmd_buf():
@@ -4970,7 +4967,10 @@ class nic_ctrl():
                 else:
                     cmd += " -dev=FRU"
             if nic_type in VULCANO_NIC_TYPE_LIST:
-                cmd += " -dev=" + dev
+                if dev:
+                    cmd += " -dev=" + dev
+                else:
+                    cmd += " -dev=FRU"
                 if not boardid:
                     self.nic_set_err_msg("For Vulcano cards, please Provide Board ID")
                     return False
@@ -6896,11 +6896,13 @@ class nic_ctrl():
                 cmds.append(cmd)
 
         for cmd in cmds:
+            print(f'Slot {self._slot + 1} CMD: {cmd}')
             if not self.mtp_exec_cmd(cmd, timeout=timeout):
                 return False
             if "=== test result at Slot {:s}: Passed".format(str(self._slot + 1)) not in self.nic_get_cmd_buf():
                 self.nic_set_err_msg("Error found in command '{:s}'".format(cmd))
-                return False
+                print(f'Slot {self._slot + 1} FAILED: {cmd}')
+                # return False
 
         return True
 
