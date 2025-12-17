@@ -3,8 +3,10 @@ source /home/diag/diag/scripts/asic/cmdline.tcl
 
 set usage {
     {slot.arg           ""                  "Slot number"}
-    {vmarg.arg          "normal"            "Voltage margin"}
+    {vmarg.arg          "nom"               "Voltage margin high/low/nom"}
     {snake_num.arg      1                   "snake number"}
+    {int_lpbk.arg       1                   "mac serdes internal loopback"}
+    {duration.arg       60                  "duration"}
     {tcl_path.arg       ""                  "ASIC lib location"}
 }
 # rename argv variables to call them more easily
@@ -52,6 +54,8 @@ set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
 set fn "vul_snake_slot${slot}_${cur_time}.log"
 plog_start $fn
 
+set ::board_rev [vul_get_board_rev]
+
 plog_msg "calling vul_pll_fix"
 vul_pll_fix
 after 10000
@@ -61,10 +65,10 @@ after 10000
 #plog_msg "card_type = $card_type"
 #plog_msg "cpld_id = $cpld_id"
 #vul_print_die_id
-#vul_set_vmarg $vmarg
+vul_set_vmarg $vmarg all
 
 plog_msg "start snake"
-vul_l1_snake 1
+vul_l1_snake $snake_num 0 $int_lpbk $duration 1500
 plog_msg "check result"
 vul_print_pass_fail vul_l1_snake $err_cnt_init
 plog_stop
