@@ -52,12 +52,12 @@ then
         picocom -b 115200 -f h $term
     elif [[ $uart_id -eq 1 ]]
     then
-        fpga_uart_panarea $((slot - 1))
+        term="/dev/ttySuC$((slot - 1))"
+        picocom -b 115200 $term
     elif [[ $uart_id -eq 2 ]]
     then
-        # ASIC console still uses old UART reg offset
-        # TODO: check if we need taskset -c
-        fpga_uart $((slot - 1))
+        term="/dev/ttyVul$((slot - 1))"
+        picocom -b 115200 $term
     fi
 else
     cpldutil -cpld-wr -addr=0x18 -data=0
