@@ -851,7 +851,7 @@ PRIVEK <ek.sk>"""
         else:
             print("=== DICE PROG FAILED ===")
 
-        return [ret, md5sum_cert]
+        return ret
 
     def cleanup (self):
         ret = 0
