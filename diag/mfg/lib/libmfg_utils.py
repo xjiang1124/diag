@@ -175,15 +175,15 @@ def file_exist(file_path):
 
 
 def fan_key(slot, base = 1):
-    return "FAN-{:d}".format(slot + base)
+    return "FAN-{:d}".format(int(slot) + base)
 
 
 def psu_key(slot, base = 1):
-    return "PSU-{:d}".format(slot + base)
+    return "PSU-{:d}".format(int(slot) + base)
 
 
 def nic_key(slot, base = 1):
-    return "NIC-{:02d}".format(slot + base)
+    return "NIC-{:02d}".format(int(slot) + base)
 
 
 def mtp_key(mtp, base = 1):

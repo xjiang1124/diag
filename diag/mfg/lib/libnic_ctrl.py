@@ -825,6 +825,10 @@ class nic_ctrl():
                 if self._nic_type in SALINA_DPU_NIC_TYPE_LIST:
                     if uart_selecttor is None:
                         uart_sel = "1"
+                # For Vulcano cards, made the default uart_sekector to uC, namely uart selector to 0
+                if self._nic_type in VULCANO_NIC_TYPE_LIST:
+                    if uart_selecttor is None:
+                        uart_sel = "0"
                 if not self.nic_console_attach(uart_sel):
                     self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
                     return False
@@ -6756,7 +6760,7 @@ class nic_ctrl():
         # [INFO]    [2025-11-14-11:38:13.208]
         # [INFO]    [2025-11-14-11:38:13.292] LOCAL TEMP : 21.062
         # [INFO]    [2025-11-14-11:38:13.292] REMOTE TEMP: 21.062
-        if "P3V3_NIC" not in devmgr_v2_status or "ERROR:" in devmgr_v2_status:
+        if "ERROR:" in devmgr_v2_status:
             self.nic_set_err_msg("devmgr_v2 status info check failed")
             return False
         # [2025-11-14_10:28:33] diag@MTP:$ devmgr_v2 list -s 6

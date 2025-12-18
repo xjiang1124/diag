@@ -556,7 +556,10 @@ class MFG_DIAG_CMDS:
     PANAREA_SUC_UTIL_OSFP_READ_SN = PANAREA_SUC_UTIL_RAW_CMD + ' -c "osfp serialnumber" '
     PANAREA_SUC_USB_TOOL = "/home/diag/usb/suc_usb_tool.py"
     PANAREA_SUC_CNS_PMCI_TEST_ALL = "cd /home/diag/cns-pmci; ./test_all.py"
-    PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc  --detach-usb-kernel-driver --allow-early-update-completion --usb {:s}:3 --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
+    #PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc  --detach-usb-kernel-driver --print-hdrs --print-msgs --allow-early-update-completion --usb {:s}:3 --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
+    # update uC image only
+    # PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --component-ids 1 --detach-usb-kernel-driver --print-hdrs --print-msgs --allow-early-update-completion --usb {:s}:3 --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
+    PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --component-ids 1 --detach-usb-kernel-driver --print-hdrs --print-msgs --allow-early-completion --usb {:s}:3 --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
 
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
