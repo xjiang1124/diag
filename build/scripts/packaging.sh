@@ -93,6 +93,7 @@ do
     mkdir -p $TEMP_DIR/scripts
     mkdir -p $TEMP_DIR/regression
     mkdir -p $TEMP_DIR/tools
+    mkdir -p $TEMP_DIR/drivers
     
     # Prepare files
     cd $TOP_DIR/diag/python/infra/config/
@@ -154,6 +155,10 @@ do
         cp -r $TOP_DIR/tools/barco/ $TEMP_DIR/tools/
         # Copy this for Taormina.  Need it in amd64 pkgt. Bringup doesn't pull in the arm64 pkg.  
         cp $TOP_DIR/tools/bin/arm64/stressapptest_arm           $TEMP_DIR/tools/
+        if [[ $asic == "vulcano" ]]
+        then
+            cp $TOP_DIR/diag/modules/fpga_tty_driver/fpga_uart.ko $TEMP_DIR/drivers/
+        fi
     elif [[ $arch == "arm" ]]
     then
         # nothing right now     

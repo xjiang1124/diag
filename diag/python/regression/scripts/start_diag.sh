@@ -101,6 +101,10 @@ then
         else
             /home/diag/diag/python/regression/envinit_panarea.py
         fi
+        if [[ $asic == "vulcano" ]]
+        then
+            insmod /home/diag/diag/drivers/fpga_uart.ko
+        fi
     else 
         /home/diag/diag/python/regression/envinit.py
     fi
