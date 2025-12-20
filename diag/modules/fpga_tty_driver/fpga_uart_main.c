@@ -158,6 +158,8 @@ static int fpga_uart_tty_open(struct tty_struct *tty, struct file *filep)
     readl(pdev->uart_status_reg);
     pdev->last_timestamp_us = 0UL;
     pdev->last_push_us = 0UL;
+    pdev->rx_bytes = 0;
+    smp_wmb();
     pdev->enabled = 1;
 
     return 0;
