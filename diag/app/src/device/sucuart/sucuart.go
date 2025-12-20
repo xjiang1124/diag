@@ -30,6 +30,13 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
     uut_uart_fpga := fmt.Sprintf("/dev/ttySuC%d", slot - 1)
     uut_uart := ""
 
+    uutName := "UUT_"+strconv.Itoa(slot)
+    cardType := os.Getenv(uutName)
+    if (cardType == "UUT_NONE") {
+        cli.Printf("i", "slot %d is empty\n", slot)
+        return nil, errType.FAIL
+    }
+
     _, err_o := os.Stat(uut_uart_acm)
     if err_o == nil {
         uut_uart = uut_uart_acm
