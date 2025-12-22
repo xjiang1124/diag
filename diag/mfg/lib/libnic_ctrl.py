@@ -6180,7 +6180,7 @@ class nic_ctrl():
                 self.nic_set_err_msg("Assign Board ID Command 'board_config -B' Failed")
                 return False
             # test string "Config successfully set" in command return buffer
-            if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
+            if "successfullyset" not in cmd_buf.replace(" ", "").lower():
                 self.nic_set_err_msg("Assign Board ID NOT Success")
                 self.nic_set_err_msg(cmd_buf)
                 return False
@@ -6261,7 +6261,7 @@ class nic_ctrl():
         cmd_buf = re.sub(r'\r', '', cmd_buf)
         cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
         # test string "Config successfully set" in command return buffer
-        if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
+        if "successfullyset" not in cmd_buf.replace(" ", "").lower():
             self.nic_set_err_msg("Zephyr Write Board ID NOT Success")
             self.nic_set_err_msg(cmd_buf)
             return False
@@ -6279,7 +6279,7 @@ class nic_ctrl():
             cmd_buf = re.sub(r'\r', '', cmd_buf)
             cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
             # test string "Config successfully set" in command return buffer
-            if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
+            if "successfullyset" not in cmd_buf.replace(" ", "").lower():
                 self.nic_set_err_msg("Zephyr Write Board PCI Subsystem ID NOT Success")
                 self.nic_set_err_msg(cmd_buf)
                 return False
