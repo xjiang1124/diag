@@ -15,6 +15,7 @@ import (
     "go.bug.st/serial"
     "github.com/gofrs/flock"
     "os/exec"
+    "device/fpga/panareafpga"
 )
 
 type SUCUARTHandle struct {
@@ -31,9 +32,10 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
     uut_uart := ""
 
     uutName := "UUT_"+strconv.Itoa(slot)
-    cardType := os.Getenv(uutName)
-    if (cardType == "UUT_NONE") {
-        cli.Printf("i", "slot %d is empty\n", slot)
+    present, _ := panareafpga.SLOTpresentUUT(uutName)
+    SlotPoweredOn, _ := panareafpga.SLOTpoweredOn(uutName);
+    if present != true || SlotPoweredOn != true {
+        cli.Printf("i", "slot %d is not present\n", slot)
         return nil, errType.FAIL
     }
 
