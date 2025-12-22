@@ -26,24 +26,27 @@ type SUCUARTHandle struct {
 func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
     var i int
     lock_path := fmt.Sprintf("/var/lock/sucuart%d.lock", slot)
-    uut_uart := fmt.Sprintf("/dev/SUCUART%d", slot)
+    uut_uart_acm := fmt.Sprintf("/dev/SUCUART%d", slot)
+    uut_uart_fpga := fmt.Sprintf("/dev/ttySuC%d", slot - 1)
+    uut_uart := ""
 
-    //wait for the /dev/sucuart device to come up
-    for i = 0; i < 20; i++ {
-        _, err_o := os.Stat(uut_uart)
-        if err_o != nil {
-            if os.IsNotExist(err_o) {
-                //cli.Printf("i", "error: %v", err_o)
-                time.Sleep(time.Duration(1) * time.Second)
-            } else {
-                cli.Printf("e", "failed to open SUCUART for slot %d: %v\n", slot, err_o)
-                return nil, errType.FAIL
-            }
-        } else {
-            break
+    uutName := "UUT_"+strconv.Itoa(slot)
+    cardType := os.Getenv(uutName)
+    if (cardType == "UUT_NONE") {
+        cli.Printf("i", "slot %d is empty\n", slot)
+        return nil, errType.FAIL
+    }
+
+    _, err_o := os.Stat(uut_uart_acm)
+    if err_o == nil {
+        uut_uart = uut_uart_acm
+    } else {
+        _, err_p := os.Stat(uut_uart_fpga)
+        if err_p == nil {
+            uut_uart = uut_uart_fpga
         }
     }
-    if i == 20 {
+    if uut_uart == "" {
         cli.Printf("e", "SUCUART not exist for slot %d\n", slot)
         return nil, errType.FAIL
     }
@@ -80,10 +83,10 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
     port, err_o := serial.Open(uut_uart, mode)
     if err_o != nil {
         fileLock.Unlock()
-        cli.Printf("e", "failed to open SUCUART for slot %d: %v", slot, err_o)
+        cli.Printf("e", "failed to open %s for slot %d: %v", uut_uart, slot, err_o)
         return nil, errType.FAIL
     }
-    port.SetReadTimeout(10 * time.Second)
+    port.SetReadTimeout(1 * time.Second)
     return &SUCUARTHandle{slot, port, fileLock}, errType.SUCCESS
 }
 
@@ -92,18 +95,35 @@ func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
         cli.Println("e", "SUCUART handle not initialized")
         return nil, errType.FAIL
     }
-
-    _, err_w := u.port.Write([]byte(cmd))
-    if err_w != nil {
-        cli.Println("e", "SUCUART write failed:", err_w)
-        return nil, errType.FAIL
+    wdata := []byte(cmd)
+    total := 0
+    retry_count := 0
+    for total < len(wdata) {
+        n, err_w := u.port.Write(wdata[total:])
+        if err_w != nil {
+            if err_w.Error() == "resource temporarily unavailable" {
+                if retry_count < 10 {
+                    time.Sleep(10 * time.Millisecond)
+                    retry_count++
+                    continue
+                } else {
+                    cli.Println("e", "SUCUART write failed after 10 retries: ", err_w)
+                }
+            } else {
+                cli.Println("e", "SUCUART write failed:", err_w)
+                return nil, errType.FAIL
+            }
+        } else {
+            total += n
+        }
     }
 
     reader := bufio.NewReader(u.port)
-    prompt := []byte("uart:~$")
+    prompt1 := []byte("uart:~$")
+    prompt2 := []byte("suc:~$")
     var result []byte
     read_count := 0
-    retry_count := 0
+    retry_count = 0
     for {
         read_count++
         // limit the number of read attempts
@@ -120,7 +140,7 @@ func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
             break
         }
         result = append(result, b)
-        if bytes.HasSuffix(result, prompt) {
+        if bytes.HasSuffix(result, prompt1) || bytes.HasSuffix(result, prompt2) {
             //right after power cycle, we might get prompt from UART before sending any commands
             if idx := bytes.Index(result, []byte(cmd)); idx != -1 {
                 break
