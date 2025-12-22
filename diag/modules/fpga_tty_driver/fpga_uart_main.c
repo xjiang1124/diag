@@ -3,12 +3,8 @@
 #include <linux/errno.h>
 #include <linux/string.h>
 #include <linux/moduleparam.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/mm.h>
 #include <linux/slab.h>
 #include <linux/io.h>
-#include <linux/device.h>
 #include <linux/uaccess.h>
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
@@ -19,6 +15,10 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/uaccess.h>
+#include <linux/kthread.h>
+#include <linux/delay.h>
+#include <linux/mutex.h>
+#include <linux/jiffies.h>
 #include "fpga_uart_device.h"
 
 #define FPGA_UART_POLL_INTERVAL 10000  // 10 us
@@ -27,6 +27,8 @@
 #define FPGA_UART_PORT_NUM  (20)
 
 #define FPGA_UART_RX_BUFFER_SIZE (1024)
+#define FPGA_UART_TX_BUFFER_SIZE (1024)
+
 typedef struct _fpga_uart_device_ {
     struct tty_port uart_port;
     struct device *uart_dev;
@@ -38,12 +40,18 @@ typedef struct _fpga_uart_device_ {
     unsigned int rxfifo_full;
     unsigned long tx_total_bytes;
     unsigned long rx_total_bytes;
-    unsigned long last_timestamp_us;
+    unsigned long rx_timestamp_us;
+    unsigned long tx_timestamp_s;
     unsigned int  violations;
     unsigned int __iomem* uart_rxdata_reg;
     unsigned int __iomem* uart_txdata_reg;
     unsigned int __iomem* uart_status_reg;
     unsigned int __iomem* uart_ctrl_reg;
+    struct mutex tx_lock;
+    char tx_buf[FPGA_UART_TX_BUFFER_SIZE];
+    int tx_write_ptr;
+    int tx_read_ptr;
+    int tx_full;
     int rx_bytes;
     char rx_buf[FPGA_UART_RX_BUFFER_SIZE];
     int rx_full;
@@ -51,6 +59,8 @@ typedef struct _fpga_uart_device_ {
 } fpga_uart_device_t;
 
 static struct hrtimer fpga_uart_timer;
+
+static struct task_struct *fpga_uart_tx_thread;
 
 static void __iomem *fpga_virt_ptr = NULL;
 static unsigned long fpga_phy_address = 0x10020300000UL;
@@ -71,29 +81,73 @@ static fpga_uart_device_t *port_to_fpga_uart_device(int port)
     return &(fpga_uart_dev_list[port]);
 }
 
+static int tx_ringbuf_is_empty(fpga_uart_device_t *pdev)
+{
+    if (pdev->tx_write_ptr == pdev->tx_read_ptr)
+        return 1;
+    return 0;
+}
+
+static int tx_ringbuf_is_full(fpga_uart_device_t *pdev)
+{
+    if (((pdev->tx_write_ptr + 1) % FPGA_UART_TX_BUFFER_SIZE) == pdev->tx_read_ptr)
+        return 1;
+    return 0;
+}
+
+static size_t tx_ringbuf_get_space(fpga_uart_device_t *pdev)
+{
+    // space in use: write_ptr - read_ptr, so
+    // (FPGA_UART_TX_BUFFER_SIZE - 1) - (write_ptr - read_ptr) availabe
+    if (pdev->tx_write_ptr >= pdev->tx_read_ptr)
+        return (FPGA_UART_TX_BUFFER_SIZE - 1) - (pdev->tx_write_ptr - pdev->tx_read_ptr);
+    // space in use: (FPGA_UART_TX_BUFFER_SIZE - read_ptr) + write_ptr, so
+    // (FPGA_UART_TX_BUFFER_SIZE - 1) - [((FPGA_UART_TX_BUFFER_SIZE - read_ptr) + write_ptr] available
+    // simplify: read_ptr - write_ptr - 1
+    else
+        return pdev->tx_read_ptr - pdev->tx_write_ptr - 1;
+}
+
+static void tx_ringbuf_enque(fpga_uart_device_t *pdev, char ch)
+{
+    pdev->tx_buf[pdev->tx_write_ptr] = ch;
+    pdev->tx_write_ptr = (pdev->tx_write_ptr + 1) % FPGA_UART_TX_BUFFER_SIZE;
+}
+
+static char tx_ringbuf_deque(fpga_uart_device_t *pdev)
+{
+    char ch = pdev->tx_buf[pdev->tx_read_ptr];
+    pdev->tx_read_ptr = (pdev->tx_read_ptr + 1) % FPGA_UART_TX_BUFFER_SIZE;
+    return ch;
+}
+
 /************************
 ** /proc entry related.**
 ************************/
 static int fpga_uart_stats_show(struct seq_file *m, void *v)
 {
     int port;
-    seq_printf(m, "%5s %8s %8s %8s %8s %8s %8s %8s %8s %8s %10s %10s\n",
+    seq_printf(m, "%5s %2s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %10s %10s %10s %10s\n",
                   "PORT:",
-                  "ENABLED",
+                  "EN",
                   "PARITY",
                   "FRAME",
                   "OVERRUN",
                   "TXFIFO",
                   "RXFIFO",
                   ">1388US",
-                  "BUF_FULL",
-                  "LAST_TS",
+                  "RX_FULL",
+                  "TX_W_PTR",
+                  "TX_R_PTR",
+                  "TX_FULL",
+                  "RX_TIMER",
+                  "TX_TIMER",
                   "TX_BYTES",
                   "RX_BYTES");
     for (port = 0; port < FPGA_UART_PORT_NUM; port++) {
         fpga_uart_device_t *pdev = port_to_fpga_uart_device(port);
         if (port < FPGA_UART_SLOT_NUM)
-            seq_printf(m, "Vul%d: %8d %8d %8d %8d %8d %8d %8d %8d %8ld %10ld %10ld\n",
+            seq_printf(m, "Vul%d: %2d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %10ld %10ld %10ld %10ld\n",
                           port,
                           pdev->enabled,
                           pdev->parity_error,
@@ -103,11 +157,15 @@ static int fpga_uart_stats_show(struct seq_file *m, void *v)
                           pdev->rxfifo_full,
                           pdev->violations,
                           pdev->rx_full,
-                          pdev->last_timestamp_us/1000000,
+                          pdev->tx_write_ptr,
+                          pdev->tx_read_ptr,
+                          pdev->tx_full,
+                          pdev->rx_timestamp_us/1000000,
+                          pdev->tx_timestamp_s,
                           pdev->tx_total_bytes,
                           pdev->rx_total_bytes);
         else
-            seq_printf(m, "SuC%d: %8d %8d %8d %8d %8d %8d %8d %8d %8ld %10ld %10ld\n",
+            seq_printf(m, "SuC%d: %2d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %10ld %10ld %10ld %10ld\n",
                           port-10,
                           pdev->enabled,
                           pdev->parity_error,
@@ -117,7 +175,11 @@ static int fpga_uart_stats_show(struct seq_file *m, void *v)
                           pdev->rxfifo_full,
                           pdev->violations,
                           pdev->rx_full,
-                          pdev->last_timestamp_us/1000000,
+                          pdev->tx_write_ptr,
+                          pdev->tx_read_ptr,
+                          pdev->tx_full,
+                          pdev->rx_timestamp_us/1000000,
+                          pdev->tx_timestamp_s,
                           pdev->tx_total_bytes,
                           pdev->rx_total_bytes);
     }
@@ -156,9 +218,11 @@ static int fpga_uart_tty_open(struct tty_struct *tty, struct file *filep)
     // Reset the UART FIFO.
     writel(UART_RESET_TXFIFO_BIT|UART_RESET_RXFIFO_BIT, pdev->uart_ctrl_reg);
     readl(pdev->uart_status_reg);
-    pdev->last_timestamp_us = 0UL;
+    pdev->rx_timestamp_us = 0UL;
     pdev->last_push_us = 0UL;
     pdev->rx_bytes = 0;
+    pdev->tx_read_ptr = 0;
+    pdev->tx_write_ptr = 0;
     smp_wmb();
     pdev->enabled = 1;
 
@@ -180,30 +244,32 @@ static void fpga_uart_tty_set_termios(struct tty_struct *tty, const struct kterm
 
 static unsigned int fpga_uart_tty_write_room(struct tty_struct *tty)
 {
-    return 65536;
+    int port = tty_to_uart_port(tty);
+    fpga_uart_device_t *pdev = port_to_fpga_uart_device(port);
+    unsigned int tx_space;
+
+    mutex_lock(&pdev->tx_lock);
+    tx_space = tx_ringbuf_get_space(pdev);
+    mutex_unlock(&pdev->tx_lock);
+
+    return tx_space;
 }
 
 static ssize_t fpga_uart_tty_write(struct tty_struct *tty, const unsigned char *buf, size_t count)
 {
     int port = tty_to_uart_port(tty);
     fpga_uart_device_t *pdev = port_to_fpga_uart_device(port);
-    unsigned int sts_val;
-    int tx_bytes;
+    size_t tx_bytes;
 
-    sts_val = readl(pdev->uart_status_reg);
-    // FIFO is full, notify user program to try again latter.
-    if (sts_val & UART_TXFIFO_FULL_BIT) {
-        pdev->txfifo_full ++;
-        return -EAGAIN;
-    }
+    mutex_lock(&pdev->tx_lock);
 
     tx_bytes = 0;
-    while (((sts_val & UART_TXFIFO_FULL_BIT) == 0) && (tx_bytes < count)) {
-        writel(buf[tx_bytes], pdev->uart_txdata_reg);
+    while ((tx_bytes < count) && (!tx_ringbuf_is_full(pdev))) {
+        tx_ringbuf_enque(pdev, buf[tx_bytes]);
         tx_bytes ++;
-        sts_val = readl(pdev->uart_status_reg);
     }
-    pdev->tx_total_bytes += tx_bytes;
+
+    mutex_unlock(&pdev->tx_lock);
 
     return tx_bytes;
 }
@@ -216,10 +282,51 @@ static const struct tty_operations fpga_uart_tty_ops = {
     .set_termios= fpga_uart_tty_set_termios,
 };
 
+/***********************************
+** kthread to send data to txfifo.**
+***********************************/
+static int fpga_uart_tx_callback(void *unused)
+{
+    int port;
+    fpga_uart_device_t *pdev;
+    unsigned int sts_val;
+    unsigned int tx_val;
+
+    while (!kthread_should_stop()) {
+        for (port = 0; port < FPGA_UART_PORT_NUM; port++) {
+            pdev = port_to_fpga_uart_device(port);
+            if (pdev->enabled == 0)
+                continue;
+
+            pdev->tx_timestamp_s = get_jiffies_64() / HZ;
+            sts_val = readl(pdev->uart_status_reg);
+            // FIFO is full, try again latter.
+            if (sts_val & UART_TXFIFO_FULL_BIT) {
+                pdev->txfifo_full ++;
+                continue;
+            }
+
+            mutex_lock(&pdev->tx_lock);
+
+            while ((!tx_ringbuf_is_empty(pdev)) && ((sts_val & UART_TXFIFO_FULL_BIT) == 0)) {
+                tx_val = (unsigned int)tx_ringbuf_deque(pdev);
+                writel(tx_val, pdev->uart_txdata_reg);
+                pdev->tx_total_bytes ++;
+                sts_val = readl(pdev->uart_status_reg);
+            }
+
+            mutex_unlock(&pdev->tx_lock);
+        }
+        usleep_range(800, 1000);
+    }
+
+    return 0;
+}
+
 /********************************
 ** hrtimer to poll uart rxfifo.**
 ********************************/
-static enum hrtimer_restart fpga_uart_timer_callback(struct hrtimer *t)
+static enum hrtimer_restart fpga_uart_rx_callback(struct hrtimer *t)
 {
     int port;
     unsigned long ts, delta_us;
@@ -233,11 +340,11 @@ static enum hrtimer_restart fpga_uart_timer_callback(struct hrtimer *t)
             continue;
 
         ts = ktime_to_us(ktime_get());  // timestamp in us
-        if (pdev->last_timestamp_us != 0UL)
-            delta_us = ts - pdev->last_timestamp_us;
+        if (pdev->rx_timestamp_us != 0UL)
+            delta_us = ts - pdev->rx_timestamp_us;
         else
             delta_us = 0UL;
-        pdev->last_timestamp_us = ts;
+        pdev->rx_timestamp_us = ts;
         // There is 16-bytes fifo in FPGA, assuming speed is 115200 and 8-N-1 format(1 bit start, 8 bit data, 1 bit stop):
         // 1000000/(115200/10)*16 = 1388.888888888889
         // So if delta_us > 1388, there is possibility to lose data.
@@ -301,6 +408,11 @@ static int __init fpga_uart_init(void)
     int port;
     unsigned long uart_base_addr;
     fpga_uart_device_t *pdev;
+
+    for (port = 0; port < FPGA_UART_PORT_NUM; port++) {
+        pdev = port_to_fpga_uart_device(port);
+        mutex_init(&(pdev->tx_lock));
+    }
 
     fpga_virt_ptr = ioremap(fpga_phy_address, fpga_mem_size);
     if (fpga_virt_ptr == NULL) {
@@ -414,8 +526,11 @@ static int __init fpga_uart_init(void)
     pr_info("FPGA UART proc entry is created.\n");
 
     // Initialize the timer
-    hrtimer_setup(&fpga_uart_timer, fpga_uart_timer_callback, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+    hrtimer_setup(&fpga_uart_timer, fpga_uart_rx_callback, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
     hrtimer_start(&fpga_uart_timer, ktime_set(0, FPGA_UART_POLL_INTERVAL), HRTIMER_MODE_REL);
+
+    // Start the kernel thread for tx
+    fpga_uart_tx_thread = kthread_run(fpga_uart_tx_callback, NULL, "fpga_uart_tx");
 
     pr_info("FPGA UART driver loaded\n");
     return 0;
@@ -455,6 +570,8 @@ static void __exit fpga_uart_exit(void)
 {
     int port;
     fpga_uart_device_t *pdev;
+
+    kthread_stop(fpga_uart_tx_thread);
 
     hrtimer_cancel(&fpga_uart_timer);
 
