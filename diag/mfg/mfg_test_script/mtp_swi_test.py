@@ -534,6 +534,7 @@ def main():
         if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
 
             # power cycle all nic
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ESEC_UNLOCK")
