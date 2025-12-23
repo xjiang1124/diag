@@ -43,6 +43,7 @@ const (
     ID_LINGUA          = 0x67
     ID_GELSOP          = 0x68
     ID_GELSOX          = 0x69
+    ID_GELSOB          = 0x6A    //Gelso with no OSP.  Has bullseye connector for testing
     ID_MORTARO         = 0x70
     ID_SARACENO        = 0x71
     ID_TAORMINA_ELBA   = 0x80    //PENSANDO+HPE SWITCH

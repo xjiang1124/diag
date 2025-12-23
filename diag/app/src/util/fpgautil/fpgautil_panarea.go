@@ -19,6 +19,8 @@ const errhelpPanarea = "\nfpgautil:\n" +
         "\n" + 
         "fpgautil show fan/psu\n" +
         "\n" +
+         "fpgautil i2c help  << Display i2c debug commands in the CLI >>\n" +
+        "\n" +
         "fpgautil flash help  << Display debug commands in the CLI >>\n" +
         "fpgautil flash program/verify/generate <primary/secondary/allflash> <filename>\n" +
         "\n"
@@ -29,6 +31,7 @@ func panarea_fpga_cli() {
     var data32 uint32
     var data64, addr uint64
     var err error
+    var i int
 
     argc := len(os.Args[0:])
 
@@ -88,6 +91,163 @@ func panarea_fpga_cli() {
         } else {
             fmt.Printf("ERROR: show argv[2] is incorrect.  You entered '%s'  Please check the help\n", os.Args[2])
             os.Exit(-1)
+        }
+    //
+    //I2C Debug commands
+    //
+    } else if os.Args[1] == "i2c" {
+        wrData := []byte{}
+        rdData := []byte{}
+        var rdSize uint32 = 0
+        const helpI2C = "fpgautil i2c bus mux i2c_addr w byte0 [byte1. . . byteN] r len   -- write/read\n" +
+                        "fpgautil i2c bus mux i2c_addr r len                              -- read\n" +
+                        "fpgautil i2c bus mux i2c_addr w byte0 [byte1 . . . byteN]        -- write\n" +
+                        "fpgautil i2c bus mux scan\n" +
+                        "fpgautil i2c debug enable/disable\n" 
+
+        if os.Args[2][0] == 'h' || os.Args[2][0] == 'H' {
+            fmt.Printf("\n %s \n", helpI2C)
+            return
+        }
+        if os.Args[3] == "reset" {
+            bus, err := strconv.ParseUint(os.Args[2], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            freq, _ := strconv.ParseUint(os.Args[4], 0, 32)
+            fmt.Printf(" Resetting Bus %d.  pre-scaler low=%d\n", int(bus), freq)
+            panareafpga.I2cResetController2(int(bus), uint8(freq))
+            return
+        }
+        if argc == 4 {
+            if os.Args[3][0] == 'd' {
+                panareafpga.WriteU32(panareafpga.FPGA_SCRATCH_3_REG, 0x00)
+            } else if os.Args[3][0] == 'e' {
+                panareafpga.WriteU32(panareafpga.FPGA_SCRATCH_3_REG, 0xDEBDEB99)
+            } else {
+                fmt.Printf(" %s \n", helpI2C)
+            }
+            return
+        }
+        if argc == 5 {   //scan
+            matrix := make([]byte, 128)
+            bus, err := strconv.ParseUint(os.Args[2], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            mux, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            panareafpga.ExecutingScanChain = 1
+            for i:=3; i<0x80; i++ {
+                rdData, err = panareafpga.I2c_access( uint32(bus), uint32(mux), uint32(i), 0x00, wrData, 1 )
+                if err == nil {
+                    matrix[i] = byte(i)
+                } else {
+                    matrix[i] = 0x99
+                }
+            }
+            panareafpga.ExecutingScanChain = 0
+            fmt.Printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f")
+            for i:=0; i<0x80; i++ {
+                if (i%0x10)==0 { fmt.Printf("\n%.02x:", i) }
+                if matrix[i] == 0 { fmt.Printf("   ") 
+                } else if matrix[i] == 0x99 { fmt.Printf(" --") 
+                } else { fmt.Printf(" %.02x", matrix[i]) }
+            }
+            fmt.Printf("\n")
+            return
+        }
+        if argc < 6 {
+            fmt.Printf(" ERROR: Not Enough ARGS!!\n")
+            fmt.Printf(" %s \n", helpI2C)
+            return
+        }
+        bus, err := strconv.ParseUint(os.Args[2], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+        mux, err := strconv.ParseUint(os.Args[3], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+        i2cAddr, err := strconv.ParseUint(os.Args[4], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+
+        if os.Args[5] == "b" || os.Args[5] == "b" {
+            fmt.Printf(" Attempting to wipe secure key from the eeprom\n")
+            wrData = append(wrData, 0xFF)
+            for i:=0x100;i<0x1000;i++ {
+                fmt.Printf(".")
+                rdData, err = panareafpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), uint32(len(wrData)), wrData, 0 )
+                if err != nil {
+                    os.Exit(-1)
+                }
+            }
+            os.Exit(0)
+        }
+        if os.Args[5] == "w" || os.Args[5] == "W" {
+            for i=6; i<argc; i++ {
+                if os.Args[i] == "r" || os.Args[i] == "R" {
+                    rdLength, err := strconv.ParseUint(os.Args[i+1], 0, 32)
+                    if err != nil {
+                        fmt.Printf(" Args[%d] ParseUint is showing ERR = %v.   Exiting Program\n", i+1,  err); return
+                    }
+                    rdSize = uint32(rdLength)
+                    rdData, err = panareafpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), uint32(len(wrData)), wrData, rdSize )
+                    if err == nil {
+                        if err == nil {
+                            fmt.Printf("\nWR: ")
+                            for i=0;i<len(wrData);i++ {
+                                fmt.Printf("0x%02x ", wrData[i])
+                            }
+                        }
+                        fmt.Printf("\nRD: ")
+                        for j:=0; j<len(rdData); j++ {
+                            fmt.Printf("0x%.02x ", rdData[j])
+                        }
+                        fmt.Printf("\n")
+                        return
+                    } else {
+                        os.Exit(-1)
+                    }
+                } else {
+                    dataArg, err := strconv.ParseUint(os.Args[i], 0, 32)
+                    if err != nil {
+                        fmt.Printf(" Args[%d] ParseUint is showing ERR = %v.   Exiting Program\n", i, err); return
+                    }
+                    wrData = append(wrData, byte(dataArg))
+                }
+            }
+
+            rdData, err = panareafpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), uint32(len(wrData)), wrData, rdSize )
+            if err == nil {
+                fmt.Printf("\nWR: ")
+                for i=0;i<len(wrData);i++ {
+                    fmt.Printf("0x%02x ", wrData[i])
+                }
+                fmt.Printf("\n")
+            } else {
+                os.Exit(-1)
+            }
+        } else {       //read only
+            rdLength, err := strconv.ParseUint(os.Args[6], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[6] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            rdData, err = panareafpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), 0x00, wrData, uint32(rdLength) )
+            if err == nil {
+                fmt.Printf("\nRD: ")
+                for j:=0; j<len(rdData); j++ {
+                    fmt.Printf("0x%.02x ", rdData[j])
+                }
+                fmt.Printf("\n")
+            } else {
+                os.Exit(-1)
+            }
         }
     //
     //FPGA Local Flash commands 
