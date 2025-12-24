@@ -1709,10 +1709,18 @@ class nic_test_v2:
             cmd = "i2cget -y {} 0x4a 0x2".format(int(args.slot) + 2)
             cmdret, output = common.session_cmd_w_ot(session, cmd)
             uart_session = common.session_start()
-            ret = self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
-            if ret != 0:
+            cmdret = self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
+            if cmdret != 0:
                 print("=== FAILED to connect")
-                return ret
+                return cmdret
+            if card_type == "LENI48G" or card_type == "LENI":
+                # required for port 1
+                cmd = "debug port update qsfp port1 --simulate remove"
+                cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, ending="uart:~\$")
+                # required for port 0
+                cmd = "debug port update qsfp port2 --simulate remove"
+                cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, ending="uart:~\$")
+                time.sleep(2)
             for eeprom_address in (
                 "0x80",
                 "0x90",
