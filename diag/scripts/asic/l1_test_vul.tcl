@@ -35,6 +35,8 @@ set env(LD_LIBRARY_PATH) "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:${::env(LD_LIBRA
 set MTP_TYPE $::env(MTP_TYPE)
 set ASIC_TYPE $::env(ASIC_TYPE)
 set ::VEL_SHELL 0
+set ::ts_present 0
+set ::reset_cpu 0
 
 source /home/diag/diag/scripts/asic/asic_tests.tcl
 
