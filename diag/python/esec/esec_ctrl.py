@@ -731,8 +731,14 @@ PRIVEK <ek.sk>"""
         except pexpect.TIMEOUT:
             print("--- Synced ---")
 
+        # diable linkmgr debug output so we can have a clean dice_dump_cert output.
+        self.nic_con.uart_session_cmd(session, "debug linkmgr trace --level none", 30, expstr)
+
         self.nic_con.uart_session_cmd(session, "dice_dump_cert", 30, expstr)
         src_str = session.before
+
+        # restore linkmgr debug level.
+        self.nic_con.uart_session_cmd(session, "debug linkmgr trace --level info", 30, expstr)
 
         self.nic_con.uart_session_stop(session)
 
