@@ -6263,6 +6263,7 @@ class nic_ctrl():
         cmd_buf = self.nic_get_cmd_buf()
         cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
         cmd_buf = re.sub(r'\r', '', cmd_buf)
+        cmd_buf = re.sub(r'Boot success set\n+', '', cmd_buf)
         cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
         # test string "Config successfully set" in command return buffer
         if "successfullyset" not in cmd_buf.replace(" ", "").lower():
@@ -6281,6 +6282,7 @@ class nic_ctrl():
             cmd_buf = self.nic_get_cmd_buf()
             cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
             cmd_buf = re.sub(r'\r', '', cmd_buf)
+            cmd_buf = re.sub(r'Boot success set\n+', '', cmd_buf)
             cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
             # test string "Config successfully set" in command return buffer
             if "successfullyset" not in cmd_buf.replace(" ", "").lower():
