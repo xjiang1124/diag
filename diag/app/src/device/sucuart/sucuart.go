@@ -52,15 +52,6 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
         cli.Printf("e", "SUCUART not exist for slot %d\n", slot)
         return nil, errType.FAIL
     }
-    //check that the /dev/sucuart device is not already opened.
-    //Strange things can happen otherwise including the code getting stuck.
-    cmdStr := fmt.Sprintf("lsof %s\n", uut_uart)
-    output , _ := exec.Command("sh", "-c", cmdStr).Output()
-    if len(output) != 0 {
-        cli.Printf("e","Another process has console device %s open.  This process cannot open it", uut_uart)
-        err = errType.FAIL
-        return
-    }
 
     fileLock := flock.New(lock_path)
     for i = 0; i < 1000; i++ {
@@ -75,6 +66,17 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
     }
     if i == 1000 {
         return nil, errType.FAIL
+    }
+
+    //check that the /dev/sucuart device is not already opened (for example, by con_connect.sh).
+    //Strange things can happen otherwise including the code getting stuck.
+    cmdStr := fmt.Sprintf("lsof %s\n", uut_uart)
+    output , _ := exec.Command("sh", "-c", cmdStr).Output()
+    if len(output) != 0 {
+        fileLock.Unlock()
+        cli.Printf("e","Another process has console device %s open.  This process cannot open it", uut_uart)
+        err = errType.FAIL
+        return
     }
 
     mode := &serial.Mode{
