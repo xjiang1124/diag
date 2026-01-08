@@ -452,7 +452,10 @@ class nic_test_v2:
         if ret != 0:
             return ret
         try:
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd showparams", ending="uart:~\$")
             self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd collect_linkeval 0xf", ending="uart:~\$")
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd dump_linkeval", ending="uart:~\$")
         except pexpect.TIMEOUT:
             print ("Faied to dump pcie trace")
             return -1
@@ -497,6 +500,8 @@ class nic_test_v2:
         try:
             self.nic_con.uart_session_cmd(uart_session, "pcieawd showparams", ending="uart:~\$")
             self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd collect_linkeval 0xf", ending="uart:~\$")
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd dump_linkeval", ending="uart:~\$")
         except pexpect.TIMEOUT:
             print ("Faied to dump pcie trace")
             return -1
