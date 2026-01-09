@@ -1727,7 +1727,7 @@ class nic_test_v2:
                 cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, ending="uart:~\$")
                 time.sleep(2)
             for eeprom_address in (
-                "0x80",
+                "0x00",
                 "0x90",
                 "0xa0",
                 "0xb0",

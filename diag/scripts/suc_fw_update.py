@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import sys
 import time
 import argparse
@@ -27,55 +28,32 @@ def tail_fast(filename, n=50):
     except Exception as Err:
         return Err
 
-def slot2_sn_bus_devid(slot=None):
+def slot2_sn(slot=None, kernel=None):
     '''
     mapping slot to serial
     '''
 
     if slot is None:
         return None
+    if kernel is None:
+        return None
+
+    sn_content_file = f'/sys/bus/usb/devices/{kernel}/serial'
 
     # check usb uart device present
-    link = f'/dev/SUCUART{slot}'
-    if not os.path.exists(link):
-        print(f'{link} not exist')
+    if not os.path.exists(sn_content_file):
+        print(f'{sn_content_file} not exist')
         return False
 
     try:
-        CompletedProcess = subprocess.run(["udevadm", "info", "-q", "path", "-n", link], text=True, capture_output=True)
-        cmd = ' '.join(CompletedProcess.args)
-        rc = CompletedProcess.returncode
-        cmdout = CompletedProcess.stdout
-        cmderr = CompletedProcess.stderr
-    except subprocess.SubprocessError as Err:
+        with open(sn_content_file, 'r', encoding="utf-8", errors="replace") as f:
+            content = f.read().strip()
+    except Exception as Err:
+        print(f"Failed to open {sn_content_file}")
         print(Err)
-        print(cmd)
-        print(cmdout)
-        print(cmderr)
         return False
-    # print(cmd)
-    # print(cmdout)
-    # print(cmderr)
-    if rc != 0:
-        return False
-
-    iface_dir = f"/sys{cmdout.rsplit('/tty/', 1)[0]}"
-    dev_dir = os.path.dirname(iface_dir)
-    rc = []
-
-    for name in ("serial", "busnum", "devnum"):
-        file_name = os.path.join(dev_dir, name)
-        try:
-            with open(file_name, 'r', encoding="utf-8", errors="replace") as f:
-                content = f.read().strip()
-        except Exception as Err:
-            print(f"Failed to open {file_name}")
-            print(Err)
-            return False
-        rc.append(content)
-    # print(f'Slot {slot} USB Serial {rc[0]}')
-
-    return tuple(rc)
+    print(f'Slot {slot} USB Serial {content}')
+    return content
 
 def zephyr_console_mon(slot, monitor_time=60):
     '''
@@ -122,23 +100,25 @@ def zephyr_console_mon(slot, monitor_time=60):
 
     return rc
 
-def pldm_program(slot,  component_ids=None, image=None, debug=False, signature="Test case PldmFwUpdateSingleFDUpdateFlow has PASSED"):
+def pldm_program(slot,  component_ids=None, kernel=None, image=None, debug=False, signature="Test case PldmFwUpdateSingleFDUpdateFlow has PASSED"):
     '''
     program uC firmware
     '''
 
     interface = 3
+    cns_home = '/home/diag/cns-pmci'
     logfile=f'suc_pldm_program_slot{slot}_log.log'
-    utility = '/home/diag/cns-pmci/test_all.py'
-    get_sn = slot2_sn_bus_devid(slot)
-    if not get_sn:
+    utility = f'{cns_home}/test_all.py'
+    sn = slot2_sn(slot, kernel)
+    if not sn:
         return False, logfile
 
-    sn = get_sn[0]
     # util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}:{interface}', '--print-hdrs', '--print-msgs', '-vvv',  '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
     # util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}:{interface}', '--detach-usb-kernel-driver', '--allow-early-update-completion', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
     # util_args = ['--board-type', 'AinicSuc', '--component-ids', '1', '--usb', f'{sn}:{interface}', '--detach-usb-kernel-driver', '--allow-early-update-completion', '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
-    util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}:{interface}', '--detach-usb-kernel-driver', '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
+    # util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}:{interface}', '--detach-usb-kernel-driver', '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
+    # util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}', '--detach-usb-kernel-driver', '--override-fd-descriptors', '/home/diag/cns-pmci/board/gelso.json', '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
+    util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}', '--detach-usb-kernel-driver', '--allow-early-update-completion',  '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
     if component_ids:
         util_args += ['--component-ids', component_ids]
     if debug:
@@ -181,7 +161,7 @@ def main():
         return False
 
     components = [str(c_id) for c_id in args.component_ids]
-    console_monitor_time = 35 + len(components) * 15 if components else 300
+    console_monitor_time = 35 + len(components) * 15 if components else 60
     component_ids = ""
     if components:
         component_ids = " ".join(components)
@@ -198,10 +178,27 @@ def main():
 
     slots = list(set([str(slot) for slot in args.slot]))
     slots.sort()
+
+    slot2kernels = {}
+    suc_uart_rules = "/etc/udev/rules.d/99-suc-uart.rules"
+    try:
+        with open(suc_uart_rules, "r") as rules_file:
+            for line in rules_file:
+                match = re.findall(r'SUBSYSTEM=="tty",\s*KERNELS=="(\d-\d)",\s*SYMLINK\+="SUCUART(\d{1,2})"', line)
+                if match:
+                    slot2kernels[match[0][1]] = match[0][0]
+    except Exception as Err:
+        print(Err)
+        return False
+    else:
+        if len(slot2kernels) != 10:
+            print(F"Suc uart rules file {suc_uart_rules} may corrupted")
+            return False
+
     # power on given slots if nessarary
     need_wait = False
     for slot in slots:
-        if os.path.exists(f'/dev/SUCUART{slot}'):
+        if os.path.exists(f'/sys/bus/usb/devices/{slot2kernels[slot]}/serial'):
             continue
         need_wait = True
         try:
@@ -232,7 +229,7 @@ def main():
     passed_slots = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=2*len(slots)) as executor:
         future_to_slot_task = {executor.submit(zephyr_console_mon, slot, console_monitor_time): (slot, f'{slot}_monitor_process') for slot in slots}
-        future_to_slot_task.update({executor.submit(pldm_program, slot, component_ids, imagefile, debug): (slot, f'{slot}_program_process') for slot in slots})
+        future_to_slot_task.update({executor.submit(pldm_program, slot, component_ids, slot2kernels[slot], imagefile, debug): (slot, f'{slot}_program_process') for slot in slots})
         for future  in concurrent.futures.as_completed(future_to_slot_task):
             slot, process_name = future_to_slot_task[future]
             try:

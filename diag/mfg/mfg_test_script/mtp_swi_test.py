@@ -14,6 +14,7 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
+from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
@@ -223,6 +224,17 @@ def swi_verify_board_id(mtp_mgmt_ctrl, slot):
     pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
     return mtp_mgmt_ctrl.mtp_nic_assign_board_id(slot, pn, verifyOnly=True)
 
+@parallelize.parallel_nic_using_ssh
+def swi_uc_img_program(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_SWI
+    uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_microcontroller_sw_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_SW_IMAGE_PROG
+    return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, uc_img_file)
+
+@parallelize.parallel_nic_using_ssh
+def swi_uc_boot_check(mtp_mgmt_ctrl, slot):
+    return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_boot_check(slot)
+
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
 
@@ -375,7 +387,12 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_validate_sku_dpn_match(nic_list)
             elif test == "VERIFY_BOARD_ID":
                 rlist = swi_verify_board_id(mtp_mgmt_ctrl, nic_list)
-
+            elif test == "uC_SW_IMG_PROG":
+                rlist = swi_uc_img_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "uC_BOOTING_CHK":
+                rlist = swi_uc_boot_check(mtp_mgmt_ctrl, nic_list)
+            elif test == "uC_VERSION_CHK":
+                rlist = mtp_mgmt_ctrl.mtp_nic_suc_version_read_check(nic_list, stage=FF_Stage.FF_SWI)
             elif test == "CPLD_PROG":
                 rlist = swi_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "FSAFE_CPLD_PROG":
@@ -530,7 +547,11 @@ def main():
             return rlist
 
         dsp = FF_Stage.FF_SWI
-
+        if "SCAN_VERIFY" in args.skip_test:
+            # only for QA, fake the scans
+            run_swi_test(pass_nic_list, "FAKE_SCAN_VERIFY")
+        else:
+            fru_reprogram_list = run_swi_test(pass_nic_list, "SCAN_VERIFY")
         if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             # power cycle all nic
@@ -542,18 +563,6 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "HMAC_PROG_CATE", stage=dsp)
             # run_swi_test(hmac_prog_slots, "SEC_KEY_VAL_UDS_CATE", stage=dsp)
             run_swi_test(list(set(pass_nic_list) - set(val_cert_pass_slots)), "CLEAR_PRE_UBOOT_SECTION")
-            # run_swi_test(pass_nic_list, "CONSOLE_BOOT")
-            # run_swi_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
-
-            if "SCAN_VERIFY" in args.skip_test:
-                # only for QA, fake the scans
-                run_swi_test(pass_nic_list, "FAKE_SCAN_VERIFY")
-            else:
-                # pass
-                fru_reprogram_list = run_swi_test(pass_nic_list, "SCAN_VERIFY")
-                # # for ortano-ti PN update from C0->C1, need to program C1 field in FRU
-                # run_swi_test(fru_reprogram_list, "FRU_PROG")
-                # run_swi_test(fru_reprogram_list, "NIC_FRU_INIT")
 
             # record ocp adapter fru
             run_swi_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_FRU_SN")
@@ -565,52 +574,21 @@ def main():
             # Before programming, check that scanned SKU is valid for this card
             run_swi_test(sku_fru_prog_list, "SKU_VALIDATE")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "FRU_PROG")
-            # run_swi_test(sku_fru_prog_list, "NIC_FRU_INIT")
 
             for slot in pass_nic_list:
                 swi_display_program_matrix(mtp_mgmt_ctrl, slot)
 
-            # run_swi_test(pass_nic_list, "NIC_POWER")
             run_swi_test(pass_nic_list, "NIC_PRSNT")
             run_swi_test(pass_nic_list, "NIC_INIT")
-            # run_swi_test(pass_nic_list, "NIC_DIAG_BOOT")
 
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG", secure_img=False)
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 
-            # fpga_type_list = get_slots_of_type(FPGA_TYPE_LIST)
-            # run_swi_test(fpga_type_list, "FPGA_PROG")
-            # run_swi_test(fpga_type_list, "FPGA_PROG_VERIFY")
-            # cpld_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2])
-            # run_swi_test(cpld_type_list, "CPLD_PROG")
-            # fsafe_cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
-            # run_swi_test(fsafe_cpld_type_list, "FSAFE_CPLD_PROG")
-            # refresh_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.NAPLES25OCP])
-            # run_swi_test(refresh_type_list, "CPLD_REF")
-
-            # non_capri_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CAPRI_NIC_TYPE_LIST)
-            # run_swi_test(non_capri_type_list, "DISABLE_ESEC_WP")
-            # # Powercycle and also fix diag.exe as needed for elba's efuse script
-            # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
             run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) - set(val_cert_pass_slots)), "NIC_INIT")
             run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) - set(val_cert_pass_slots)), "EFUSE_PROG")
             run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) - set(val_cert_pass_slots)), "SEC_KEY_PROG")
             run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) - set(val_cert_pass_slots)), "DUMP_BOOT_BIN")
-            # run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux")
-            # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
-            # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
-            # run_swi_test(pass_nic_list, "NIC_INIT")
-            # sec_cpld_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2, NIC_Type.ORTANO2ADIMSFT])
-            # run_swi_test(sec_cpld_type_list, "SEC_CPLD_PROG")
-            # sec_ref_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2, NIC_Type.ORTANO2ADIMSFT, NIC_Type.NAPLES25OCP])
-            # run_swi_test(sec_ref_type_list, "SEC_CPLD_REF")
-            # cpld_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST) # cant power up fpga only in 3.3v
-            # run_swi_test(cpld_type_list, "SEC_PROG_VERIFY")
-            # non_capri_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CAPRI_NIC_TYPE_LIST)
-            # run_swi_test(non_capri_type_list, "ENABLE_ESEC_WP")
-
-            # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
 
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_PROG", secure_img=False)
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
@@ -619,17 +597,6 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR")
 
-            # run_swi_test(pass_nic_list, "NIC_INIT")
-            # run_swi_test(pass_nic_list, "SEC_CPLD_VERIFY")
-            # run_swi_test(pass_nic_list, "COPY_GOLD")
-            # adiibm_type_list = get_slots_of_type(NIC_Type.ORTANO2ADIIBM)
-            # run_swi_test(adiibm_type_list, "COPY_CERT")
-            # # program sw image onto EMMC
-            # mainfw_type_list = get_slots_of_type(MAINFW_TYPE_LIST)
-            # run_swi_test(mainfw_type_list, "SW_INSTALL")
-            ###################################################################################################################
-            # If installing mainfw using sysupdate from goldfw it will always only flash mainfwa by default
-            # boot from mainfwa, then re-run sysupdate, it will program mainfwb
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PARA_MGMT_INIT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_BOOT_INIT")
@@ -653,33 +620,7 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFWA")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_A_BOOT")
-            # cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
-            # run_swi_test(cpld_type_list, "COMPARE_CPLD")
-            # run_swi_test(cpld_type_list, "COMPARE_FAILSAFE_CPLD")
-            # # program goldfw package copied earlier
-            # run_swi_test(pass_nic_list, "GOLDFW_PROG")
-            # run_swi_test(pass_nic_list, "NIC_PWRCYC")
-            # run_swi_test(pass_nic_list, "GOLDFW_BOOT")
-            # # if "GOLDFW_BOOT" not in args.skip_test:
-            # #     run_swi_test(pass_nic_list, "NIC_PWRCYC")
-            # adiibm_type_list = get_slots_of_type(NIC_Type.ORTANO2ADIIBM)
-            # run_swi_test(adiibm_type_list, "BOARD_CONFIG_CERT", cert_img_file=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cert_img["68-0028"])
-            # secure_boot_type_list = get_slots_of_type(ELBA_NIC_TYPE_LIST)
-            # run_swi_test(secure_boot_type_list, "SEC_BOOT_VERIFY")
-            # sw_cfg_type_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
-            # run_swi_test(sw_cfg_type_list, "CFG_VERIFY")
-            # fpga_type_list = get_slots_of_type(FPGA_TYPE_LIST)
-            # run_swi_test(fpga_type_list, "SET_EXTDIAGFW")
-            # mainfw_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_CIS])
-            # run_swi_test(mainfw_type_list, "SET_MAINFW")
-            # run_swi_test(pass_nic_list, "SW_CLEANUP")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_CLEANUP")
-            # run_swi_test(pass_nic_list, "NIC_PWRCYC")
-            # libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
-            # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG", secure_img=False)
-            # run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="linux")
-            # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
-
             cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_swi_test(cpld_list, "UMF1_CFG0_CPLD_PROG")
             fsafe_cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
@@ -696,28 +637,23 @@ def main():
 
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_ERASE_PCIEAWD_ENV")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "I2C_DUMP")
-            # # Verify the NIC Software boot
-            # mainfw_boot_type_list = get_slots_of_type(MAINFW_TYPE_LIST)
-            # run_swi_test(mainfw_type_list, "SW_BOOT")
-            # netapp_type_list = get_slots_of_type(NIC_Type.NAPLES100)
-            # run_swi_test(netapp_type_list, "SW_MGMT_INIT")
-            # run_swi_test(netapp_type_list, "CONF_VERIFY")
-            # run_swi_test(netapp_type_list, "SW_PROFILE", nic_profile="netapp_nic_profile.py")
-            # adimsft_type_list = get_slots_of_type([NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICRMSFT])
-            # run_swi_test(adimsft_type_list, "SW_MODE_SWITCH")
-            # run_swi_test(adimsft_type_list, "SW_MODE_SWITCH_VERIFY")
-            # run_swi_test(adimsft_type_list, "SW_BOOT") # again
-            # monterey_type_list = get_slots_of_type(FPGA_TYPE_LIST)
-            # run_swi_test(monterey_type_list, "EXTDIAG_BOOT_SMODE")
-            # run_swi_test(monterey_type_list, "EXTDIAG_BOOT")
-            # run_swi_test(monterey_type_list, "KEYS_CHECK")
-            # fw_boot_type_list = get_slots_of_type(MAINFW_TYPE_LIST + CTO_MODEL_TYPE_LIST)
-            # run_swi_test(fw_boot_type_list, "SW_SHUTDOWN")
-            # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SW_SHUTDOWN")
-
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+            run_swi_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
+            run_swi_test(pass_nic_list, "NIC_TYPE")
+            run_swi_test(pass_nic_list, "NIC_INIT")
+            # run_swi_test(pass_nic_list, "FRU_PROG")
+            # run_swi_test(pass_nic_list, "NIC_PWRCYC")
+            # run_swi_test(pass_nic_list, "CPLD_PROG")
+            # run_swi_test(pass_nic_list, "CPLD_REF")
+            # run_swi_test(pass_nic_list, "NIC_PWRCYC")
+            # run_swi_test(pass_nic_list, "CPLD_VERIFY")
+            # run_swi_test(pass_nic_list, "FSAFE_CPLD_PROG")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
-
+            run_swi_test(pass_nic_list, "uC_SW_IMG_PROG")
+            run_swi_test(pass_nic_list, "uC_BOOTING_CHK")
+            # run_swi_test(pass_nic_list, "VULCANO_BOOTING_CHK")
+            run_swi_test(pass_nic_list, "uC_VERSION_CHK")
+            # run_swi_test(pass_nic_list, "VULVANO_VERSION_CHK")
 
         else:
             # power cycle all nic
@@ -727,14 +663,9 @@ def main():
             run_swi_test(pass_nic_list, "CONSOLE_BOOT")
             run_swi_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
 
-            if "SCAN_VERIFY" in args.skip_test:
-                # only for QA, fake the scans
-                run_swi_test(pass_nic_list, "FAKE_SCAN_VERIFY")
-            else:
-                fru_reprogram_list = run_swi_test(pass_nic_list, "SCAN_VERIFY")
-                # for ortano-ti PN update from C0->C1, need to program C1 field in FRU
-                run_swi_test(fru_reprogram_list, "FRU_PROG")
-                run_swi_test(fru_reprogram_list, "NIC_FRU_INIT")
+            # for ortano-ti PN update from C0->C1, need to program C1 field in FRU
+            run_swi_test(fru_reprogram_list, "FRU_PROG")
+            run_swi_test(fru_reprogram_list, "NIC_FRU_INIT")
 
             # Reprogram FRU with final SKU
             sku_fru_prog_list = get_slots_of_type(CTO_MODEL_TYPE_LIST)
