@@ -35,7 +35,7 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
     present, _ := panareafpga.SLOTpresentUUT(uutName)
     SlotPoweredOn, _ := panareafpga.SLOTpoweredOn(uutName);
     if present != true || SlotPoweredOn != true {
-        cli.Printf("i", "slot %d is not present\n", slot)
+        cli.Printf("i", "slot %d is not present. Present: %v, PowerOn: %v\n", slot, present, SlotPoweredOn)
         return nil, errType.FAIL
     }
 
