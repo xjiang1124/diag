@@ -1296,8 +1296,22 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = GelsopMtpTbl
     } else if uutType == "MORTARO" {
         CurI2cTbl = MontaroMtpTbl
-} else if uutType == "SARACENO" {
+    } else if uutType == "SARACENO" {
         CurI2cTbl = SaracenoMtpTbl
+        //Saraceno production SuC image moved the eeprom to 0x50.  Probe and see if it's at 0x50 and udpate the table if it is
+        //get the slot number
+        strLength := len(uutName)
+        slot, _ := strconv.ParseUint(uutName[4:strLength], 0, 32)
+        //see if device 0x50 is there
+        cmdStr := fmt.Sprintf("i2cdetect -y -a %d | grep -w \"50 \"", slot+2)
+        output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            fmt.Printf("Cmd %s failed! %v", cmdStr, errGo)
+        } 
+        if len(output) > 0 {
+            fmt.Printf("Switching Slot-%d Saracneo I2C address to 0x50\n", slot);
+            CurI2cTbl[0].DevAddr = 0x50
+        }
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM
