@@ -500,7 +500,7 @@ class MFG_DIAG_CMDS:
     NIC_L1_ESEC_PROG_FMT = "tclsh ./esec_l1_prog_elba.tcl -slot {:d}"
     NIC_L1_ESEC_GIGLIO_PROG_FMT = "tclsh ./esec_l1_prog_giglio.tcl -slot {:d}"
     NIC_MATERA_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s} -joo {:s} -i {:s} -o {:s} -e {:s} -s {:s} -ite {:s} -lt {:s}"
-    NIC_PANAREA_RUN_ASIC_L1_FMT = "./run_l1_vul.sh -sn {:s} -slot {:d} -v {:s} -i {:s} -e {:s} -ite {:s}"
+    NIC_PANAREA_RUN_ASIC_L1_FMT = "./run_l1_vul.sh -sn {:s} -slot {:d} -v {:s} -i {:s} -ite {:s}"
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s} {:s}"
@@ -544,6 +544,7 @@ class MFG_DIAG_CMDS:
     SUC_ZEPHYR_CPLD_PROG_BUF = "cpld prog_buf {:s}"
     SUC_ZEPHYR_CPLD_REFRESH = "cpld refresh"
     SUC_ZEPHYR_HWINFO_DEVID = "hwinfo devid"
+    SUC_ZEPHYR_VERSION = "version"
     SUC_ZEPHYR_FRU_WRITE = "fru write"                                                   # Write FRU data to cache at a starting address
     SUC_ZEPHYR_FRU_SAVE = "fru save"                                                     # Update FRU cache to partition. Only performable once after booting
     SUC_ZEPHYR_PARTITION_READ = "partition read"                                         # read - Read partition <dev_id> <part_id> <offset> <len>
@@ -556,10 +557,8 @@ class MFG_DIAG_CMDS:
     PANAREA_SUC_UTIL_OSFP_READ_SN = PANAREA_SUC_UTIL_RAW_CMD + ' -c "osfp serialnumber" '
     PANAREA_SUC_USB_TOOL = "/home/diag/usb/suc_usb_tool.py"
     PANAREA_SUC_CNS_PMCI_TEST_ALL = "cd /home/diag/cns-pmci; ./test_all.py"
-    #PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc  --detach-usb-kernel-driver --print-hdrs --print-msgs --allow-early-update-completion --usb {:s}:3 --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
-    # update uC image only
-    # PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --component-ids 1 --detach-usb-kernel-driver --print-hdrs --print-msgs --allow-early-update-completion --usb {:s}:3 --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
-    PANAREA_SUC_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --component-ids 1 --detach-usb-kernel-driver --print-hdrs --print-msgs --allow-early-completion --usb {:s}:3 --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
+    PANAREA_SUC_DIAG_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --component-ids 1 --detach-usb-kernel-driver --print-hdrs --print-msgs --allow-early-update-completion --usb {:s} --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
+    PANAREA_SUC_SW_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --detach-usb-kernel-driver --print-hdrs --print-msgs --allow-early-update-completion --usb {:s} --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
 
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"

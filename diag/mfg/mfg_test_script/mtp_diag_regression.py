@@ -1310,7 +1310,7 @@ def main():
                     l1_setup_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_test(l1_setup_list, "L1_SETUP")
 
-                    l1_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
+                    l1_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST+VULCANO_NIC_TYPE_LIST)
                     for slot in l1_type_list[:]:
                         if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                             l1_type_list.remove(slot)
@@ -1320,6 +1320,14 @@ def main():
                     run_regression_test(salina_ainic_type_list, "L1", "ASIC", l1_sequence=l1_sequence, ddr='0')
                     salina_type_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_regression_test(salina_type_list, "L1_OW", "ASIC", l1_sequence=l1_sequence, joo='0', ddr='0', offload='1')
+
+                    # Vulcano L1 Test
+                    # Vulcano ./run_l1_vul.sh -v option takes three values nom|high|low
+                    vulcano_type_list = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
+                    if vulcano_type_list:
+                        vul_vmarg = 'nom' if vmarg == 'normal' else vmarg
+                        vmarg = vul_vmarg
+                    run_regression_test(vulcano_type_list, "L1", "ASIC",l1_sequence=l1_sequence, ddr='0')
 
                     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Complete\n".format(nic_type), level=0)
 
@@ -1487,17 +1495,24 @@ def main():
                     # run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
 
                 elif test_section == "VULCANO_SNAKE_SECTION":
-
-                    # run snake test
-                    vulcano_snake_slots = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
-                    # if p2c using internal loopback, set int_lpbk to 1, if 4c using external lookback, set int_lpbk to 0
-                    lpbk_type = 1 if stage in (FF_Stage.FF_P2C,  FF_Stage.FF_2C_H, FF_Stage.FF_2C_L) else 0
-                    nvmarg = 'nom' if vmarg == 'normal' else vmarg
-                    run_regression_test(vulcano_snake_slots, "VULCANO_SNAKE", snake_num=4, vmarg=nvmarg, dura=60, int_lpbk=lpbk_type, timeout=3600)
+                    # so asic not support external loopback, if run internal loopback, it's same as L1, so comment out first
+                    # # run snake test
+                    # run_test(get_slots_of_type(VULCANO_NIC_TYPE_LIST), "NIC_PWRCYC")
+                    # vulcano_snake_slots = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
+                    # # if p2c using internal loopback, set int_lpbk to 1, if 4c using external lookback, set int_lpbk to 0
+                    # # lpbk_type = 1 if stage in (FF_Stage.FF_P2C,  FF_Stage.FF_2C_H, FF_Stage.FF_2C_L) else 0
+                    # lpbk_type = 0
+                    # nvmarg = 'nom' if vmarg == 'normal' else vmarg
+                    # run_regression_test(vulcano_snake_slots, "VULCANO_SNAKE", snake_num=4, vmarg=nvmarg, dura=60, int_lpbk=lpbk_type, timeout=3600)
 
                     # run PCIE PRBS
+                    run_test(get_slots_of_type(VULCANO_NIC_TYPE_LIST), "NIC_PWRCYC")
                     pcie_prbs_list = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
                     run_regression_test(pcie_prbs_list, "VULCANO_PCIE_PRBS", vmarg=vmarg)
+                    # # run PCIE PRBS
+                    # run_regression_test(pcie_prbs_list, "VULCANO_PCIE_PRBS_4CHAMBER", margin_code="")
+                    # run_regression_test(pcie_prbs_list, "VULCANO_PCIE_PRBS_4CHAMBER", margin_code="1")
+                    # run_regression_test(pcie_prbs_list, "VULCANO_PCIE_PRBS_4CHAMBER", margin_code="2")
 
                 # print temperature after the test
                 if GLB_CFG_MFG_TEST_MODE:

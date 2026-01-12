@@ -40,6 +40,7 @@ class nic_ctrl():
         self._diag_util_ver = None
         self._diag_asic_ver = None
         self._cpld_ver = None
+        self._cpld_ver_min = None
         self._cpld_id = None
         self._cpld_timestamp = None
         self._sn = None
@@ -5121,6 +5122,7 @@ class nic_ctrl():
                     return False
             self._cpld_id = "0x{:X}".format(int(parsed_dump['40'], 16))
             self._cpld_ver = "0x{:X}".format(int(parsed_dump['00'], 16))
+            self._cpld_ver_min = "0x{:X}".format(int(parsed_dump['01'], 16))
             date_time = []
             for register in timestamp_registers:
                 date_time.append("{:02X}".format(int(parsed_dump[register], 16)))
@@ -5230,7 +5232,7 @@ class nic_ctrl():
         if not self._cpld_ver or not self._cpld_timestamp or not self._cpld_id:
             return None
         else:
-            return [self._cpld_ver, self._cpld_timestamp, self._cpld_id]
+            return [self._cpld_ver, self._cpld_timestamp, self._cpld_id, self._cpld_ver_min]
 
 
     def nic_get_diag(self):
@@ -6519,6 +6521,59 @@ class nic_ctrl():
         devid = match[0]
         return devid
 
+    def uc_zephyr_version_check(self, nic_type=None, board_id=None, expected_suc_timestamp=None, cpld_ver=None):
+        """
+        execute suc zephyr shell version command, verify the board ID, board name, Suc Build time and CPLD version 
+        command example:
+            uart:~$ version
+            Board ID: 0x05700002
+            SuC build type: Mortaro P1
+            SuC build time: 2025-12-22 10:14:59
+            SuC panel: A
+            SUC_BOOT: 0.0.1+dummy
+            SUC_RUNTIME: 0.2.6+commit.304312b46127
+            SOC_CFGFPGA: 1.2
+        """
+
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_VERSION
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr version Command '{:s}' Failed".format(cmd))
+            return False
+
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        current_board_id = ""
+        current_board_name = ""
+        current_suc_build_time = ""
+        current_cpld_ver = ""
+        for line in sanitized_cmd_buf.splitlines():
+            if "Board ID" in line:
+                current_board_id = line.split(":")[1].strip()
+            if "SuC build type" in line:
+                current_board_name = line.split(":")[1].strip()
+            if "SuC build time" in line:
+                current_suc_build_time = line.split("time:")[1].strip()
+            if "SOC_CFGFPGA" in line:
+                current_cpld_ver = line.split(":")[1].strip()
+
+        if board_id:
+            if board_id.lower() not in current_board_id.lower():
+                self.nic_set_err_msg("Board ID:{:s} not in version command output {:s}".format(board_id, sanitized_cmd_buf))
+                return False
+        if expected_suc_timestamp:
+            if expected_suc_timestamp.lower() not in current_suc_build_time.lower():
+                self.nic_set_err_msg("Suc version timestamp:{:s} not in version command output {:s}".format(expected_suc_timestamp, sanitized_cmd_buf))
+                return False
+        if cpld_ver:
+            if cpld_ver.lower() not in current_cpld_ver.lower():
+                self.nic_set_err_msg("CPLD version:{:s} not in version command output {:s}".format(cpld_ver, sanitized_cmd_buf))
+                return False
+        if nic_type:
+            if nic_type.lower() not in current_board_name.lower():
+                self.nic_set_err_msg("Board Name:{:s} not in version command output {:s}".format(nic_type, sanitized_cmd_buf))
+                return False
+        return True
+
     def uc_zephyr_fru_boardid_program(self, date, sn, mac, pn, nic_type, dpn, sku, boardid):
         """
         uart:~$ fru
@@ -6529,32 +6584,7 @@ class nic_ctrl():
                     E.g
                     fru write 75 string XXXYYWW0000
                     E.g
-                fru write 146 hex 123456
 
-            save   : Update FRU cache to partition. Only performable once after booting.
-            uart:~$ fru write 75 string GELSOPSN001
-            At address: 75
-            String to write:
-            "GELSOPSN001"
-            Hex to write:
-            0x47 0x45 0x4c 0x53 0x4f 0x50 0x53 0x4e 0x30 0x30 0x31
-            Write completed
-            uart:~$ fru write 143 hex 049081268B79
-            At address: 143
-            String to write:
-            "049081268B79"
-            Hex to write:
-            0x04 0x90 0x81 0x26 0x8b 0x79
-            Write completed
-            uart:~$ fru write 132 hex 05710001
-            At address: 132
-            String to write:
-            "05710001"
-            Hex to write:
-            0x05 0x71 0x00 0x01
-            Write completed
-            uart:~$ fru save
-            Partition write completed
         """
 
         fru_write_cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_FRU_WRITE
@@ -6662,7 +6692,7 @@ class nic_ctrl():
 
         return serial, busnum, devnum
 
-    def uc_image_program(self, uc_img):
+    def uc_image_program(self, cmd_format, uc_img):
         """
         Get usb device iserial according to self._slot, which mapping to device /dev/SUCUART(self._slot+1).
         For the usb device interface, so far we hardcode 3 here, unless uC firmware change it in the future
@@ -6688,7 +6718,7 @@ class nic_ctrl():
         device_iSerial = device_iSerial[0]
 
         # program uC with MTCP
-        cmd = MFG_DIAG_CMDS().PANAREA_SUC_IMAGE_PROG.format(device_iSerial, uc_img)
+        cmd = cmd_format.format(device_iSerial, uc_img)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             self.nic_set_err_msg("Program uC image Command '{:s}' Failed".format(cmd))
             return False

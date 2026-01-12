@@ -7595,6 +7595,50 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_console
+    def mtp_nic_suc_version_read_check(self, slot, stage=None):
+        """
+        execute suc zephyr shell version command, verify the board ID, board name, Suc Build time and CPLD version
+        command example:
+            uart:~$ version
+            Board ID: 0x05700002
+            SuC build type: Mortaro P1
+            SuC build time: 2025-12-22 10:14:59
+            SuC panel: A
+            SUC_BOOT: 0.0.1+dummy
+            SUC_RUNTIME: 0.2.6+commit.304312b46127
+            SOC_CFGFPGA: 1.2
+        """
+
+        nic_type = self.mtp_get_nic_type(slot)
+        partNumber = self.get_scanned_pn(slot)
+        if partNumber is None:
+            self.cli_log_slot_err_lock(slot, "Part Number Not set to MTP ctrl instance")
+            return False
+        partNumberIn6Digits = "-".join(partNumber.split('-')[0:2]) if "-" in partNumber[0:6] else partNumber[0:6]
+
+        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        if not nic_cpld_info:
+            self.cli_log_slot_err_lock(slot, "Failed to retrieve CPLD ID info")
+            return False
+        cpldId = nic_cpld_info[2]
+        (boardId, pciSubSysId) = PN_CPLD2BOARDID_PCI_SUBSYS_ID.get((partNumberIn6Digits, cpldId), (None, None))
+        if stage == FF_Stage.FF_SWI:
+            sku = self.get_scanned_sku(slot)
+            (boardId, pciSubSysId) = SKU2BOARDID_PCI_SUBSYS_ID.get(sku, (None, None))
+        expected_suc_timestamp = image_control.get_microcontroller_diag_img(self, slot, stage)["timestamp"]
+        expected_suc_timestamp = image_control.get_microcontroller_diag_img(self, slot, stage)["timestamp"]
+        if stage == FF_Stage.FF_SWI:
+            expected_suc_timestamp = image_control.get_microcontroller_sw_img(self, slot, stage)["timestamp"]
+            expected_suc_timestamp = image_control.get_microcontroller_sw_img(self, slot, stage)["timestamp"]
+        cpld_ver = f'{int(nic_cpld_info[0], 16)}.{int(nic_cpld_info[3], 16)}'
+        if not self._nic_ctrl_list[slot].uc_zephyr_version_check(nic_type, boardId, expected_suc_timestamp, cpld_ver):
+            self.cli_log_slot_err_lock(slot, "Suc Zephyr Version Check Failed")
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_console
     def mtp_nic_zephyr_debug_update_firmware(self, slot, bootfw='mainfwa', bootfw_verify=True):
         """
             update - Update commands
@@ -7824,7 +7868,7 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_nic_uc_image_program(self, slot, uc_img_file):
+    def mtp_nic_uc_image_program(self, slot, cmd_format, uc_img_file):
         """
         lsusb
         lsusb -v -d 0438:0001
@@ -7832,7 +7876,7 @@ class mtp_ctrl():
         ./test_all.py --board-type AinicSuc --usb B4A7BA2756444B028820F0E180B0F82E:3 --print-hdrs --print-msgs -vvv --util pldmfwpkg=/home/diag/two_comp_gelso_v0_1_0_0.pldm --test-cases PldmFwUpdateSingleFDUpdateFlow
         """
 
-        if not self._nic_ctrl_list[slot].uc_image_program(uc_img_file):
+        if not self._nic_ctrl_list[slot].uc_image_program(cmd_format, uc_img_file):
             self.cli_log_slot_err_lock(slot, "Program uC image Failed")
             self.mtp_get_nic_err_msg(slot)
             return False

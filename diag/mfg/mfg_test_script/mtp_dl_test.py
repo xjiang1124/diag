@@ -13,6 +13,7 @@ from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_SIG
+from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
@@ -199,8 +200,9 @@ def dl_osfp_sn_read(mtp_mgmt_ctrl, slot):
 @parallelize.parallel_nic_using_ssh
 def dl_uc_img_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
-    uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_microcontroller_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
-    return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, uc_img_file)
+    uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_microcontroller_diag_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_DIAG_IMAGE_PROG
+    return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, uc_img_file)
 
 @parallelize.parallel_nic_using_ssh
 def dl_uc_boot_check(mtp_mgmt_ctrl, slot):
@@ -548,7 +550,7 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_erase_board_config_ssh(nic_list)
             elif test == "BOARD_CONFIG":
                 rlist = mtp_mgmt_ctrl.mtp_nic_board_config(nic_list)
-            elif test == "uC_IMG_PROG":
+            elif test == "uC_DIAG_IMG_PROG":
                 rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list)
             elif test == "I2C_DEVICE_SCREENING":
                 rlist = mtp_mgmt_ctrl.mtp_nic_i2c_device_screening(nic_list)
@@ -761,31 +763,23 @@ def main():
             run_dl_test(pass_nic_list, "NIC_INIT")
             run_dl_test(pass_nic_list, "uC_BOOTING_CHK")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            run_dl_test(pass_nic_list, "FRU_PROG")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_PROG")
             run_dl_test(pass_nic_list, "CPLD_REF")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_VERIFY")
             run_dl_test(pass_nic_list, "FSAFE_CPLD_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
-            run_dl_test(pass_nic_list, "uC_IMG_PROG")
+            run_dl_test(pass_nic_list, "uC_DIAG_IMG_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "I2C_DEVICE_SCREENING")
             run_dl_test(pass_nic_list, "VUL_SUC_I2C_DEVICE_TEST")
             run_dl_test(pass_nic_list, "OSFP_SN_READ_TEST")
-            run_dl_test(pass_nic_list, "NIC_PWRCYC")
-            run_dl_test(pass_nic_list, "FRU_PROG")
-
         else:
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
-
-            if not args.scandl:
-                if "SCAN_VERIFY" in args.skip_test:
-                    # only for QA, fake the scans
-                    run_dl_test(pass_nic_list, "FAKE_SCAN_VERIFY")
-                else:
-                    run_dl_test(pass_nic_list, "SCAN_VERIFY")
 
             # validate the DPN is allowed for this PN
             dpn_test_nic_list = get_slots_of_type(CTO_MODEL_TYPE_LIST)
