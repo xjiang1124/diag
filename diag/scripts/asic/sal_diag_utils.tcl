@@ -107,7 +107,7 @@ proc set_pollara_frequency {{arm_freq "none"}} {
     }
     plog_msg "set_pollara_frequency :: running with repairs"; sal_jtag_smsg_ctrl_saferr
     sal_j2c
-    reset_to_proto_mode warm_rot
+    reset_to_proto_mode warm_rot_proto
 }
 
 proc cpld_disable_wdt {} {
@@ -138,7 +138,7 @@ proc reset_to_proto_mode {{reset "cold"}} {
         sal_irstn_no_arm warm_rot
         clear_resetcode 0x12
     } elseif { $reset == "warm_rot_proto" } {
-        sal_irstn_no_arm warm_rot
+        sal_irstn_no_arm warm_rot_proto
         clear_resetcode 0x12
     } elseif { $reset == "cold" } {
         sal_irstn_no_arm cold
