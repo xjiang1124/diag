@@ -1945,16 +1945,16 @@ class nic_test_v2:
         ret = self.sal_boot_with_i2cfix(args)
 
         cmd = "cd ~/diag/scripts/asic; ./run_l1.sh -ite 1 -m hod"
-        cmd += f" -sn {args.sn}"
-        cmd += f" -slot {args.slot}"
-        cmd += f" -joo {args.joo}"
-        cmd += f" -s {args.simplified}"
-        cmd += f" -i {args.int_lpbk}"
-        cmd += f" -v {args.vmarg}"
-        cmd += f" -e {args.esec}"
-        cmd += f" -lt {args.prbslt}"
-        cmd +=  " -hc 0"
-        cmd += f" -ddr {args.ddr}"
+        cmd += " -sn {}".format(args.sn)
+        cmd += " -slot {}".format(args.slot)
+        cmd += " -joo {}".format(args.joo)
+        cmd += " -s {}".format(args.simplified)
+        cmd += " -i {}".format(args.int_lpbk)
+        cmd += " -v {}".format(args.vmarg)
+        cmd += " -e {}".format(args.esec)
+        cmd += " -lt {}".format(args.prbslt)
+        cmd += " -hc 0"
+        cmd += " -ddr {}".format(args.ddr_test)
         session = common.session_start()
         ret = common.session_cmd_pass(session, cmd, pass_sign="L1 TEST ", timeout=600)
         common.session_stop(session)
@@ -1963,8 +1963,8 @@ class nic_test_v2:
     def sal_i2cacc_func(self, args):
         ret = self.sal_boot_with_i2cfix(args)
         cmd = "cd ~/diag/scripts/asic; tclsh sal_i2c_access.tcl"
-        cmd += f" -slot {args.slot}"
-        cmd += f" -vmarg {args.vmarg}"
+        cmd += " -slot {}".format(args.slot)
+        cmd += " -vmarg {}".format(args.vmarg)
         session = common.session_start()
         ret = common.session_cmd(session, cmd, timeout=30*60)
         common.session_stop(session)
@@ -1975,17 +1975,17 @@ class nic_test_v2:
             ret = self.sal_boot_with_i2cfix(args)
 
         cmd = "cd ~/diag/scripts/asic; tclsh jtag_screen.tcl"
-        cmd += f" -slot {args.slot}"
+        cmd += " -slot {}".format(args.slot)
         if args.sn:
-            cmd += f" -sn {args.sn}"
+            cmd += " -sn {}".format(args.sn)
         if args.vmarg:
-            cmd += f" -vmarg {args.vmarg}"
+            cmd += " -vmarg {}".format(args.vmarg)
         if args.tcl_path:
-            cmd += f" -tcl_path {args.tcl_path}"
+            cmd += " -tcl_path {}".format(args.tcl_path)
         if args.reset:
-            cmd += f" -reset {args.reset}"
+            cmd += " -reset {}".format(args.reset)
         if args.test_list:
-            cmd += f" -test_list {args.test_list}"
+            cmd += " -test_list {}".format(args.test_list)
         session = common.session_start()
         ret = common.session_cmd(session, cmd, timeout=5*60)
         common.session_stop(session)
