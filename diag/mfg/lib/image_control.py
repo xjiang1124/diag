@@ -325,16 +325,16 @@ def get_suc_diag_img(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, suc_diag_img)
     return {
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_diag_img, nic_type),
-    "timestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_diag_img_suc_date, nic_type)
+    "timestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_diagimg_suc_date, nic_type)
     }
 
 def get_suc_sw_img(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, suc_sw_img)
     return {
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_sw_img, nic_type),
-    "soctimestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_sw_img_soc_date, nic_type),
-    "socver": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_sw_img_soc_ver, nic_type),
-    "suctimestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_sw_img_suc_date, nic_type)
+    "soctimestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_swimg_soc_date, nic_type),
+    "socver": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_swimg_soc_ver, nic_type),
+    "suctimestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_swimg_suc_date, nic_type)
     }
 
 def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
