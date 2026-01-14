@@ -1919,9 +1919,75 @@ class nic_test_v2:
         common.session_cmd(session, cmd)
         return ret
 
+    def sal_boot_with_i2cfix(self, args):
+        """ Load I2C fix from uboot. Powercycle into uboot, then continue j2c test """
+        ret = 0
+        card_type = self.nic_con.get_card_type(args.slot)
+        session = common.session_start()
+        if sal_con.enter_a35_uboot(int(args.slot), session):
+            print("===== FAILED: slot {} couldn't boot a35 uboot".format(args.slot))
+            return -1
+        print("\nDisable WDT")
+        cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(args.slot) + 2)
+        common.session_cmd(session, cmd)
+        cmd = "i2cget -y {} 0x4f 0x1".format(int(args.slot)+2)
+        common.session_cmd(session, cmd)
+        common.session_stop(session)
+        return ret
+
     def sal_vmarg_func(self, args):
         session = common.session_start()
         ret = self.sal_boot_to_vmarg(session, args)
+        common.session_stop(session)
+        return ret
+
+    def sal_l1_func(self, args):
+        ret = self.sal_boot_with_i2cfix(args)
+
+        cmd = "cd ~/diag/scripts/asic; ./run_l1.sh -ite 1 -m hod"
+        cmd += f" -sn {args.sn}"
+        cmd += f" -slot {args.slot}"
+        cmd += f" -joo {args.joo}"
+        cmd += f" -s {args.simplified}"
+        cmd += f" -i {args.int_lpbk}"
+        cmd += f" -v {args.vmarg}"
+        cmd += f" -e {args.esec}"
+        cmd += f" -lt {args.prbslt}"
+        cmd +=  " -hc 0"
+        cmd += f" -ddr {args.ddr}"
+        session = common.session_start()
+        ret = common.session_cmd_pass(session, cmd, pass_sign="L1 TEST ", timeout=600)
+        common.session_stop(session)
+        return ret
+
+    def sal_i2cacc_func(self, args):
+        ret = self.sal_boot_with_i2cfix(args)
+        cmd = "cd ~/diag/scripts/asic; tclsh sal_i2c_access.tcl"
+        cmd += f" -slot {args.slot}"
+        cmd += f" -vmarg {args.vmarg}"
+        session = common.session_start()
+        ret = common.session_cmd(session, cmd, timeout=30*60)
+        common.session_stop(session)
+        return ret
+
+    def sal_mbist_func(self, args):
+        if args.reset != "warm":
+            ret = self.sal_boot_with_i2cfix(args)
+
+        cmd = "cd ~/diag/scripts/asic; tclsh jtag_screen.tcl"
+        cmd += f" -slot {args.slot}"
+        if args.sn:
+            cmd += f" -sn {args.sn}"
+        if args.vmarg:
+            cmd += f" -vmarg {args.vmarg}"
+        if args.tcl_path:
+            cmd += f" -tcl_path {args.tcl_path}"
+        if args.reset:
+            cmd += f" -reset {args.reset}"
+        if args.test_list:
+            cmd += f" -test_list {args.test_list}"
+        session = common.session_start()
+        ret = common.session_cmd(session, cmd, timeout=5*60)
         common.session_stop(session)
         return ret
 
@@ -2324,6 +2390,36 @@ if __name__ == "__main__":
     group_sal_vmarg.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
     parser_sal_vmarg.add_argument("-new_memory_layout", "--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
     parser_sal_vmarg.set_defaults(func=test.sal_vmarg_func)
+
+    # L1 test
+    parser_sal_l1 = sal_misc_subp.add_parser('l1', help='L1 Test Wrapper', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_l1.add_argument("-slot",          "--slot",              help="NIC slot", type=str, required=True)
+    parser_sal_l1.add_argument("-tcl_path",      "--tcl_path",          help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_sal_l1.add_argument("-sn",            "--sn",                help="SN", type=str, default="SN01")
+    parser_sal_l1.add_argument("-joo",           "--joo",               help="J2C or OW; J2C; 1: OW: 0; default: 1", type=str, default="1")
+    parser_sal_l1.add_argument("-simplified",    "--simplified","-s",   help="0: simplified test disabled; 1: simlified test enabled; default: 0", type=str, default="0")
+    parser_sal_l1.add_argument("-int_lpbk",      "--int_lpbk",  "-i",   help="0: external loopback; 1 internal loopback; default: 0", type=str, default="0")
+    parser_sal_l1.add_argument("-vmarg",         "--vmarg",     "-v",   help="Voltage margin: normal/low/high; default: normal", type=str, default="normal")
+    parser_sal_l1.add_argument("-esec",          "--esec",      "-e",   help="0: esecure test disabled; 1: esecure test enabled; default: 1", type=str, default="1")
+    parser_sal_l1.add_argument("-ddr_test",      "--ddr_test",  "-ddr", help="0: DDR test skipped; 1: DDR test enabled", type=str, default="0")
+    parser_sal_l1.add_argument("-prbslt",        "--prbslt",    "-lt",  help="0: PRBS link training off; 1: PRBS link training on", type=str, default="0")
+    parser_sal_l1.set_defaults(func=test.sal_l1_func)
+
+    # I2C test
+    parser_sal_i2cacc = sal_misc_subp.add_parser('i2cacc', help='I2C Test Wrapper', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_i2cacc.add_argument("-slot",          "--slot",       help="NIC slot", type=str, required=True)
+    parser_sal_i2cacc.add_argument("-vmarg",         "--vmarg",      help="vmarg", type=str, default='normal')
+    parser_sal_i2cacc.set_defaults(func=test.sal_i2cacc_func)
+
+    # MBIST
+    parser_sal_mbist = sal_misc_subp.add_parser('mbist', help='MBIST Test Wrapper', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_mbist.add_argument("-slot",          "--slot",       help="NIC slot", type=str, required=True)
+    parser_sal_mbist.add_argument("-tcl_path",      "--tcl_path",   help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_sal_mbist.add_argument("-vmarg",         "--vmarg",      help="vmarg", type=str, default='normal')
+    parser_sal_mbist.add_argument("-sn",            "--sn",         help="NIC SN", type=str, default="SN01")
+    parser_sal_mbist.add_argument("-reset",         "--reset",      help="Reset (warm/cold)", type=str, default="cold")
+    parser_sal_mbist.add_argument("-test_list",     "--test_list",  help="Run only some tests, e.g. ALGO22. default: MBIST", type=str, default="")
+    parser_sal_mbist.set_defaults(func=test.sal_mbist_func)
 
     try:
         args = parser.parse_args()
