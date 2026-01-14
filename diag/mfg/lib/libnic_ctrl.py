@@ -21,6 +21,7 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
+from libdefs import FF_Stage
 
 from libmfg_cfg import *
 from libsku_utils import *
@@ -35,6 +36,8 @@ class nic_ctrl():
         self._nic_missed_fa = False
         self._nic_con_prompt = "# "
         self._nic_con_zephyr_prompt = "uart:~$ "
+        self._nic_con_suc_prompt = "suc:~$ "
+        self._nic_con_vulcano_prompt = "vulcano:~$ "
 
         self._diag_ver = None
         self._diag_util_ver = None
@@ -678,12 +681,20 @@ class nic_ctrl():
         if self._mtp_type == MTP_TYPE.PANAREA:
             if str(uart_selecttor) == "1":
                 cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_FPGA_UART_FMT.format(str(self._slot))
+            elif str(uart_selecttor) == "2":
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_VULCANO_UART_FMT.format(str(self._slot))
             else:
                 cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot + 1))
             self._nic_handle.sendline(cmd)
             idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
             # Check if there is still got picocom process running
-            self._nic_handle.sendline(MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT.format(str(self._slot + 1)))
+            if str(uart_selecttor) == "1":
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_SOC_FMT.format(str(self._slot))
+            elif str(uart_selecttor) == "2":
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_VULCANO_FMT.format(str(self._slot))
+            else:
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT.format(str(self._slot + 1))
+            self._nic_handle.sendline(cmd)
             idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
         elif self._mtp_type == MTP_TYPE.MATERA:
             cmd = MFG_DIAG_CMDS().MATERA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot))
@@ -716,10 +727,10 @@ class nic_ctrl():
         if self._nic_type == NIC_Type.FORIO or self._nic_type == NIC_Type.VOMERO:
             self._nic_handle.sendline("")
 
-        exp_list = [self._nic_con_prompt, "login:", "assword:", self._nic_con_zephyr_prompt]
+        exp_list = [self._nic_con_prompt, "login:", "assword:", self._nic_con_zephyr_prompt,  self._nic_con_suc_prompt,  self._nic_con_vulcano_prompt]
         while True:
             idx = libmfg_utils.mfg_expect(self._nic_handle, exp_list, timeout=MTP_Const.NIC_CON_INIT_DELAY)
-            if idx == 0 or idx == 3:
+            if idx in [0, 3, 4, 5]:
                 break
             elif idx == 1:
                 self._nic_handle.sendline(NIC_MGMT_USERNAME)
@@ -732,10 +743,23 @@ class nic_ctrl():
                 self.nic_set_err_msg("Timeout connecting to UART console")
                 self.nic_console_detach()
                 return False
-        # # if zephyr, skip time sync, and make sure no extra zephyr_prompt
-        if str(uart_selecttor) == "0":
+        # for Salina, we still need sync time for leni, only skip zephyr console
+        if self._mtp_type in [MTP_TYPE.MATERA]:
+            if str(uart_selecttor) == "0":
+                while True:
+                    idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt, self._nic_con_zephyr_prompt], timeout=3)
+                    if idx == 0:
+                        break
+                    elif idx == 1:
+                        continue
+                    else:
+                        break
+                return True
+
+        # for vulcano, skip sync time for all no matter the uart selector
+        if self._mtp_type in [MTP_TYPE.PANAREA]:
             while True:
-                idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt, self._nic_con_zephyr_prompt], timeout=3)
+                idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt, self._nic_con_zephyr_prompt, self._nic_con_suc_prompt,  self._nic_con_vulcano_prompt], timeout=3)
                 if idx == 0:
                     break
                 elif idx == 1:
@@ -1765,8 +1789,55 @@ class nic_ctrl():
         return True
 
     @nic_console_test('1')
+    def nic_exec_cmd_from_suc_console1(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        self._nic_handle.sendline()
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_suc_prompt], self._nic_con_suc_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_suc_prompt], self._nic_con_suc_prompt, timeout=timeout)
+        if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        self.nic_set_cmd_buf(cmd_buf)
+        return True
+
+    @nic_console_test('2')
+    def nic_exec_cmd_from_soc_console(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        self._nic_handle.sendline()
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_vulcano_prompt], self._nic_con_vulcano_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_vulcano_prompt], self._nic_con_vulcano_prompt, timeout=timeout)
+        if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        self.nic_set_cmd_buf(cmd_buf)
+        return True
+
+    @nic_console_test('1')
     def uc_get_zephyr_booting_msg(self, monitor_timeout=30):
-        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt], self._nic_con_zephyr_prompt, timeout=monitor_timeout)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt, self._nic_con_suc_prompt], self._nic_con_zephyr_prompt, timeout=monitor_timeout)
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        self.nic_set_cmd_buf(cmd_buf)
+        return True
+
+    @nic_console_test('2')
+    def uc_get_vulcano_booting_msg(self, monitor_timeout=60):
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_suc_prompt], self._nic_con_suc_prompt, timeout=monitor_timeout)
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         self.nic_set_cmd_buf(cmd_buf)
         return True
@@ -6521,9 +6592,62 @@ class nic_ctrl():
         devid = match[0]
         return devid
 
-    def uc_zephyr_version_check(self, nic_type=None, board_id=None, expected_suc_timestamp=None, cpld_ver=None):
+    def zephyr_vulcano_version_check(self, expected_soc_ver,  expected_soc_timestamp=None, cpld_ver=None):
         """
-        execute suc zephyr shell version command, verify the board ID, board name, Suc Build time and CPLD version 
+        execute vulcano zephyr shell 'show version' command, verify the Build time and CPLD version
+        command example:
+            vulcano:~$ show version
+            SUC-firmware              : mainfwb
+            Suc-boot                  : 0.0.1+dummy
+            Suc-app                   : 0.2.7+commit.2f241db9b99e
+            CPLD:                     : 1.2
+            Soc-firmware              : mainfwb
+            Firmware version          : 1.125.0-a-49
+            Firmware build time       : Jan  1 2026 06:29:55
+            Build tag                 : 1.XX.0-C-8-50282-g97c6dd2cc49c
+            Pipeline                  : rudra
+            P4 program                : pulsar
+        """
+
+        cmd = MFG_DIAG_CMDS().ZEPHYR_SHOW_VERSION_FMT
+        if not self.nic_exec_cmd_from_soc_console(cmd):
+            self.nic_set_err_msg("Vulcano show version Command '{:s}' Failed".format(cmd))
+            return False
+
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        current_soc_version = ""
+        current_soc_build_time = ""
+        current_cpld_ver = ""
+        for line in sanitized_cmd_buf.splitlines():
+            if "Firmware version" in line:
+                current_soc_version = line.split(":", 1)[1].strip()
+            if "Firmware build time" in line:
+                current_soc_build_time = line.split(":", 1)[1].strip()
+            if "CPLD:" in line:
+                current_cpld_ver = line.split(":")[2].strip()
+        print("-" * 100)
+        print(current_soc_version)
+        print(current_soc_build_time)
+        print(current_cpld_ver)
+        print("-" * 100)
+        if expected_soc_ver:
+            if expected_soc_ver.lower() not in current_soc_version.lower():
+                self.nic_set_err_msg("SOC version :{:s} not in version command output {:s}".format(expected_soc_timestamp, sanitized_cmd_buf))
+                return False
+        if expected_soc_timestamp:
+            if expected_soc_timestamp.lower() not in current_soc_build_time.lower():
+                self.nic_set_err_msg("SOC timestamp:{:s} not in version command output {:s}".format(expected_soc_timestamp, sanitized_cmd_buf))
+                return False
+        if cpld_ver:
+            if cpld_ver.lower() not in current_cpld_ver.lower():
+                self.nic_set_err_msg("SOC CPLD version:{:s} not in version command output {:s}".format(cpld_ver, sanitized_cmd_buf))
+                return False
+        return True
+
+    def uc_zephyr_version_check(self, nic_type=None, board_id=None, expected_suc_timestamp=None, cpld_ver=None, stage=None):
+        """
+        execute suc zephyr shell version command, verify the board ID, board name, Suc Build time and CPLD version
         command example:
             uart:~$ version
             Board ID: 0x05700002
@@ -6536,9 +6660,14 @@ class nic_ctrl():
         """
 
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_VERSION
-        if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr version Command '{:s}' Failed".format(cmd))
-            return False
+        if stage == FF_Stage.FF_SWI:
+            if not self.nic_exec_cmd_from_suc_console1(cmd):
+                self.nic_set_err_msg("SUC version Command '{:s}' Failed".format(cmd))
+                return False
+        else:
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr version Command '{:s}' Failed".format(cmd))
+                return False
 
         cmd_buf = self.nic_get_cmd_buf()
         sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
@@ -6548,13 +6677,13 @@ class nic_ctrl():
         current_cpld_ver = ""
         for line in sanitized_cmd_buf.splitlines():
             if "Board ID" in line:
-                current_board_id = line.split(":")[1].strip()
+                current_board_id = line.split(":", 1)[1].strip()
             if "SuC build type" in line:
-                current_board_name = line.split(":")[1].strip()
+                current_board_name = line.split(":", 1)[1].strip()
             if "SuC build time" in line:
-                current_suc_build_time = line.split("time:")[1].strip()
+                current_suc_build_time = line.split(":", 1)[1].strip()
             if "SOC_CFGFPGA" in line:
-                current_cpld_ver = line.split(":")[1].strip()
+                current_cpld_ver = line.split(":", 1)[1].strip()
 
         if board_id:
             if board_id.lower() not in current_board_id.lower():
@@ -6617,41 +6746,41 @@ class nic_ctrl():
         print(cmd_buf)
         return True
 
-    def uc_sucuart_slot2sn_bus_dev(self):
+    def suc_slot2_usb_sn(self):
         """
         according to rule /etc/udev/rules.d/99-suc-uart.rules, which map usb UART to slot
         find the bus number, device number and serial number for the slot
         """
 
-        # check usb uart exist
-        usb_uart_dev = "/dev/SUCUART{:d}".format(self._slot + 1)
-        cmd = 'ls {:s}'.format(usb_uart_dev)
+        # check uart rules file exist
+        usb_uart_rules_file = '/etc/udev/rules.d/99-suc-uart.rules'
+        cmd = 'ls {:s}'.format(usb_uart_rules_file)
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
             return False
         if "No such file or directory".lower() in self.nic_get_cmd_buf().lower():
-            self.nic_set_err_msg("Device {:s} not exist".format(usb_uart_dev))
+            self.nic_set_err_msg("uart rules file {:s} not exist".format(usb_uart_rules_file))
             return False
 
-        busnum = None
-        devnum = None
-        serial = None
-        cmd = 'udevadm info -q path -n {:s}'.format(usb_uart_dev)
+        # grep usb kernels
+        usb_uart_dev = "SUCUART{:d}".format(self._slot + 1)
+        cmd = """cat /etc/udev/rules.d/99-suc-uart.rules | grep 'SYMLINK+="{:s}"' | cat""".format(usb_uart_dev)
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]', '', self.nic_get_cmd_buf()).strip()
-        if "No such device".lower() in cmd_buf.lower():
-            self.nic_set_err_msg("Device {:s} not exist".format(usb_uart_dev))
+        if "No such file or directory".lower() in cmd_buf.lower():
+            self.nic_set_err_msg("Device {:s} not found in suc-uart.rules".format(usb_uart_dev))
             return False
 
-        usb_uart_dev_interface_path = cmd_buf.split("\n")[1].strip("\r").strip()
-        usb_uart_dev_interface = usb_uart_dev_interface_path.rsplit('/tty/', 1)[0]
-        usb_uart_dev_interface = usb_uart_dev_interface.rsplit('/devices/', 1)[1]
-        usb_uart_dev_path = os.path.dirname('/sys/devices/' + usb_uart_dev_interface)
+        found_kernel = re.findall(r'KERNELS=="(\d+-\d+)"',  self.nic_get_cmd_buf())
+        if not found_kernel:
+            self.nic_set_err_msg("kernel pattern KERNELS==d-d not found in suc-uart.rules")
+            return False
+        kernel = found_kernel[0]
 
         # get serial
-        filename = os.path.join(usb_uart_dev_path, "serial")
+        filename = f'/sys/bus/usb/devices/{kernel}/serial'
         cmd = 'cat {:s}'.format(filename)
 
         if not self.mtp_exec_cmd(cmd):
@@ -6663,34 +6792,7 @@ class nic_ctrl():
             return False
         serial =  cmd_buf.split("\n")[1].strip("\r").strip()
 
-        # get busnum
-        filename = os.path.join(usb_uart_dev_path, "busnum")
-        cmd = 'cat {:s}'.format(filename)
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
-            return False
-        cmd_buf = re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]', '', self.nic_get_cmd_buf()).strip()
-        if "No such file or directory".lower() in cmd_buf:
-            self.nic_set_err_msg("File {:s} not exist".format(filename))
-            return False
-        busnum =  cmd_buf.split("\n")[1].strip("\r").strip()
-
-        # get devnum
-        filename = os.path.join(usb_uart_dev_path, "devnum")
-        cmd = 'cat {:s}'.format(filename)
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
-            return False
-        cmd_buf = re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]', '', self.nic_get_cmd_buf()).strip()
-        if "No such file or directory".lower() in cmd_buf:
-            self.nic_set_err_msg("File {:s} not exist".format(filename))
-            return False
-        devnum =  cmd_buf.split("\n")[1].strip("\r").strip()
-
-        if not all((serial, busnum, devnum)):
-            return False
-
-        return serial, busnum, devnum
+        return serial
 
     def uc_image_program(self, cmd_format, uc_img):
         """
@@ -6711,11 +6813,10 @@ class nic_ctrl():
         PASS       PldmFwUpdateSingleFDUpdateFlow
         """
 
-        device_iSerial = self.uc_sucuart_slot2sn_bus_dev()
+        device_iSerial = self.suc_slot2_usb_sn()
         if not device_iSerial:
             self.nic_set_err_msg("Failed to get usb device serial number")
             return False
-        device_iSerial = device_iSerial[0]
 
         # program uC with MTCP
         cmd = cmd_format.format(device_iSerial, uc_img)

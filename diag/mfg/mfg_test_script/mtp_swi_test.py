@@ -227,13 +227,17 @@ def swi_verify_board_id(mtp_mgmt_ctrl, slot):
 @parallelize.parallel_nic_using_ssh
 def swi_uc_img_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
-    uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_microcontroller_sw_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_suc_sw_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
     cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_SW_IMAGE_PROG
     return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, uc_img_file)
 
 @parallelize.parallel_nic_using_ssh
 def swi_uc_boot_check(mtp_mgmt_ctrl, slot):
-    return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_boot_check(slot)
+    return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_boot_check(slot, stage=FF_Stage.FF_SWI)
+
+@parallelize.parallel_nic_using_ssh
+def swi_vulcano_boot_check(mtp_mgmt_ctrl, slot):
+    return mtp_mgmt_ctrl.mtp_nic_vulcano_boot_check(slot)
 
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
@@ -391,8 +395,12 @@ def main():
                 rlist = swi_uc_img_program(mtp_mgmt_ctrl, nic_list)
             elif test == "uC_BOOTING_CHK":
                 rlist = swi_uc_boot_check(mtp_mgmt_ctrl, nic_list)
+            elif test == "VULCANO_BOOTING_CHK":
+                rlist = swi_vulcano_boot_check(mtp_mgmt_ctrl, nic_list)
             elif test == "uC_VERSION_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_suc_version_read_check(nic_list, stage=FF_Stage.FF_SWI)
+            elif test == "VULVANO_VERSION_CHK":
+                rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_version_read_check(nic_list, stage=FF_Stage.FF_SWI)
             elif test == "CPLD_PROG":
                 rlist = swi_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "FSAFE_CPLD_PROG":
@@ -651,9 +659,9 @@ def main():
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(pass_nic_list, "uC_SW_IMG_PROG")
             run_swi_test(pass_nic_list, "uC_BOOTING_CHK")
-            # run_swi_test(pass_nic_list, "VULCANO_BOOTING_CHK")
+            run_swi_test(pass_nic_list, "VULCANO_BOOTING_CHK")
             run_swi_test(pass_nic_list, "uC_VERSION_CHK")
-            # run_swi_test(pass_nic_list, "VULVANO_VERSION_CHK")
+            run_swi_test(pass_nic_list, "VULVANO_VERSION_CHK")
 
         else:
             # power cycle all nic

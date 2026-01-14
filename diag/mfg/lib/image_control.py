@@ -44,8 +44,8 @@ pentrust_img = "pentrust"
 fipa_img = "fipa"
 fipb_img = "fipb"
 fipg_img = "fipg"
-microcontroller_diag_img = "microcontroller_diag_img"
-microcontroller_sw_img = "microcontroller_sw_img"
+suc_diag_img = "suc_diag_img"
+suc_sw_img = "suc_sw_img"
 
 def get_dict_entry(mtp_mgmt_ctrl, img_dict, nic_type):
     try:
@@ -321,18 +321,20 @@ def get_fipg_img(mtp_mgmt_ctrl, slot, stage):
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.fipg_img, nic_type)
     }
 
-def get_microcontroller_diag_img(mtp_mgmt_ctrl, slot, stage):
-    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, microcontroller_diag_img)
+def get_suc_diag_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, suc_diag_img)
     return {
-    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.microcontroller_diag_img, nic_type),
-    "timestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.microcontroller_diag_date, nic_type)
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_diag_img, nic_type),
+    "timestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_diag_img_suc_date, nic_type)
     }
 
-def get_microcontroller_sw_img(mtp_mgmt_ctrl, slot, stage):
-    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, microcontroller_sw_img)
+def get_suc_sw_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, suc_sw_img)
     return {
-    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.microcontroller_sw_img, nic_type),
-    "timestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.microcontroller_sw_date, nic_type)
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_sw_img, nic_type),
+    "soctimestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_sw_img_soc_date, nic_type),
+    "socver": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_sw_img_soc_ver, nic_type),
+    "suctimestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_sw_img_suc_date, nic_type)
     }
 
 def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
@@ -382,8 +384,8 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         fipb_img: get_fipb_img,
         fipg_img: get_fipg_img,
         fipg_img: get_fipg_img,
-        microcontroller_diag_img: get_microcontroller_diag_img,
-        microcontroller_sw_img: get_microcontroller_sw_img,
+        suc_diag_img: get_suc_diag_img,
+        suc_sw_img: get_suc_sw_img,
         }
 
     images_needed = list()
@@ -419,8 +421,8 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         if nic_type in VULCANO_NIC_TYPE_LIST:
             images_needed.append(fail_cpld)
             images_needed.append(fea_cpld)
-            images_needed.append(microcontroller_diag_img)
-            images_needed.append(microcontroller_sw_img)
+            images_needed.append(suc_diag_img)
+            images_needed.append(suc_sw_img)
 
         if nic_type in FPGA_TYPE_LIST:
             images_needed.append(fail_cpld)
@@ -525,8 +527,8 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
 
         if nic_type in VULCANO_NIC_TYPE_LIST:
             images_needed.append(fail_cpld)
-            images_needed.append(microcontroller_diag_img)
-            images_needed.append(microcontroller_sw_img)
+            images_needed.append(suc_diag_img)
+            images_needed.append(suc_sw_img)
 
     # return dict with {"Image display name": filepath}
     ret_dict = dict()
