@@ -55,6 +55,7 @@ typedef struct _fpga_uart_device_ {
     int rx_bytes;
     char rx_buf[FPGA_UART_RX_BUFFER_SIZE];
     int rx_full;
+    int flip_full;
     unsigned long last_push_us;
 } fpga_uart_device_t;
 
@@ -127,7 +128,7 @@ static char tx_ringbuf_deque(fpga_uart_device_t *pdev)
 static int fpga_uart_stats_show(struct seq_file *m, void *v)
 {
     int port;
-    seq_printf(m, "%5s %2s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %10s %10s %10s %10s\n",
+    seq_printf(m, "%5s %2s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %10s %10s %10s %10s\n",
                   "PORT:",
                   "EN",
                   "PARITY",
@@ -140,6 +141,7 @@ static int fpga_uart_stats_show(struct seq_file *m, void *v)
                   "TX_W_PTR",
                   "TX_R_PTR",
                   "TX_FULL",
+                  "FLP_FULL",
                   "RX_TIMER",
                   "TX_TIMER",
                   "TX_BYTES",
@@ -147,7 +149,7 @@ static int fpga_uart_stats_show(struct seq_file *m, void *v)
     for (port = 0; port < FPGA_UART_PORT_NUM; port++) {
         fpga_uart_device_t *pdev = port_to_fpga_uart_device(port);
         if (port < FPGA_UART_SLOT_NUM)
-            seq_printf(m, "Vul%d: %2d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %10ld %10ld %10ld %10ld\n",
+            seq_printf(m, "Vul%d: %2d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %10ld %10ld %10ld %10ld\n",
                           port,
                           pdev->enabled,
                           pdev->parity_error,
@@ -160,12 +162,13 @@ static int fpga_uart_stats_show(struct seq_file *m, void *v)
                           pdev->tx_write_ptr,
                           pdev->tx_read_ptr,
                           pdev->tx_full,
+                          pdev->flip_full,
                           pdev->rx_timestamp_us/1000000,
                           pdev->tx_timestamp_s,
                           pdev->tx_total_bytes,
                           pdev->rx_total_bytes);
         else
-            seq_printf(m, "SuC%d: %2d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %10ld %10ld %10ld %10ld\n",
+            seq_printf(m, "SuC%d: %2d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %10ld %10ld %10ld %10ld\n",
                           port-10,
                           pdev->enabled,
                           pdev->parity_error,
@@ -178,6 +181,7 @@ static int fpga_uart_stats_show(struct seq_file *m, void *v)
                           pdev->tx_write_ptr,
                           pdev->tx_read_ptr,
                           pdev->tx_full,
+                          pdev->flip_full,
                           pdev->rx_timestamp_us/1000000,
                           pdev->tx_timestamp_s,
                           pdev->tx_total_bytes,
@@ -362,13 +366,16 @@ static enum hrtimer_restart fpga_uart_rx_callback(struct hrtimer *t)
             pdev->rxfifo_full ++;
 
         while (sts_val & UART_RXDATA_READY_BIT) {
-            pdev->rx_buf[pdev->rx_bytes] = (char)readl(pdev->uart_rxdata_reg);
-            pdev->rx_bytes ++;
-            pdev->rx_total_bytes ++;
+            // rx buffer is full, could be:
+            // 1. uart rx data ready bit is somehow stuck, hw misbehavior.
+            // 2. user open the uart port, but don't read, that will cause tty core flip buffer full and backpressure rx buffer.
             if (pdev->rx_bytes >= FPGA_UART_RX_BUFFER_SIZE) {
                 pdev->rx_full ++;
                 break;
             }
+            pdev->rx_buf[pdev->rx_bytes] = (char)readl(pdev->uart_rxdata_reg);
+            pdev->rx_bytes ++;
+            pdev->rx_total_bytes ++;
             sts_val = readl(pdev->uart_status_reg);
         }
 
@@ -384,6 +391,7 @@ static enum hrtimer_restart fpga_uart_rx_callback(struct hrtimer *t)
             m = tty_insert_flip_string(&(pdev->uart_port), pdev->rx_buf, n);
             if (m == 0) {
                 // 0 byte copied, which means no space left in tty core, have to wait.
+                pdev->flip_full ++;
                 continue;
             } else if (m == n) {
                 // all bytes copied.
@@ -395,6 +403,7 @@ static enum hrtimer_restart fpga_uart_rx_callback(struct hrtimer *t)
                 pdev->rx_bytes = n - m;
             }
             tty_flip_buffer_push(&(pdev->uart_port));
+            pdev->last_push_us = ts;
         }
     }
 
