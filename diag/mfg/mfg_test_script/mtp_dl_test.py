@@ -560,6 +560,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_vul_suc_i2c_device_test(nic_list)
             elif test == "OSFP_SN_READ_TEST":
                 rlist = dl_osfp_sn_read(mtp_mgmt_ctrl, nic_list)
+            elif test == "VULVANO_FOGA_UART_STATS_DUMP":
+                rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
             elif test == "uC_BOOTING_CHK":
                 rlist = dl_uc_boot_check(mtp_mgmt_ctrl, nic_list)
             elif test == "CPLD_PROG":
@@ -779,6 +781,7 @@ def main():
             run_dl_test(pass_nic_list, "I2C_DEVICE_SCREENING")
             run_dl_test(pass_nic_list, "VUL_SUC_I2C_DEVICE_TEST")
             run_dl_test(pass_nic_list, "OSFP_SN_READ_TEST")
+            run_dl_test(pass_nic_list, "VULVANO_FOGA_UART_STATS_DUMP")
         else:
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)

@@ -4094,6 +4094,17 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Retrieve reset code")
         return True
 
+    @parallelize.parallel_nic_using_ssh
+    def mtp_vulcano_fpga_uart_stats_dump(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in VULCANO_NIC_TYPE_LIST:
+            return True
+        if not self._nic_ctrl_list[slot].nic_vulcano_fpga_uart_stats_dump():
+            self.cli_log_slot_err(slot, "dump fpga uart stats failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True
+
     def mtp_program_nic_adi_ibm_cpld(self, slot, cpld_img, dl_step=True):
         # check the current cpld version
         nic_type = self.mtp_get_nic_type(slot)
@@ -5076,6 +5087,8 @@ class mtp_ctrl():
             self.mtp_single_j2c_lock()
             self.mtp_nic_console_lock()
             self.mtp_nic_dump_reg(slot)
+            if self.mtp_get_nic_type(slot) in VULCANO_NIC_TYPE_LIST:
+                self.mtp_vulcano_fpga_uart_stats_dump(slot)
             self.mtp_get_nic_sts(slot, skip_vrm_check, test)
             self.mtp_sal_check_j2c(slot, test)
             self.mtp_nic_console_unlock()
@@ -6063,18 +6076,6 @@ class mtp_ctrl():
 
         return True
 
-    @parallelize.parallel_nic_using_ssh
-    def mtp_nic_vulcano_pcie_prbs(self, slot, vmarg="normal", test_duration="1", int_lpbk='0'):
-
-        if not self._nic_ctrl_list[slot].nic_vulcano_pcie_prbs(vmarg, test_duration, int_lpbk):
-            self.cli_log_slot_err(slot, "NIC PCIE PRBS FAILED")
-            self.mtp_get_nic_err_msg(slot)
-            return False
-        else:
-            self.cli_log_slot_inf(slot, "NIC PCIE PRBS PASS")
-
-        return True
-
     def mtp_l1_pre_setup(self, slot):
 
         failed_slot_list = []
@@ -6161,36 +6162,6 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].ainic_snake_mtp_salina(snake_type, vmarg, dura, timeout, slot_asic_dir_path, ite, int_lpbk):
             self.cli_log_slot_err_lock(slot, "nic_test_v2 nic_snake_mtp {:s} TEST FAILED".format(snake_type))
-            return False
-
-        return True
-
-    @parallelize.parallel_nic_using_ssh
-    def mtp_snake_mtp_vulcano(self, slot, snake_num=4, vmarg="nom", dura=60, int_lpbk=0, timeout=3600):
-        '''
-            for vulcano, we aleady put snake test in L1, but in run_l1, snake only support one snake number, that's the reason we still have this function here
-            vul_snake.tcl with command  "stdbuf -i0 -o0 -e0 tclsh vul_snake.tcl -slot 1 -snake_num 4 -vmarg high/low/nom"
-        '''
-
-        if vmarg not in ('high', 'low', 'nom'):
-            self.cli_log_slot_err_lock(slot, "Unsupported vmarg: {:s}, must be one of high, low or nom".format(vmarg))
-            return False
-
-        if not self._nic_ctrl_list[slot].snake_mtp_vulcano(snake_num, vmarg, dura, int_lpbk, timeout):
-            self.cli_log_slot_err_lock(slot, "stdbuf -i0 -o0 -e0 tclsh vul_snake.tcl TEST FAILED")
-            return False
-
-        return True
-
-    @parallelize.parallel_nic_using_ssh
-    def mtp_vulcano_snake_tmp(self, slot, snake_num=4, vmarg="normal", timeout=3600):
-        '''
-        This is to support the chamber test, may temporary 
-        run yanming updated vul_snake.tcl with command  "stdbuf -i0 -o0 -e0 tclsh vul_snake.tcl -slot 1 -snake_num 4 -vmarg high/low/nom"
-        '''
-    
-        if not self._nic_ctrl_list[slot].snake_vulcano_tmp(snake_num, vmarg, timeout):
-            self.cli_log_slot_err_lock(slot, "tclsh vul_snake.tcl TEST FAILED")
             return False
 
         return True
