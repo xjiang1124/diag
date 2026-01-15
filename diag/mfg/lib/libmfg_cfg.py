@@ -78,10 +78,12 @@ class NIC_IMAGES:
     device_config_dtb = dict()
     firmware_config_dtb = dict()
     mbist_boot0_img = dict()
-    microcontroller_diag_img = dict()
-    microcontroller_diag_date = dict()
-    microcontroller_sw_img = dict()
-    microcontroller_sw_date = dict()
+    suc_diag_img = dict()
+    suc_diagimg_suc_date = dict()
+    suc_sw_img = dict()
+    suc_swimg_soc_date = dict()
+    suc_swimg_soc_ver = dict()
+    suc_swimg_suc_date = dict()
 
     # write it down here so release script copies this file
     uboot_img["INSTALLER"] = "install_file"
@@ -1281,10 +1283,12 @@ class NIC_IMAGES:
     fail_cpld_ver["GELSOP"] = "0x1"
     fail_cpld_dat["GELSOP"] = "12-07-25_19:13" #mm-dd-YY_HH:MM
     fea_cpld_img["GELSOP"] = "gelso.fea"
-    microcontroller_diag_img["GELSOP"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_diag_date["GELSOP"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
-    microcontroller_sw_img["GELSOP"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_sw_date["GELSOP"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_diag_img["GELSOP"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_diagimg_suc_date["GELSOP"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_sw_img["GELSOP"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_swimg_suc_date["GELSOP"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["GELSOP"] = "Jan  1 2026 06:29:55"
+    suc_swimg_soc_ver["GELSOP"] = "1.125.0-a-49"
 
     cpld_img["58-0012-01"] = "gelso_cpld_cfg0_rev0105.jed"
     cpld_ver["58-0012-01"] = "0x1"
@@ -1296,10 +1300,12 @@ class NIC_IMAGES:
     fail_cpld_ver["58-0012-01"] = "0x1"
     fail_cpld_dat["58-0012-01"] = "12-07-25_19:13" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0012-01"] = "gelso.fea"
-    microcontroller_diag_img["58-0012-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_diag_date["58-0012-01"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
-    microcontroller_sw_img["58-0012-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_sw_date["58-0012-01"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_diag_img["58-0012-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_diagimg_suc_date["58-0012-01"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_sw_img["58-0012-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_swimg_suc_date["58-0012-01"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["58-0012-01"] = "Jan  1 2026 06:29:55"
+    suc_swimg_soc_ver["58-0012-01"] = "1.125.0-a-49"
 
     # GELSOX is AINIC
     cpld_img["GELSOPX"] = "gelsoX_cfg0_0101.jed"
@@ -1312,10 +1318,12 @@ class NIC_IMAGES:
     fail_cpld_ver["GELSOPX"] = "0x1"
     fail_cpld_dat["GELSOPX"] = "12-04-25_13:47" #mm-dd-YY_HH:MM
     fea_cpld_img["GELSOPX"] = "gelsoX.fea"
-    microcontroller_diag_img["GELSOPX"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_diag_date["GELSOPX"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
-    microcontroller_sw_img["GELSOPX"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_sw_date["GELSOPX"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_diag_img["GELSOPX"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_diagimg_suc_date["GELSOPX"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_sw_img["GELSOPX"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_swimg_suc_date["GELSOPX"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["GELSOPX"] = "Jan  1 2026 06:29:55"
+    suc_swimg_soc_ver["GELSOPX"] = "1.125.0-a-49"
 
     cpld_img["58-0013-01"] = "gelsoX_cfg0_0101.jed"
     cpld_ver["58-0013-01"] = "0x1"
@@ -1327,10 +1335,12 @@ class NIC_IMAGES:
     fail_cpld_ver["58-0013-01"] = "0x1"
     fail_cpld_dat["58-0013-01"] = "12-04-25_13:47" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0013-01"] = "gelsoX.fea"
-    microcontroller_diag_img["58-0013-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_diag_date["58-0013-01"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
-    microcontroller_sw_img["58-0013-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_sw_date["58-0013-01"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_diag_img["58-0013-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_diagimg_suc_date["58-0013-01"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_sw_img["58-0013-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_swimg_suc_date["58-0013-01"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["58-0013-01"] = "Jan  1 2026 06:29:55"
+    suc_swimg_soc_ver["58-0013-01"] = "1.125.0-a-49"
 
     # SARACENO is AINIC
     cpld_img["SARACENO"] = "saraceno_cpld_cfg0_rev0102.jed"
@@ -1343,10 +1353,12 @@ class NIC_IMAGES:
     fail_cpld_ver["SARACENO"] = "0x1"
     fail_cpld_dat["SARACENO"] = "12-08-25_15:27" #mm-dd-YY_HH:MM
     fea_cpld_img["SARACENO"] = "saraceno.fea"
-    microcontroller_diag_img["SARACENO"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_diag_date["SARACENO"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
-    microcontroller_sw_img["SARACENO"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_sw_date["SARACENO"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
+    suc_diag_img["SARACENO"] = "vulcano/saraceno/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_diagimg_suc_date["SARACENO"] = "2025-12-22 10:12:18"   #YYYY-mm-dd HH:MM:SS
+    suc_sw_img["SARACENO"] = "vulcano/saraceno/ainic_bundle_1.125.0-a-49/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["SARACENO"] = "2026-01-01 04:22:04"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["SARACENO"] = "Jan  1 2026 06:29:55"
+    suc_swimg_soc_ver["SARACENO"] = "1.125.0-a-49"
 
     cpld_img["58-0014-01"] = "saraceno_cpld_cfg0_rev0102.jed"
     cpld_ver["58-0014-01"] = "0x1"
@@ -1358,10 +1370,12 @@ class NIC_IMAGES:
     fail_cpld_ver["58-0014-01"] = "0x1"
     fail_cpld_dat["58-0014-01"] = "12-08-25_15:27" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0014-01"] = "saraceno.fea"
-    microcontroller_diag_img["58-0014-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_diag_date["58-0014-01"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
-    microcontroller_sw_img["58-0014-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_sw_date["58-0014-01"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
+    suc_diag_img["58-0014-01"] = "vulcano/saraceno/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_diagimg_suc_date["58-0014-01"] = "2025-12-22 10:12:18"   #YYYY-mm-dd HH:MM:SS
+    suc_sw_img["58-0014-01"] = "vulcano/saraceno/ainic_bundle_1.125.0-a-49/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["58-0014-01"] = "2026-01-01 04:22:04"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["58-0014-01"] = "Jan  1 2026 06:29:55"
+    suc_swimg_soc_ver["58-0014-01"] = "1.125.0-a-49"
 
     cpld_img["100-700000003"] = "saraceno_cpld_cfg0_rev0102.jed"
     cpld_ver["100-700000003"] = "0x1"
@@ -1373,10 +1387,12 @@ class NIC_IMAGES:
     fail_cpld_ver["100-700000003"] = "0x1"
     fail_cpld_dat["100-700000003"] = "12-08-25_15:27" #mm-dd-YY_HH:MM
     fea_cpld_img["100-700000003"] = "saraceno.fea"
-    microcontroller_diag_img["100-700000003"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_diag_date["100-700000003"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
-    microcontroller_sw_img["100-700000003"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_sw_date["100-700000003"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
+    suc_diag_img["100-700000003"] = "vulcano/saraceno/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_diagimg_suc_date["100-700000003"] = "2025-12-22 10:12:18"   #YYYY-mm-dd HH:MM:SS
+    suc_sw_img["100-700000003"] = "vulcano/saraceno/ainic_bundle_1.125.0-a-49/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["100-700000003"] = "2026-01-01 04:22:04"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["100-700000003"] = "Jan  1 2026 06:29:55"
+    suc_swimg_soc_ver["100-700000003"] = "1.125.0-a-49"
 
     # MORTARO is AINIC
     cpld_img["MORTARO"] = "mortaro_rev01_02_cfg0.jed"
@@ -1389,10 +1405,12 @@ class NIC_IMAGES:
     fail_cpld_ver["MORTARO"] = "0x1"
     fail_cpld_dat["MORTARO"] = "12-10-25_12:08" #mm-dd-YY_HH:MM
     fea_cpld_img["MORTARO"] = "mortaro_impl1.fea"
-    microcontroller_diag_img["MORTARO"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_diag_date["MORTARO"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
-    microcontroller_sw_img["MORTARO"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_sw_date["MORTARO"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
+    suc_diag_img["MORTARO"] = "vulcano/mortaro/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_diagimg_suc_date["MORTARO"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
+    suc_sw_img["MORTARO"] = "vulcano/mortaro/ainic_bundle_1.125.0-a-49/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["MORTARO"] = "2026-01-01 04:22:04"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["MORTARO"] = "Jan  1 2026 06:29:55"
+    suc_swimg_soc_ver["MORTARO"] = "1.125.0-a-49"
 
     cpld_img["58-0015-01"] = "mortaro_rev01_02_cfg0.jed"
     cpld_ver["58-0015-01"] = "0x1"
@@ -1404,10 +1422,12 @@ class NIC_IMAGES:
     fail_cpld_ver["58-0015-01"] = "0x1"
     fail_cpld_dat["58-0015-01"] = "12-10-25_12:08" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0015-01"] = "mortaro_impl1.fea"
-    microcontroller_diag_img["58-0015-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_diag_date["58-0015-01"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
-    microcontroller_sw_img["58-0015-01"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_sw_date["58-0015-01"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
+    suc_diag_img["58-0015-01"] = "vulcano/mortaro/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_diagimg_suc_date["58-0015-01"] = "2025-12-22 10:14:59"   #YYYY-mm-dd HH:MM:SS
+    suc_sw_img["58-0015-01"] = "vulcano/mortaro/ainic_bundle_1.125.0-a-49/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["58-0015-01"] = "2026-01-01 04:22:04"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["58-0015-01"] = "Jan  1 2026 06:29:55"
+    suc_swimg_soc_ver["58-0015-01"] = "1.125.0-a-49"
 
     cpld_img["100-700000004"] = "mortaro_rev01_02_cfg0.jed"
     cpld_ver["100-700000004"] = "0x1"
@@ -1419,10 +1439,12 @@ class NIC_IMAGES:
     fail_cpld_ver["100-700000004"] = "0x1"
     fail_cpld_dat["100-700000004"] = "12-10-25_12:08" #mm-dd-YY_HH:MM
     fea_cpld_img["100-700000004"] = "mortaro_impl1.fea"
-    microcontroller_diag_img["100-700000004"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_diag_date["100-700000004"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
-    microcontroller_sw_img["100-700000004"] = "vulcano/gelsop/ainic_fw_vulcano_1222_2025.pldmfw"
-    microcontroller_sw_date["100-700000004"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_diag_img["100-700000004"] = "vulcano/mortaro/ainic_fw_vulcano_1222_2025.pldmfw"
+    suc_diagimg_suc_date["100-700000004"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_sw_img["100-700000004"] = "vulcano/mortaro/ainic_bundle_1.125.0-a-49/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["100-700000004"] = "2025-12-22 10:12:56"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["100-700000004"] = "Jan  1 2026 06:29:55"
+    suc_swimg_soc_ver["100-700000004"] = "1.125.0-a-49"
 
 
 class MTP_IMAGES:

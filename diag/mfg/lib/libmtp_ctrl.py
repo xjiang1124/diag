@@ -7625,14 +7625,57 @@ class mtp_ctrl():
         if stage == FF_Stage.FF_SWI:
             sku = self.get_scanned_sku(slot)
             (boardId, pciSubSysId) = SKU2BOARDID_PCI_SUBSYS_ID.get(sku, (None, None))
-        expected_suc_timestamp = image_control.get_microcontroller_diag_img(self, slot, stage)["timestamp"]
-        expected_suc_timestamp = image_control.get_microcontroller_diag_img(self, slot, stage)["timestamp"]
+        expected_suc_timestamp = image_control.get_suc_diag_img(self, slot, stage)["timestamp"]
         if stage == FF_Stage.FF_SWI:
-            expected_suc_timestamp = image_control.get_microcontroller_sw_img(self, slot, stage)["timestamp"]
-            expected_suc_timestamp = image_control.get_microcontroller_sw_img(self, slot, stage)["timestamp"]
+            expected_suc_timestamp = image_control.get_suc_sw_img(self, slot, stage)["suctimestamp"]
         cpld_ver = f'{int(nic_cpld_info[0], 16)}.{int(nic_cpld_info[3], 16)}'
-        if not self._nic_ctrl_list[slot].uc_zephyr_version_check(nic_type, boardId, expected_suc_timestamp, cpld_ver):
+        if not self._nic_ctrl_list[slot].uc_zephyr_version_check(nic_type, boardId, expected_suc_timestamp, cpld_ver, stage):
             self.cli_log_slot_err_lock(slot, "Suc Zephyr Version Check Failed")
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_console
+    def mtp_nic_vulcano_version_read_check(self, slot, stage=None):
+        """
+        execute vulcano zephyr shell 'show version' command, verify Build time and CPLD version
+        command example:
+            vulcano:~$ show version
+            SUC-firmware              : mainfwb
+            Suc-boot                  : 0.0.1+dummy
+            Suc-app                   : 0.2.7+commit.2f241db9b99e
+            CPLD:                     : 1.2
+            Soc-firmware              : mainfwb
+            Firmware version          : 1.125.0-a-49
+            Firmware build time       : Jan  1 2026 06:29:55
+            Build tag                 : 1.XX.0-C-8-50282-g97c6dd2cc49c
+            Pipeline                  : rudra
+            P4 program                : pulsar
+        """
+
+        nic_type = self.mtp_get_nic_type(slot)
+        partNumber = self.get_scanned_pn(slot)
+        if partNumber is None:
+            self.cli_log_slot_err_lock(slot, "Part Number Not set to MTP ctrl instance")
+            return False
+        partNumberIn6Digits = "-".join(partNumber.split('-')[0:2]) if "-" in partNumber[0:6] else partNumber[0:6]
+
+        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        if not nic_cpld_info:
+            self.cli_log_slot_err_lock(slot, "Failed to retrieve CPLD ID info")
+            return False
+        cpldId = nic_cpld_info[2]
+        (boardId, pciSubSysId) = PN_CPLD2BOARDID_PCI_SUBSYS_ID.get((partNumberIn6Digits, cpldId), (None, None))
+        if stage == FF_Stage.FF_SWI:
+            sku = self.get_scanned_sku(slot)
+            (boardId, pciSubSysId) = SKU2BOARDID_PCI_SUBSYS_ID.get(sku, (None, None))
+
+        expected_soc_timestamp = image_control.get_suc_sw_img(self, slot, stage)["soctimestamp"]
+        expected_soc_ver = image_control.get_suc_sw_img(self, slot, stage)["socver"]
+        cpld_ver = f'{int(nic_cpld_info[0], 16)}.{int(nic_cpld_info[3], 16)}'
+        if not self._nic_ctrl_list[slot].zephyr_vulcano_version_check(expected_soc_ver, expected_soc_timestamp, cpld_ver):
+            self.cli_log_slot_err_lock(slot, "Vulcano Zephyr Version Check Failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
@@ -7726,7 +7769,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_nic_uc_zephyr_boot_check(self, slot, monitor_timeout=40):
+    def mtp_nic_uc_zephyr_boot_check(self, slot, monitor_timeout=40, stage=None):
         """
         sample microcontroller power cycle output as following:
             [00:00:00.000,000] <inf> part_core## Gelso bringup app loaded ##
@@ -7823,11 +7866,129 @@ class mtp_ctrl():
 
         power_cycle_handle.close()
 
-        if "Booting Zephyr OS build".lower() not in self.mtp_get_nic_cmd_buf(slot).lower():
-            self.cli_log_slot_err_lock(slot, "uc zephyr boot check Failed")
-            self.mtp_get_nic_err_msg(slot)
-            return False
+        if stage == FF_Stage.FF_SWI:
+            if "suc:~$".lower() not in self.mtp_get_nic_cmd_buf(slot).lower():
+                self.cli_log_slot_err_lock(slot, "uc zephyr boot check Failed")
+                self.mtp_get_nic_err_msg(slot)
+                return False
         return True
+
+    def mtp_nic_vulcano_boot_check(self, slot, monitor_timeout=60, stage=None):
+        """
+            Trying to boot from NOR
+            TPL: Boot Device: B
+
+            U-Boot SPL 2024.10-g84a590cd0c59 (Dec 06 2025 - 22:23:35 -0800)
+            CPU Clock div is set to 07
+            Trying to boot from NOR
+            SPL: Boot Device: B
+
+
+            U-Boot 2024.10-g84a590cd0c59 (Dec 06 2025 - 22:23:35 -0800)
+
+            Model: Vulcano Gelso
+            DRAM:  32 MiB
+            Core:  21 devices, 11 uclasses, devicetree: separate
+            Loading Environment from <NULL>... OK
+            In:    serial@F0000
+            Out:   serial@F0000
+            Err:   serial@F0000
+            U-Boot: Boot Device: B
+            Auto-boot: FIT image detected at 0x711a1000
+            Hit any key to stop autoboot:  0
+            ## Loading kernel from FIT Image at 711a1000 ...
+            Using 'vulcano-asic' configuration
+            Trying 'kernel' kernel subimage
+                Description:  AINIC Zephyr
+                Type:         Kernel Image
+                Compression:  uncompressed
+                Data Start:   0x711a10c4
+                Data Size:    4041496 Bytes = 3.9 MiB
+                Architecture: RISC-V
+                OS:           U-Boot
+                Load Address: 0x810171c000
+                Entry Point:  0x810171c000
+                Hash algo:    crc32
+                Hash value:   edec13f3
+            Verifying Hash Integrity ... crc32+ OK
+            Loading Kernel Image to 810171c000
+            .......
+            vulcano:~$
+        """
+        def mtp_2nd_mgmt_exec_cmd(mtp_mgmt_ctrl, handle, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
+
+            rc = True
+            handle.sendline(cmd)
+            cmd_before = ""
+            buf_before_sig = ""
+            for sig in sig_list:
+                idx = libmfg_utils.mfg_expect(handle, [sig], timeout)
+                buf_before_sig += handle.before
+                if idx < 0:
+                    rc = False
+                    cmd_before = handle.before
+                    break
+            idx = libmfg_utils.mfg_expect(handle, ["$"], timeout)
+            # signature match fails
+            if not rc:
+                mtp_mgmt_ctrl.mtp_dump_err_msg(cmd_before)
+                return (False, cmd_before)
+            elif idx < 0:
+                mtp_mgmt_ctrl.mtp_dump_err_msg(handle.before)
+                return (False, buf_before_sig + handle.before)
+            else:
+                cmd_output = buf_before_sig + handle.before
+                # print(cmd_buf + "$")
+
+            # get command return code
+            handle.sendline("echo $?")
+            idx = libmfg_utils.mfg_expect(handle, ["$"], 3)
+            idx = libmfg_utils.mfg_expect(handle, ["$"], 5)
+            if idx < 0:
+                mtp_mgmt_ctrl.cli_log_slot_wrn("Failed to Get Command Return Value" + handle.before)
+                return (True, cmd_output)
+
+            cmd_return_code = handle.before.splitlines()[2].strip("\r").strip()
+            if cmd_return_code != '0':
+                return (False, cmd_output + " echo $?" + handle.before)
+
+            return (True, cmd_output)
+
+        def power_cycle_slot_in_2nd_session(mtp_mgmt_ctrl, second_handle, slot):
+
+            mtp_mgmt_ctrl.cli_log_inf_lock("Power Cylce slot slot {:d} in 2nd session".format(slot + 1) , level=0)
+            result = False
+            cmd = "turn_on_slot.sh off {:d}; sleep 10;turn_on_slot.sh on {:d}".format(slot + 1, slot +1)
+            cmd_result = mtp_2nd_mgmt_exec_cmd(mtp_mgmt_ctrl, second_handle, cmd, timeout=30)
+            if not cmd_result[0]:
+                mtp_mgmt_ctrl.cli_log_err_lock("command {:s} on 2nd mtp mgmt session failed".format(cmd), level=0)
+                mtp_mgmt_ctrl.cli_log_err_lock(cmd_result[1], level=0)
+                return result
+            result = True
+            return result
+
+        power_cycle_handle = self.mtp_session_create()
+        boot_check_threads = []
+        t1 = threading.Thread(target=self._nic_ctrl_list[slot].uc_get_vulcano_booting_msg, args=(monitor_timeout,))
+        boot_check_threads.append(t1)
+        t2 = threading.Thread(target=power_cycle_slot_in_2nd_session, args=(self, power_cycle_handle, slot))
+        boot_check_threads.append(t2)
+
+        for thread in boot_check_threads:
+            thread.start()
+            time.sleep(5)
+        for thread in boot_check_threads:
+            thread.join()
+
+        power_cycle_handle.close()
+
+        if stage == FF_Stage.FF_SWI:
+            if "vulcano:~$".lower() not in self.mtp_get_nic_cmd_buf(slot).lower():
+                self.cli_log_slot_err_lock(slot, "vulcano boot check Failed")
+                self.mtp_get_nic_err_msg(slot)
+                return False
+        return True
+
 
     @parallelize.parallel_nic_using_ssh
     def mtp_nic_i2c_device_screening(self, slot):
