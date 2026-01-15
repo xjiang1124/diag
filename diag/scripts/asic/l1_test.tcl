@@ -20,13 +20,14 @@ set logEn    [lindex $argv 11]
 set pct      [lindex $argv 12]
 set joo      [lindex $argv 13]
 set prbslt   [lindex $argv 14]
+set proto_mode [lindex $argv 15]
 set port 10
 
 if {$logEn == ""} {
     set logEn 1
 }
 
-puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn; simplified: $simplified; logEn: $logEn; ddr_hc_training: $ddr_hc_training; run_ddr_test: $run_ddr_test; pct: $pct; joo: $joo; prbslt:$prbslt"
+puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn; simplified: $simplified; logEn: $logEn; ddr_hc_training: $ddr_hc_training; run_ddr_test: $run_ddr_test; pct: $pct; joo: $joo; prbslt:$prbslt; proto_mode $proto_mode"
 set err_cnt 0
 
 #set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
@@ -183,6 +184,7 @@ if {$use_zmq == 0} {
             sal_j2c
         }
 
+        if { $proto_mode == "1" } { reset_to_proto_mode }
         sal_print_voltage_temp_from_j2c
         sal_print_die_id
         plog_msg "Measuring frequencies:"

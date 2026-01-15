@@ -1955,6 +1955,7 @@ class nic_test_v2:
         cmd += " -lt {}".format(args.prbslt)
         cmd += " -hc 0"
         cmd += " -ddr {}".format(args.ddr_test)
+        cmd += " -p 0"
         session = common.session_start()
         ret = common.session_cmd_pass(session, cmd, pass_sign="L1 TEST ", timeout=600)
         common.session_stop(session)
