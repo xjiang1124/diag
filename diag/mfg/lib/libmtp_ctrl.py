@@ -1557,6 +1557,27 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_update_cns_pmci_package(self, image):
+
+        cmd = "rm -rf /home/diag/cns-pmci"
+        if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+            self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
+
+            return False
+
+        cmd = "tar zxf {:s} -C /home/diag/".format(image)
+        self.cli_log_inf(cmd, level=0)
+        if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+            self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
+            return False
+
+        cmd = "sync"
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_SYNC_DELAY):
+            self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
+            return False
+
+        return True
+
     def mtp_update_nic_diag_image(self, image):
         cmd = "rm -rf {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):

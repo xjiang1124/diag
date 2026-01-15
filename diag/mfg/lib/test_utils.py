@@ -399,7 +399,7 @@ def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     return True
 
 def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=None, scanned_sku=None):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "VULCANO_CNS_PMCI_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_dpn=scanned_dpn, scanned_sku=scanned_sku):
         return False
     return True
@@ -413,7 +413,7 @@ def mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list=[], mtp_type=MTP_T
         test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "MTP_USB_SANITY_CHECK", "DIAG_UPDATE", "AMD_AVT_TOOL_INSTALL", "PYTHON_UPDATE",
                      "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
     elif mtp_type == MTP_TYPE.PANAREA:
-        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "AMD_AVT_TOOL_INSTALL",
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "AMD_AVT_TOOL_INSTALL", "VULCANO_CNS_PMCI_UPDATE",
                      "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
     else:
         test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE",
@@ -430,7 +430,7 @@ def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     return True
 
 def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[]):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "VULCANO_CNS_PMCI_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg):
         return False
     return True
@@ -483,6 +483,9 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
 
         elif test == "PYTHON_UPDATE":
             ret = libmfg_utils.mtp_python369_sitepackage_update(mtp_mgmt_ctrl)
+
+        elif test == "VULCANO_CNS_PMCI_UPDATE":
+            ret = libmfg_utils.mtp_vulcano_cns_pmci_update(mtp_mgmt_ctrl)
 
         elif test == "AMD_AVT_TOOL_INSTALL":
             # Install AMD CPU validation tool AVT onto MTP

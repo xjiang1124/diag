@@ -660,6 +660,7 @@ def main():
             # run_swi_test(pass_nic_list, "FSAFE_CPLD_PROG")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(pass_nic_list, "uC_SW_IMG_PROG")
+            run_swi_test(pass_nic_list, "uC_SW_IMG_PROG")
             run_swi_test(pass_nic_list, "uC_BOOTING_CHK")
             run_swi_test(pass_nic_list, "VULCANO_BOOTING_CHK")
             run_swi_test(pass_nic_list, "uC_VERSION_CHK")

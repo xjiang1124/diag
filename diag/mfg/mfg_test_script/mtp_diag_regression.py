@@ -759,6 +759,8 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_nic_cpld_register_dump_check(nic_list, check=test_kwargs["check"])
                 elif test == "VUL_SUC_I2C_DEVICE_TEST":
                     rlist = mtp_mgmt_ctrl.mtp_nic_vul_suc_i2c_device_test(nic_list)
+                elif test == "VULVANO_FOGA_UART_STATS_DUMP":
+                    rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
                 elif test == "OCP_FRU_SN":
                     rlist = salina_parse_ocp_sn(mtp_mgmt_ctrl, nic_list)
                 elif test == "OCP_RMII":
