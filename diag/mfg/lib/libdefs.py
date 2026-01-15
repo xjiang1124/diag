@@ -222,6 +222,7 @@ class MTP_Const:
     MTP_PARA_ASIC_L1_TEST_TIMEOUT = 30*60
     SALINA_AI_ASIC_L1_TEST_TIMEOUT = 60*15
     SALINA_DPU_ASIC_L1_TEST_TIMEOUT = 60*60
+    VUCANO_ASIC_L1_TEST_TIMEOUT = 60*60
     MTP_L1_HEALTH_CHECK_TIMEOUT = 10*60
 
     # more than 12 hours
@@ -690,9 +691,7 @@ class MFG_DIAG_CMDS:
 
     #PANAREA MTP
     PANAREA_MTP_VULCANO_NIC_JTAG_MBIST = "tclsh vul_jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s}"
-    PANAREA_MTP_VULCANO_NIC_PCIE_PRBS = "tclsh vul_pcie_prbs.tcl -slot {:s} -pcie_gen {:s} -int_lpbk {:s} -vmarg {:s}"
-    PANAREA_SNAKE_MTP_FMT       = "stdbuf -i0 -o0 -e0 tclsh vul_snake.tcl -slot {:s} -snake_num {:d} -vmarg {:s} -duration {:d} -int_lpbk {:d}"
-    VULCANO_NIC_PCIE_PRBS_TMP_FMT = "stdbuf -i0 -o0 -e0 tclsh vul_pcie_prbs.tcl -slot {:s} -pcie_gen {:s} -int_lpbk {:s}"
+    PANAREA_MTP_FPGA_UART_STATS_FMT = "cat /proc/fpga_uart_stats"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
@@ -712,11 +711,11 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_STOP_SYSMOND_FMT = "killall sysmond"
     NIC_DIAG_STOP_HAL_FMT = "killall hal"
     NIC_DIAG_STOP_TCLSH_FMT = "killall tclsh"
-    NIC_DIAG_STOP_PICOCOM_FMT = "ps -ef | grep picocom | grep ttyS | awk '{{print $2}}' | xargs kill -9"
-    MATERA_NIC_DIAG_STOP_PICOCOM_FMT = "ps -ef | grep 'fpga_uart.*{:s}$' | awk '{{print $2}}' | xargs kill -9"
-    PANAREA_NIC_DIAG_STOP_FPGA_UART_FMT = "ps -ef | grep 'ttySuC{:s}$' | awk '{{print $2}}' | xargs kill -9"
-    PANAREA_NIC_DIAG_STOP_VULCANO_UART_FMT = "ps -ef | grep 'ttyVul{:s}$' | awk '{{print $2}}' | xargs kill -9"
-    PANAREA_NIC_DIAG_STOP_PICOCOM_FMT = "ps -ef | grep picocom  | grep SUCUART{:s}$ | awk '{{print $2}}' | xargs kill -9"
+    NIC_DIAG_STOP_PICOCOM_FMT = "ps -ef | grep picocom | grep ttyS | awk '{{print $2}}' | xargs -r kill -9"
+    MATERA_NIC_DIAG_STOP_PICOCOM_FMT = "ps -ef | grep 'fpga_uart.*{:s}$' | awk '{{print $2}}' | xargs -r kill -9"
+    PANAREA_NIC_DIAG_STOP_FPGA_UART_FMT = "ps -ef | grep 'ttySuC{:s}$' | awk '{{print $2}}' | xargs -r kill -9"
+    PANAREA_NIC_DIAG_STOP_VULCANO_UART_FMT = "ps -ef | grep 'ttyVul{:s}$' | awk '{{print $2}}' | xargs -r kill -9"
+    PANAREA_NIC_DIAG_STOP_PICOCOM_FMT = "ps -ef | grep picocom  | grep SUCUART{:s}$ | awk '{{print $2}}' | xargs -r kill -9"
     NIC_DIAG_CHECK_PICOCOM_FMT = "ps -elf | grep picocom"
     MATERA_NIC_DIAG_CHECK_PICOCOM_FMT = "ps -elf | grep fpga_uart | grep {:s}$"
     PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT = "ps -elf | grep picocom | grep SUCUART{:s}$"

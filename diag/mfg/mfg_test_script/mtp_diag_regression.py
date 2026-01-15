@@ -759,6 +759,8 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_nic_cpld_register_dump_check(nic_list, check=test_kwargs["check"])
                 elif test == "VUL_SUC_I2C_DEVICE_TEST":
                     rlist = mtp_mgmt_ctrl.mtp_nic_vul_suc_i2c_device_test(nic_list)
+                elif test == "VULVANO_FOGA_UART_STATS_DUMP":
+                    rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
                 elif test == "OCP_FRU_SN":
                     rlist = salina_parse_ocp_sn(mtp_mgmt_ctrl, nic_list)
                 elif test == "OCP_RMII":
@@ -768,10 +770,6 @@ def main():
 
                 elif test == "VULCANO_JTAG_MBIST":
                     rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"], test_type="warm")
-                elif test == "VULCANO_PCIE_PRBS":
-                    rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_pcie_prbs(nic_list, vmarg=test_kwargs["vmarg"])
-                elif test == "VULCANO_SNAKE":
-                    rlist = mtp_mgmt_ctrl.mtp_snake_mtp_vulcano(nic_list, snake_num=test_kwargs["snake_num"], vmarg=test_kwargs["vmarg"], dura=test_kwargs["dura"], int_lpbk=test_kwargs["int_lpbk"], timeout=test_kwargs["timeout"])
                 elif test == "L1":
                     rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, str(stage), test_kwargs["l1_sequence"], ddr=test_kwargs["ddr"])
                 elif test == "L1_OW":
@@ -1036,7 +1034,7 @@ def main():
 
             ### VULCANO TEST ORDER
             if get_slots_of_type(VULCANO_NIC_TYPE_LIST):
-                test_section_list = ["STRESS", "I2C", "J2C_SEQ", "VULCANO_SNAKE_SECTION"]
+                test_section_list = ["STRESS", "I2C", "J2C_SEQ"]
 
             if args.skip_test:
                 test_section_list = libmfg_utils.list_subtract(test_section_list, args.skip_test)
@@ -1327,7 +1325,7 @@ def main():
                     if vulcano_type_list:
                         vul_vmarg = 'nom' if vmarg == 'normal' else vmarg
                         vmarg = vul_vmarg
-                    run_regression_test(vulcano_type_list, "L1", "ASIC",l1_sequence=l1_sequence, ddr='0')
+                    run_regression_test(vulcano_type_list, "L1", "ASIC", l1_sequence=l1_sequence, ddr='0')
 
                     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Complete\n".format(nic_type), level=0)
 
@@ -1494,26 +1492,6 @@ def main():
                     # run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
                     # run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
 
-                elif test_section == "VULCANO_SNAKE_SECTION":
-                    # so asic not support external loopback, if run internal loopback, it's same as L1, so comment out first
-                    # # run snake test
-                    # run_test(get_slots_of_type(VULCANO_NIC_TYPE_LIST), "NIC_PWRCYC")
-                    # vulcano_snake_slots = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
-                    # # if p2c using internal loopback, set int_lpbk to 1, if 4c using external lookback, set int_lpbk to 0
-                    # # lpbk_type = 1 if stage in (FF_Stage.FF_P2C,  FF_Stage.FF_2C_H, FF_Stage.FF_2C_L) else 0
-                    # lpbk_type = 0
-                    # nvmarg = 'nom' if vmarg == 'normal' else vmarg
-                    # run_regression_test(vulcano_snake_slots, "VULCANO_SNAKE", snake_num=4, vmarg=nvmarg, dura=60, int_lpbk=lpbk_type, timeout=3600)
-
-                    # run PCIE PRBS
-                    run_test(get_slots_of_type(VULCANO_NIC_TYPE_LIST), "NIC_PWRCYC")
-                    pcie_prbs_list = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
-                    run_regression_test(pcie_prbs_list, "VULCANO_PCIE_PRBS", vmarg=vmarg)
-                    # # run PCIE PRBS
-                    # run_regression_test(pcie_prbs_list, "VULCANO_PCIE_PRBS_4CHAMBER", margin_code="")
-                    # run_regression_test(pcie_prbs_list, "VULCANO_PCIE_PRBS_4CHAMBER", margin_code="1")
-                    # run_regression_test(pcie_prbs_list, "VULCANO_PCIE_PRBS_4CHAMBER", margin_code="2")
-
                 # print temperature after the test
                 if GLB_CFG_MFG_TEST_MODE:
                     mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
@@ -1559,6 +1537,9 @@ def main():
             run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
             run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_ZEPHYR_GOLDFW")
             run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux", warm_reset=False)
+
+            # dump fpga uart stats for vulcalno cards
+            run_regression_test(get_slots_of_type(VULCANO_NIC_TYPE_LIST), "VULVANO_FOGA_UART_STATS_DUMP")
 
             # log the diag test history
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
