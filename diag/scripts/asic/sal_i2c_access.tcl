@@ -84,7 +84,6 @@ exec fpgautil spimode $slot off
 sal_j2c
 plog_msg "_msrd"
 plog_msg [eval _msrd]
-reset_to_proto_mode
 sal_set_vmarg $vmarg
 
 # run test

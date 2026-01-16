@@ -252,10 +252,8 @@ sal_j2c
 plog_msg "_msrd"
 plog_msg [eval _msrd]
 
-if { $reset == "cold" } {
-    reset_to_proto_mode no_proto
-} else {
-    reset_to_proto_mode warm_rot
+if { $reset == "warm" } {
+    reset_to_proto_mode warm_rot_proto
 }
 
 sal_set_vmarg $vmarg
