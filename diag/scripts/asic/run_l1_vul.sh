@@ -6,18 +6,19 @@ VMARG="normal"
 ESEC_EN=1
 ITE=1
 PCT=0
-#PRBSLT=1
+REPORT_MODE=0
 TCL_PATH=""
 
 usage () {
     echo "=========================="
-    echo "./run_l1.sh -sn <> -slot <> -i <> -v <> -e <> -t <> -ite <>"
+    echo "./run_l1.sh -sn <> -slot <> -i <> -v <> -e <> -t <> -r <> -ite <>"
     echo "sn:   SN"
     echo "slot: Slot number"
     echo "i:    0: external loopback; 1 internal loopback; default: 0"
     echo "v:    Voltage margin: nom/low/high; default: nom"
     echo "e:    0: esecure test disabled; 1: esecure test enabled; default: 1"
     echo "t:    Tcl_path"
+    echo "r:    skip_l1_report_mode: 0 or 1"
     echo "ite:  Number of iterations"
     echo "=========================="
 }
@@ -65,6 +66,12 @@ case $key in
     shift # past value
     ;;
     #-------------
+    -r|--report_mode)
+    REPORT_MODE=${2}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
     -ite)
     ITE=${2}
     shift # past argument
@@ -104,8 +111,8 @@ do
     echo "jtag_accpcie_vulcano clr $SLOT"
     jtag_accpcie_vulcano clr $SLOT
 
-    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT 1 $TCL_PATH\""
-    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT 1 $TCL_PATH"
+    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $TCL_PATH\""
+    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $TCL_PATH"
     ret=$?
     sync
     num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1 TEST FAILED" | wc | awk -F " " '{print $1}')
