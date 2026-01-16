@@ -117,8 +117,8 @@ def pldm_program(slot,  component_ids=None, kernel=None, image=None, debug=False
     # util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}:{interface}', '--detach-usb-kernel-driver', '--allow-early-update-completion', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
     # util_args = ['--board-type', 'AinicSuc', '--component-ids', '1', '--usb', f'{sn}:{interface}', '--detach-usb-kernel-driver', '--allow-early-update-completion', '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
     # util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}:{interface}', '--detach-usb-kernel-driver', '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
-    # util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}', '--detach-usb-kernel-driver', '--override-fd-descriptors', '/home/diag/cns-pmci/board/gelso.json', '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
-    util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}', '--detach-usb-kernel-driver', '--allow-early-update-completion',  '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
+    # util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}', '--detach-usb-kernel-driver', '--no-logs', '--override-fd-descriptors', '/home/diag/cns-pmci/board/gelso.json', '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
+    util_args = ['--board-type', 'AinicSuc', '--usb', f'{sn}', '--detach-usb-kernel-driver', '--no-logs', '--allow-early-update-completion',  '--print-hdrs', '--print-msgs', '--util', f'pldmfwpkg={image}', '--test-cases', 'PldmFwUpdateSingleFDUpdateFlow']
     if component_ids:
         util_args += ['--component-ids', component_ids]
     if debug:
