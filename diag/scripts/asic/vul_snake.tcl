@@ -6,6 +6,7 @@ set usage {
     {vmarg.arg          "nom"               "Voltage margin high/low/nom"}
     {snake_num.arg      1                   "snake number"}
     {int_lpbk.arg       1                   "mac serdes internal loopback"}
+    {is_200g_serdes.arg 0                   "is 200g serdes"}
     {duration.arg       60                  "duration"}
     {tcl_path.arg       ""                  "ASIC lib location"}
 }
@@ -71,7 +72,7 @@ after 10000
 vul_set_vmarg $vmarg all
 
 plog_msg "start snake"
-vul_l1_snake $snake_num 0 $int_lpbk $duration 1500
+vul_l1_snake $snake_num 0 $int_lpbk $is_200g_serdes $duration
 plog_msg "check result"
 vul_print_pass_fail vul_l1_snake $err_cnt_init
 plog_stop
