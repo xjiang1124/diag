@@ -109,6 +109,7 @@ then
         /home/diag/diag/python/regression/envinit.py
     fi
     /home/diag/diag/scripts/turn_on_slot.sh on all
+    sleep 3
     /home/diag/diag/util/inventory -env
     cat $DIAG_DIR/log/board_env.txt >> temp_profile
     echo "export DIAG_HOME=/home/diag/" >> temp_profile

@@ -222,7 +222,7 @@ class MTP_Const:
     MTP_PARA_ASIC_L1_TEST_TIMEOUT = 30*60
     SALINA_AI_ASIC_L1_TEST_TIMEOUT = 60*15
     SALINA_DPU_ASIC_L1_TEST_TIMEOUT = 60*60
-    VUCANO_ASIC_L1_TEST_TIMEOUT = 60*60
+    VUCANO_ASIC_L1_TEST_TIMEOUT = 60*60*1.5
     MTP_L1_HEALTH_CHECK_TIMEOUT = 10*60
 
     # more than 12 hours
@@ -501,7 +501,7 @@ class MFG_DIAG_CMDS:
     NIC_L1_ESEC_PROG_FMT = "tclsh ./esec_l1_prog_elba.tcl -slot {:d}"
     NIC_L1_ESEC_GIGLIO_PROG_FMT = "tclsh ./esec_l1_prog_giglio.tcl -slot {:d}"
     NIC_MATERA_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s} -joo {:s} -i {:s} -o {:s} -e {:s} -s {:s} -ite {:s} -lt {:s}"
-    NIC_PANAREA_RUN_ASIC_L1_FMT = "./run_l1_vul.sh -sn {:s} -slot {:d} -v {:s} -i {:s} -ite {:s}"
+    NIC_PANAREA_RUN_ASIC_L1_FMT = "./run_l1_vul.sh -sn {:s} -slot {:d} -v {:s} -i {:s} -ite {:s} -e 1 -r 1"
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s} {:s}"
