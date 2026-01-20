@@ -38,6 +38,7 @@ arm_a_zephyr_b = "arm_a_zephyr_b"
 fwsel = "fwsel"
 device_config_dtb = "device_config_dtb"
 firmware_config_dtb = "firmware_config_dtb"
+oprom = "oprom"
 mbist_boot0_img = "mbist_boot0_img"
 bl1_img = "bl1"
 pentrust_img = "pentrust"
@@ -225,6 +226,12 @@ def get_firmware_config_dtb_img(mtp_mgmt_ctrl, slot, stage):
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.firmware_config_dtb, nic_type)
     }
 
+def get_oprom_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, oprom)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.oprom, nic_type)
+    }
+
 def get_arm_n_boot0_img(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_n_boot0)
     return {
@@ -367,6 +374,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         fwsel: get_fwsel_img,
         device_config_dtb: get_device_config_dtb_img,
         firmware_config_dtb: get_firmware_config_dtb_img,
+        oprom: get_oprom_img,
         arm_n_boot0: get_arm_n_boot0_img,
         arm_n_uboota: get_arm_n_uboota_img,
         arm_n_ubootb: get_arm_n_ubootb_img,
@@ -514,6 +522,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(mainfw)
             if nic_type in SALINA_AI_NIC_TYPE_LIST:
                 images_needed.append(firmware_config_dtb)
+                images_needed.append(oprom)
                 images_needed.append(arm_a_zephyr)
                 images_needed.append(fwsel)
                 images_needed.append(bl1_img)

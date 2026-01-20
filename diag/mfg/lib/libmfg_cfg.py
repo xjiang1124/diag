@@ -77,6 +77,7 @@ class NIC_IMAGES:
     fwsel_img = dict()
     device_config_dtb = dict()
     firmware_config_dtb = dict()
+    oprom = dict()
     mbist_boot0_img = dict()
     suc_diag_img = dict()
     suc_diagimg_suc_date = dict()
@@ -1088,6 +1089,7 @@ class NIC_IMAGES:
     fwsel_img["POLLARA-1Q400P"] = "salina/pollara/ainic_1.117.1-a-31/fwsel_extosa.bin"
     device_config_dtb["POLLARA-1Q400P"] = "salina/pollara/ainic_1.117.1-a-31/mainfw/nonsecure/salina/device_config.dtb"
     firmware_config_dtb["POLLARA-1Q400P"] = "salina/pollara/ainic_1.117.1-a-31/mainfw/nonsecure/salina/firmware_config_POLLARA-1Q400P.dtb"
+    oprom["POLLARA-1Q400P"] = "salina/pollara/ainic_1.117.1-a-31/mainfw/nonsecure/salina/new_oprom.bin"
     qspi_prog_sh_img["POLLARA-1Q400P"] = "salina/pollara/ainic_1.117.1-a-31/qspi_prog.v2.sh"
     qspi_prog_secure_sh_img["POLLARA-1Q400P"] = "salina/pollara/ainic_1.117.1-a-31/qspi_prog_secure.v2.sh"
     qspi_verify_sh_img["POLLARA-1Q400P"] = "salina/pollara/ainic_1.117.1-a-31/qspi_verify.v2.sh"
@@ -1120,6 +1122,7 @@ class NIC_IMAGES:
     fwsel_img["POLLARA-1Q400P-O"] = "salina/pollara/ainic_1.117.1-a-27/fwsel_extosa.bin"
     device_config_dtb["POLLARA-1Q400P-O"] = "salina/pollara/ainic_1.117.1-a-27/mainfw/nonsecure/salina/device_config.dtb"
     firmware_config_dtb["POLLARA-1Q400P-O"] = "salina/pollara/ainic_1.117.1-a-27/mainfw/nonsecure/salina/firmware_config_POLLARA-1Q400P.dtb"
+    oprom["POLLARA-1Q400P-O"] = "salina/pollara/ainic_1.117.1-a-27/mainfw/nonsecure/salina/new_oprom.bin"
     qspi_prog_sh_img["POLLARA-1Q400P-O"] = "salina/pollara/ainic_1.117.1-a-27/qspi_prog.v2.sh"
     qspi_prog_secure_sh_img["POLLARA-1Q400P-O"] = "salina/pollara/ainic_1.117.1-a-27/qspi_prog_secure.v2.sh"
     qspi_verify_sh_img["POLLARA-1Q400P-O"] = "salina/pollara/ainic_1.117.1-a-31/qspi_verify.v2.sh"
@@ -1152,6 +1155,7 @@ class NIC_IMAGES:
     fwsel_img["POLLARA-1Q400P-D"] = "salina/pollara/ainic_1.117.5-a-44/fwsel_extosa.bin"
     device_config_dtb["POLLARA-1Q400P-D"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/device_config.dtb"
     firmware_config_dtb["POLLARA-1Q400P-D"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/firmware_config_POLLARA-1Q400P.dtb"
+    oprom["POLLARA-1Q400P-D"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/new_oprom.bin"
     qspi_prog_sh_img["POLLARA-1Q400P-D"] = "salina/pollara/ainic_1.117.5-a-44/qspi_prog.v2.sh"
     qspi_prog_secure_sh_img["POLLARA-1Q400P-D"] = "salina/pollara/ainic_1.117.5-a-44/qspi_prog_secure.v2.sh"
     qspi_verify_sh_img["POLLARA-1Q400P-D"] = "salina/pollara/ainic_1.117.5-a-44/qspi_verify.v2.sh"
@@ -1173,26 +1177,28 @@ class NIC_IMAGES:
     fail_cpld_dat["POLLARA-1Q400P-H"] = "11-01-25_12:18" #mm-dd-YY_HH:MM
     fea_cpld_img["POLLARA-1Q400P-H"] = "salina.fea"
     ufm1_img["POLLARA-1Q400P-H"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
-    arm_a_boot0_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/boot0.img"
-    arm_a_uboota_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/uboota.img"
-    arm_a_ubootb_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/ubootb.img"
-    arm_a_ubootg_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/goldfw/nonsecure/salina/ubootg.img"
-    arm_a_zephyr_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/zephyr.img"
-    arm_a_zephyr_a_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/zephyr.img"
-    arm_a_zephyr_b_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/zephyr.img"
-    arm_a_zephyr_gold_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/goldfw/nonsecure/salina/zephyr.img"
-    fwsel_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/fwsel_extosa.bin"
-    device_config_dtb["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/device_config.dtb"
-    firmware_config_dtb["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/nonsecure/salina/firmware_config_POLLARA-1Q400P.dtb"
-    qspi_prog_sh_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/qspi_prog.v2.sh"
-    qspi_prog_secure_sh_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/qspi_prog_secure.v2.sh"
-    qspi_verify_sh_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/qspi_verify.v2.sh"
-    qspi_verify_secure_sh_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/qspi_verify_secure.v2.sh"
-    bl1_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/secure/salina/bl1.img"
-    pentrust_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/secure/salina/pentrustfw.img"
-    fipa_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/secure/salina/fip.img"
-    fipb_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/mainfw/secure/salina/fip.img"
-    fipg_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-44/goldfw/secure/salina/fip.img"
+
+    arm_a_boot0_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/nonsecure/salina/boot0.img"
+    arm_a_uboota_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/nonsecure/salina/uboota.img"
+    arm_a_ubootb_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/nonsecure/salina/ubootb.img"
+    arm_a_ubootg_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/goldfw/nonsecure/salina/ubootg.img"
+    arm_a_zephyr_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/nonsecure/salina/zephyr.img"
+    arm_a_zephyr_a_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/nonsecure/salina/zephyr.img"
+    arm_a_zephyr_b_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/nonsecure/salina/zephyr.img"
+    arm_a_zephyr_gold_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/goldfw/nonsecure/salina/zephyr.img"
+    fwsel_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/fwsel_extosa.bin"
+    device_config_dtb["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/nonsecure/salina/device_config_rdma_1x400G.dtb"
+    firmware_config_dtb["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/nonsecure/salina/firmware_config_hw_board_id_0x04650001.dtb"
+    oprom["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/nonsecure/salina/new_oprom.bin"
+    qspi_prog_sh_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/qspi_prog.v3.sh"
+    qspi_prog_secure_sh_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/qspi_prog_secure.v2.sh"
+    qspi_verify_sh_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/qspi_verify.v3.sh"
+    qspi_verify_secure_sh_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/qspi_verify_secure.v2.sh"
+    bl1_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/secure/salina/bl1.img"
+    pentrust_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/secure/salina/pentrustfw.img"
+    fipa_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/secure/salina/fip.img"
+    fipb_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/secure/salina/fip.img"
+    fipg_img["POLLARA-1Q400P-H"] = "salina/pollara/ainic_1.117.5-a-56/goldfw/secure/salina/fip.img"
 
     # Lingua is AINIC, No N1 firmware image
     cpld_img["LINGUA"] = "salina_cfg0-rev2_9_0828-1127_fix_hpe_reload.bin"
@@ -1505,6 +1511,7 @@ class MTP_IMAGES:
 
 # MFG release images
 class MFG_IMAGE_FILES:
+
     MTP_AMD64_IMAGE = "image_amd64_elba.tar"
     MTP_ARM64_IMAGE = "image_arm64_elba.tar"
     
