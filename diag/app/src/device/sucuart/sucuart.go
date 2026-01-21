@@ -252,7 +252,8 @@ func Suc_dev_status(slot int) () {
     var rails []string
     uutName := "UUT_"+strconv.Itoa(slot)
     cardType := os.Getenv(uutName)
-    if cardType == "GELSOP" || cardType == "GELSOX" {
+
+    if cardType == "GELSOP" || cardType == "GELSOX" || cardType == "GELSOB" || cardType == "GELSOU" {
         cmd_list = []string{"i2c write sercom2 0x4c 0x23 0x94", "tmp451 temperature", "voltage mp2861_sensor", "voltage ina3221_sensor"}
         ds4424_output = suc_single_cmd(slot, "voltage ds4424_info", false)
         rails = []string{"VDDIO_P1V2", "VDDAN_P1V8_PX", "VDDAN_P1V8_ETH", "VDDPL_P1V2", "VDDPL_P1V1_PX", "VDDPL_P1V1_ETH", "VDDPL_0P75"}
@@ -261,7 +262,7 @@ func Suc_dev_status(slot int) () {
         ds4424_output = suc_single_cmd(slot, "voltage ds4424_info", false)
         rails = []string{"VDDCR_0P75"}
     } else {
-        cli.Println("e", "Environment UUT_<slot> not set for this card.  Please run ./start_diag.sh + source ~/.bash_profile to set the UUT_<slot>")
+        cli.Println("e", "Environment UUT_<slot> not set for this card or unsupported CARDT_TYPE.  Please run ./start_diag.sh + source ~/.bash_profile to set the UUT_<slot>")
     }
     suc_cmd_list(slot, cmd_list)
     cli.Println("i")
@@ -424,6 +425,49 @@ func Suc_cpld_write(slot int, offset byte, value byte) (err int) {
         return errType.SUCCESS
     } else {
         return errType.FAIL
+    }
+    return
+}
+
+/**************************************************************
+*
+* Read the raw frudata using "frudump raw" command
+* 
+* Data will come back in a hexdump format like below
+* 
+* uart:~$ frudump raw
+* 00000000: 01 00 00 01 17 2c 00 bb  01 16 19 40 2d dd c8 41 |.....,.. ...@-..A|
+* 00000010: 4d 44 20 20 20 20 20 f2  56 55 4c 43 41 4e 4f 2d |MD     . VULCANO-|
+* ...
+* ...
+* 000001F0: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00 |........ ........|
+*
+**************************************************************/
+func Suc_fru_read(slot int) (data []byte, err int) {
+    u, err := open_suc_uart(slot, 115200)
+    if err != errType.SUCCESS {
+        return 
+    }
+    defer u.close_suc_uart()
+    cmd := "frudump raw"
+    buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
+    if err != errType.SUCCESS {
+        return
+    }
+    fmt.Printf("%s\n", string(buf))
+    splitOutput := strings.Split(string(buf), "\n");
+    for _, splitLine := range(splitOutput) {
+        re := regexp.MustCompile(`\b[0-9a-fA-F]{2}\b`)
+	bytes := re.FindAllString(splitLine, -1)
+        if len(bytes) < 16 {
+            cli.Println("e", "Error: Not getting 16 bytes of data per line from 'frudump raw'.  Check that the Suc FRU is programmed")
+            err = errType.FAIL;
+            return;
+        }
+        for i:=0; i<16; i++ {
+            u64, _ := strconv.ParseUint(bytes[i], 16, 8)   //base 16, 8-bits
+            data = append(data, uint8(u64))
+        }
     }
     return
 }

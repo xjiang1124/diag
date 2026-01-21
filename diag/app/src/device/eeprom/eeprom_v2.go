@@ -105,6 +105,8 @@ const (
     PN_MTP_PANAREA_FPIC string = "102-P11900-00"
     PN_GELSOP           string = "102-P12100"
     PN_GELSOX           string = "102-P12200"
+    PN_GELSOB           string = "102-P12800"
+    PN_GELSOU           string = "102-P12700"
     PN_MORTARO          string = "102-P12300"
     PN_SARACENO         string = "102-P12500"
 
@@ -2341,6 +2343,20 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
 
 //==============================================================================
 //                  F R U    A C T I O N    F U N C T I O N S
+// 
+// Target Device Decoder 
+// 
+// CPLD_FRU --> Writes FRU data to CPLD UFM2 FLASH.  This is for Salina Platform.
+//              The physical eeprom was removed and the fru data is stored in the cpld ufm2 flash
+// 
+// FILE --> Write the fru contect to a binary file.  filename "eeprom"
+// 
+// SUCFRU --> This is for vulcano based platforms.  Some boards do not have an eeprom
+//            The FRU contects are stored in the boards micro-controller flash
+// 
+// FRU --> Normal I2C eeprom
+// 
+// 
 //==============================================================================
 
 func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
@@ -2354,15 +2370,29 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
         return
     }
 
-    if devName == "CPLD_FRU" {
-        //Writes FRU data to CPLD UFM2 FLASH
+    if devName == "CPLD_FRU" {              
         fmt.Printf("WRITE TO UFM2\n");
         i2cinfo.SwitchI2cTbl("UUT_NONE")
         errGo := materafpga.Spi_cpldXO3_program_flash(uint32(bus-3), "ufm2", false, "", Data)
         if errGo != nil {
             return errType.FAIL 
         }
-    } else if devName == "SUCFRU" {   //Writes FRU data to SUC Microcontroller via it's console
+    } else if devName == "FILE" {
+        var f *os.File
+        var err_ error
+        var fname string = "eeprom"
+
+        f, err_ = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+        if err_ != nil {
+            cli.Println("e", "file create failed. Filename:", fname)
+            return -1
+        }
+
+        cli.Println("i", "dump FRU to filename --> ", fname)
+        f.WriteString(string(Data[:]))
+        f.Close()
+        cli.Println("i", "EEPROM: dumped", len(Data), "bytes to file", fname)
+    } else if devName == "SUCFRU" {   
         var Length int = 378
         fmt.Printf("WRITE TO SUC Microcontroller  Bus=%d  Len=%d\n", bus, len(Data));
         i2cinfo.SwitchI2cTbl("UUT_NONE")
@@ -2432,38 +2462,45 @@ func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
         if errGo != nil {
             return errType.FAIL 
         }
-    } else {
-        var lockName string
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
-            lockName, _, err = hwinfo.LockDev(devName)
-            if err != errType.SUCCESS {
-                return
-            }
-        }
-        err = smbusNew.Open(devName, bus, devAddr)
+        return
+    }
+
+    if devName == "SUCFRU" {
+        DataRaw , err = sucuart.Suc_fru_read(int(bus-2))
+        return
+    } 
+
+    var lockName string
+    if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        lockName, _, err = hwinfo.LockDev(devName)
         if err != errType.SUCCESS {
+            return
+        }
+    }
+    err = smbusNew.Open(devName, bus, devAddr)
+    if err != errType.SUCCESS {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+            hwinfo.UnlockDev(lockName)
+        }
+        return
+    }
+    //Read FRU data from EEPROM
+    for i:=0;i<MAX_BYTES;i++ {
+        fruData, err =readOffset(devName, bus, devAddr, i)
+        DataRaw = append(DataRaw, fruData)
+        if err != errType.SUCCESS {
+            smbusNew.Close()
             if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
                 hwinfo.UnlockDev(lockName)
             }
             return
         }
-        //Read FRU data from EEPROM
-        for i:=0;i<MAX_BYTES;i++ {
-            fruData, err =readOffset(devName, bus, devAddr, i)
-            DataRaw = append(DataRaw, fruData)
-            if err != errType.SUCCESS {
-                smbusNew.Close()
-                if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
-                    hwinfo.UnlockDev(lockName)
-                }
-                return
-            }
-        }
-        smbusNew.Close()
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
-            hwinfo.UnlockDev(lockName)
-        }
     }
+    smbusNew.Close()
+    if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        hwinfo.UnlockDev(lockName)
+    }
+
     return
 }
 
@@ -2486,6 +2523,11 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
         if errGo != nil {
             return errType.FAIL 
         }
+        return
+    } 
+
+    if devName == "SUCFRU" {
+        Data , err = sucuart.Suc_fru_read(int(bus-2))
         return
     } 
 
