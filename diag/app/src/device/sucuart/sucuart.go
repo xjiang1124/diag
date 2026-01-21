@@ -166,6 +166,11 @@ func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
     if last_line != -1 {
         result = result[:last_line]
     }
+    if bytes.HasSuffix(result, prompt1) {
+        result = result[:len(result)-len(prompt1)]
+    } else if bytes.HasSuffix(result, prompt2) {
+        result = result[:len(result)-len(prompt2)]
+    }
     //time.Sleep(200 * time.Millisecond)
     return result, errType.SUCCESS
 }
@@ -248,11 +253,11 @@ func Suc_dev_status(slot int) () {
     uutName := "UUT_"+strconv.Itoa(slot)
     cardType := os.Getenv(uutName)
     if cardType == "GELSOP" || cardType == "GELSOX" {
-        cmd_list = []string{"tmp451 temperature", "voltage mp2861_sensor", "voltage ina3221_sensor"}
+        cmd_list = []string{"i2c write sercom2 0x4c 0x23 0x94", "tmp451 temperature", "voltage mp2861_sensor", "voltage ina3221_sensor"}
         ds4424_output = suc_single_cmd(slot, "voltage ds4424_info", false)
         rails = []string{"VDDIO_P1V2", "VDDAN_P1V8_PX", "VDDAN_P1V8_ETH", "VDDPL_P1V2", "VDDPL_P1V1_PX", "VDDPL_P1V1_ETH", "VDDPL_0P75"}
     } else if cardType == "MORTARO" || cardType == "SARACENO" {
-        cmd_list = []string{"tmp451 temperature", "voltage mp2861_sensor"}
+        cmd_list = []string{"i2c write sercom2 0x4c 0x23 0x94", "tmp451 temperature", "voltage mp2861_sensor"}
         ds4424_output = suc_single_cmd(slot, "voltage ds4424_info", false)
         rails = []string{"VDDCR_0P75"}
     } else {
