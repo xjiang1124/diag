@@ -267,6 +267,8 @@ func present() (err int) {
                 presentStr = "GELSOX"
             case nicCpldCommon.ID_GELSOB:
                 presentStr = "GELSOB"
+            case nicCpldCommon.ID_GELSOU:
+                presentStr = "GELSOU"
             case nicCpldCommon.ID_MORTARO:
                 presentStr = "MORTARO"
             case nicCpldCommon.ID_SARACENO:
@@ -585,6 +587,8 @@ func sysDetect() (err int) {
                 presentStr = "GELSOX"
             case nicCpldCommon.ID_GELSOB:
                 presentStr = "GELSOB"
+            case nicCpldCommon.ID_GELSOU:
+                presentStr = "GELSOU"
             case nicCpldCommon.ID_MORTARO:
                 presentStr = "MORTARO"
             case nicCpldCommon.ID_SARACENO:

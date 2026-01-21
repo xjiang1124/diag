@@ -34,7 +34,7 @@ card_adapter_enable_power() {
         then
             register40=$(( $register40 | 0x1 ))
         else
-            register40=$(( $register40 | 0xC1 )) 
+            register40=$(( $register40 | 0x1 )) 
         fi
         i2cset -y ${slotI2Cmap[$slot]} 0x4b 0x40 $register40
         sleep 0.5
@@ -43,7 +43,7 @@ card_adapter_enable_power() {
         then
             register40=$(( $register40 | 0x2 ))
         else 
-            register40=$(( $register40 | 0xC2 )) 
+            register40=$(( $register40 | 0x2 )) 
         fi
         i2cset -y ${slotI2Cmap[$slot]} 0x4b 0x40 $register40
         sleep 0.5
