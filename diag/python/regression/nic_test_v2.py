@@ -403,6 +403,295 @@ class nic_test_v2:
         
         return full_range
 
+    def conv_2s(self, a,s):
+        b = a if( a < (2**(s-1)) ) else a - (2**s)
+        return b
+
+    def parse_linkeval_registers(self, input):
+        expected_macros = {"m 0", "m 1", "m 2", "m 3"}
+        missing_macros = {m for m in expected_macros if m not in input}
+        if missing_macros:
+            print("Error - Missing macros: " + ", ".join(missing_macros))
+            return
+
+        list_of_registers = ["rx_ctle" ,
+                    "rx_ctle_adapt_bypass",
+                    "rx_agc_adapt_status",
+                    "rx_adapt_vga_offset_status",
+                    "rx_vga_reg1",
+                    "rx_vga_reg2",
+                    "rx_ffe_adapt_coef_rdreg0",
+                    "rx_ffe_adapt_coef_rdreg1",
+                    "rx_ffe_adapt_coef_rdreg2",
+                    "rx_ffe_adapt_coef_rdreg3",
+                    "rx_ffe_adapt_coef_rdreg4",
+                    "rx_datablock_offset_rdreg9",
+                    "rx_slicer_threshold_rdreg13",
+                    "rx_slicer_target_rdreg13",
+                    "rx_slicer_target_rdreg14",
+                    "rx_phase_adapt_rdreg",
+                    "rxmfsm_stat",
+                    "seq_cntrl_rx_rdreg",
+                    "tx_fir_rdreg",
+                    "tx_phase_adapt_rdreg",
+                    "txmfsm_stat"
+                    ]
+        n_macros = 4
+        n_lanes = 4
+        macro_no = -1
+        registers = dict()
+        for m in range(n_macros):
+            registers[m] = dict()
+            for l in range(n_lanes):
+                registers[m][l] = dict()
+        lines = input.splitlines()
+        for line in lines:
+            if line == '':
+                continue
+            #Process the register fields
+            if( (macro_no >= 0) and (macro_no < n_macros) ):
+                # Read all the register values
+                me = re.search(r'm\s*(\d+)\s*\(\w+\)\s*\:\s*(\w+)\s*(\w+)\s*(\w+)\s*(\w+)', line)
+                # print(line)
+                #double check that the macro number matches
+                if(int(me.group(1)) != macro_no):
+                    print("Possible parsing mismatch. We seem to be in the wrong line")
+
+                if(cur_reg == "rx_ctle"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['rate_nt'] = 0x1 & int(me.group(lane+2), base=16)
+
+                elif(cur_reg == "rx_ctle_adapt_bypass"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['setting_a']   = 0xf & (int(me.group(lane+2), base=16) >> 1)
+
+                elif(cur_reg == "rx_agc_adapt_status"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['vga_fine_a']   = 0x3f & (int(me.group(lane+2), base=16) >> 17)
+                        registers[macro_no][lane][cur_reg]['vga_coarse_a'] = 0x1f & (int(me.group(lane+2), base=16) >> 23)
+
+
+                elif(cur_reg == "rx_adapt_vga_offset_status"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['vga_offset_a']   = 0x3f & (int(me.group(lane+2), base=16) >> 11)
+
+
+                elif(cur_reg == "rx_vga_reg1"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['cap1_lut_0_a']   = 0x3f & (int(me.group(lane+2), base=16) >> 0)
+
+                elif(cur_reg == "rx_vga_reg2"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['cap2_lut_0_a']   = 0x3f & (int(me.group(lane+2), base=16) >> 18)
+
+                elif(cur_reg == "rx_datablock_offset_rdreg9"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['offset_nt']   = self.conv_2s( 0x7f & (int(me.group(lane+2), base=16) ), 7)
+
+                elif(cur_reg == "rx_ffe_adapt_coef_rdreg0"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['tap0_nt']   = self.conv_2s( 0x1f & (int(me.group(lane+2), base=16) >> 0),  5)
+                        registers[macro_no][lane][cur_reg]['tap1_nt']   = self.conv_2s( 0x1f & (int(me.group(lane+2), base=16) >> 5),  5)
+                        registers[macro_no][lane][cur_reg]['tap2_nt']   = self.conv_2s( 0x1f & (int(me.group(lane+2), base=16) >> 10), 5)
+                        registers[macro_no][lane][cur_reg]['tap3_nt']   = self.conv_2s( 0x1f & (int(me.group(lane+2), base=16) >> 15), 5)
+                        registers[macro_no][lane][cur_reg]['tap4_nt']   = self.conv_2s( 0x1f & (int(me.group(lane+2), base=16) >> 20), 5)
+                        registers[macro_no][lane][cur_reg]['tap5_nt']   = self.conv_2s( 0x1f & (int(me.group(lane+2), base=16) >> 25), 5)
+
+                elif(cur_reg == "rx_ffe_adapt_coef_rdreg1"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['tap6_nt']   = self.conv_2s( 0x3f & (int(me.group(lane+2), base=16) >> 0),  6)
+                        registers[macro_no][lane][cur_reg]['tap7_nt']   = self.conv_2s( 0x3f & (int(me.group(lane+2), base=16) >> 6),  6)
+                        registers[macro_no][lane][cur_reg]['tap8_nt']   = self.conv_2s( 0x7f & (int(me.group(lane+2), base=16) >> 12), 7)
+                        registers[macro_no][lane][cur_reg]['tap9_nt']   = self.conv_2s( 0xff & (int(me.group(lane+2), base=16) >> 19), 8)
+
+                elif(cur_reg == "rx_ffe_adapt_coef_rdreg2"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['tap10_nt']  = self.conv_2s( 0xff & (int(me.group(lane+2), base=16) >> 0),  8)
+                        registers[macro_no][lane][cur_reg]['tap11_nt']  = self.conv_2s( 0xff & (int(me.group(lane+2), base=16) >> 8),  8)
+                        registers[macro_no][lane][cur_reg]['tap12_nt']  = self.conv_2s( 0x1ff & (int(me.group(lane+2), base=16) >> 16),9)
+
+                elif(cur_reg == "rx_ffe_adapt_coef_rdreg3"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['tap13_nt']  = self.conv_2s( 0x3ff & (int(me.group(lane+2), base=16) >> 0), 10)
+                        registers[macro_no][lane][cur_reg]['tap14_nt']  = self.conv_2s( 0x1ff & (int(me.group(lane+2), base=16) >> 10), 9)
+                        registers[macro_no][lane][cur_reg]['tap15_nt']  = self.conv_2s( 0xff & (int(me.group(lane+2), base=16) >> 19),  8)
+
+                elif(cur_reg == "rx_ffe_adapt_coef_rdreg4"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['tap16_nt']  = self.conv_2s( 0x7f & (int(me.group(lane+2), base=16) >> 0),   7)
+                        registers[macro_no][lane][cur_reg]['tap17_nt']  = self.conv_2s( 0x3f & (int(me.group(lane+2), base=16) >> 7),   6)
+
+                elif(cur_reg == "rx_slicer_threshold_rdreg13"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['el_nt']     = self.conv_2s( 0x1ff & (int(me.group(lane+2), base=16) >> 0),  9)
+                        registers[macro_no][lane][cur_reg]['ez_nt']     = self.conv_2s( 0x1ff & (int(me.group(lane+2), base=16) >> 9),  9)
+                        registers[macro_no][lane][cur_reg]['eh_nt']     = self.conv_2s( 0x1ff & (int(me.group(lane+2), base=16) >> 18), 9)
+
+                elif(cur_reg == "rx_slicer_target_rdreg13"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['el3_nt']    = self.conv_2s( 0x1ff & (int(me.group(lane+2), base=16) >> 0),  9)
+                        registers[macro_no][lane][cur_reg]['el1_nt']    = self.conv_2s( 0x1ff & (int(me.group(lane+2), base=16) >> 9),  9)
+                        registers[macro_no][lane][cur_reg]['eh1_nt']    = self.conv_2s( 0x1ff & (int(me.group(lane+2), base=16) >> 18), 9)
+
+                elif(cur_reg == "rx_slicer_target_rdreg14"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['eh3_nt']    = self.conv_2s( 0x1ff & (int(me.group(lane+2), base=16) >> 0),  9)
+
+                elif(cur_reg == "rx_phase_adapt_rdreg"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['d90_dcd_a'] =  0x7f & (int(me.group(lane+2), base=16) >>  0)
+                        registers[macro_no][lane][cur_reg]['d0_dcd_a']  =  0x7f & (int(me.group(lane+2), base=16) >>  7)
+                        registers[macro_no][lane][cur_reg]['iq_a']      =  0x7f & (int(me.group(lane+2), base=16) >> 14)
+
+                elif(cur_reg == "rxmfsm_stat"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['rxmfsm_rate_cur']  = 0x7 & (int(me.group(lane+2), base=16) >> 0)
+
+                elif(cur_reg == "seq_cntrl_rx_rdreg"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['itr_dpll_afe_lock_nt']  = 0x1 & (int(me.group(lane+2), base=16) >> 0)
+
+                elif(cur_reg == "tx_fir_rdreg"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['cm3']  =  0x7 & (int(me.group(lane+2), base=16) >> 0)
+                        registers[macro_no][lane][cur_reg]['cm2']  =  0x7 & (int(me.group(lane+2), base=16) >> 3)
+                        registers[macro_no][lane][cur_reg]['cm1']  = 0x1f & (int(me.group(lane+2), base=16) >> 6)
+                        registers[macro_no][lane][cur_reg]['c0']   = 0x3f & (int(me.group(lane+2), base=16) >> 11)
+                        registers[macro_no][lane][cur_reg]['c1']   = 0x1f & (int(me.group(lane+2), base=16) >> 17)
+
+                elif(cur_reg == "tx_phase_adapt_rdreg"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['d90_dcd_a'] = 0x7f & (int(me.group(lane+2), base=16) >> 0)
+                        registers[macro_no][lane][cur_reg]['d0_dcd_a']  = 0x7f & (int(me.group(lane+2), base=16) >> 7)
+                        registers[macro_no][lane][cur_reg]['iq_a']      = 0x7f & (int(me.group(lane+2), base=16) >> 14)
+
+                elif(cur_reg == "txmfsm_stat"):
+                    for lane in range(n_lanes):
+                        registers[macro_no][lane][cur_reg]['txmfsm_rate_cur']  = 0x7 & (int(me.group(lane+2), base=16) >> 0)
+
+                macro_no = macro_no+1
+
+            #Search if this line has a  register header
+            for reg in list_of_registers:
+                regex_string = r"\b" + reg + r"\b"
+                m = re.search(regex_string, line)
+                if(m != None):
+                    cur_reg = reg
+                    for macro in range(n_macros):
+                        for lane in range(n_lanes):
+                            registers[macro][lane][cur_reg] = {}
+                    macro_no = 0
+                    break
+        #return registers
+
+        header = ['macro',
+                      'lane',
+                      'rate',
+                      'tx_cm3',
+                      'tx_cm2',
+                      'tx_cm1',
+                      'tx_c0',
+                      'tx_c1',
+                      'tx_dcd_d0',
+                      'tx_dcd_d90',
+                      'tx_iq',
+                      'rx_dcd_d0',
+                      'rx_dcd_d90',
+                      'rx_iq',
+                      'rx_cdr_lock',
+                      'rx_ctle_rate',
+                      'rx_ctle_boost',
+                      'rx_vga_cap',
+                      'rx_vga_coarse',
+                      'rx_vga_fine',
+                      'rx_vga_offset',
+                      'rx_datablock_offset',
+                      'rx_ffe0',
+                      'rx_ffe1',
+                      'rx_ffe2',
+                      'rx_ffe3',
+                      'rx_ffe4',
+                      'rx_ffe5',
+                      'rx_ffe6',
+                      'rx_ffe7',
+                      'rx_ffe8',
+                      'rx_ffe9',
+                      'rx_ffe10',
+                      'rx_ffe11',
+                      'rx_ffe12',
+                      'rx_ffe13',
+                      'rx_ffe14',
+                      'rx_ffe15',
+                      'rx_ffe16',
+                      'rx_ffe17',
+                      'rx_el',
+                      'rx_ez',
+                      'rx_eh',
+                      'rx_el3',
+                      'rx_el1',
+                      'rx_eh1',
+                      'rx_eh3'
+                      ]
+        print("\n" + str(header))
+
+        #write data
+
+        for macro in range(n_macros):
+            for lane in range(n_lanes):
+                row = [macro,
+                       lane,
+                       registers[macro][lane]['txmfsm_stat']['txmfsm_rate_cur'],
+                       registers[macro][lane]['tx_fir_rdreg']['cm3'],
+                       registers[macro][lane]['tx_fir_rdreg']['cm2'],
+                       registers[macro][lane]['tx_fir_rdreg']['cm1'],
+                       registers[macro][lane]['tx_fir_rdreg']['c0'],
+                       registers[macro][lane]['tx_fir_rdreg']['c1'],
+                       registers[macro][lane]['tx_phase_adapt_rdreg']['d0_dcd_a'],
+                       registers[macro][lane]['tx_phase_adapt_rdreg']['d90_dcd_a'],
+                       registers[macro][lane]['tx_phase_adapt_rdreg']['iq_a'],
+                       registers[macro][lane]['rx_phase_adapt_rdreg']['d0_dcd_a'],
+                       registers[macro][lane]['rx_phase_adapt_rdreg']['d90_dcd_a'],
+                       registers[macro][lane]['rx_phase_adapt_rdreg']['iq_a'],
+                       registers[macro][lane]['seq_cntrl_rx_rdreg']['itr_dpll_afe_lock_nt'],
+                       registers[macro][lane]['rx_ctle']['rate_nt'],
+                       registers[macro][lane]['rx_ctle_adapt_bypass']['setting_a'],
+                       int( (registers[macro][lane]['rx_vga_reg1']['cap1_lut_0_a'] + registers[macro][lane]['rx_vga_reg2']['cap2_lut_0_a']) / 4 ),
+                       registers[macro][lane]['rx_agc_adapt_status']['vga_coarse_a'],
+                       registers[macro][lane]['rx_agc_adapt_status']['vga_fine_a'],
+                       registers[macro][lane]['rx_adapt_vga_offset_status']['vga_offset_a'],
+                       registers[macro][lane]['rx_datablock_offset_rdreg9']['offset_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg0']['tap0_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg0']['tap1_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg0']['tap2_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg0']['tap3_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg0']['tap4_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg0']['tap5_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg1']['tap6_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg1']['tap7_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg1']['tap8_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg1']['tap9_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg2']['tap10_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg2']['tap11_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg2']['tap12_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg3']['tap13_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg3']['tap14_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg3']['tap15_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg4']['tap16_nt'],
+                       registers[macro][lane]['rx_ffe_adapt_coef_rdreg4']['tap17_nt'],
+                       registers[macro][lane]['rx_slicer_threshold_rdreg13']['el_nt'],
+                       registers[macro][lane]['rx_slicer_threshold_rdreg13']['ez_nt'],
+                       registers[macro][lane]['rx_slicer_threshold_rdreg13']['eh_nt'],
+                       registers[macro][lane]['rx_slicer_target_rdreg13']['el3_nt'],
+                       registers[macro][lane]['rx_slicer_target_rdreg13']['el1_nt'],
+                       registers[macro][lane]['rx_slicer_target_rdreg13']['eh1_nt'],
+                       registers[macro][lane]['rx_slicer_target_rdreg14']['eh3_nt']
+                      ]
+                print(row)
+        for macro in range(n_macros):
+            for lane in range(n_lanes):
+                if registers[macro][lane]['seq_cntrl_rx_rdreg']['itr_dpll_afe_lock_nt'] == 0:
+                    print("Error - No CDR lock for macro {} lane {}".format(macro, lane))
+
     def pcie_prbs(self, args):
         print("tcl_path:", args.tcl_path)
 
@@ -456,6 +745,7 @@ class nic_test_v2:
             self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
             self.nic_con.uart_session_cmd(uart_session, "pcieawd collect_linkeval 0xf", ending="uart:~\$")
             self.nic_con.uart_session_cmd(uart_session, "pcieawd dump_linkeval", ending="uart:~\$")
+            self.parse_linkeval_registers(uart_session.before)
         except pexpect.TIMEOUT:
             print ("Faied to dump pcie trace")
             return -1
@@ -502,6 +792,7 @@ class nic_test_v2:
             self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
             self.nic_con.uart_session_cmd(uart_session, "pcieawd collect_linkeval 0xf", ending="uart:~\$")
             self.nic_con.uart_session_cmd(uart_session, "pcieawd dump_linkeval", ending="uart:~\$")
+            self.parse_linkeval_registers(uart_session.before)
         except pexpect.TIMEOUT:
             print ("Faied to dump pcie trace")
             return -1
@@ -669,6 +960,7 @@ class nic_test_v2:
             self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
             self.nic_con.uart_session_cmd(uart_session, "pcieawd collect_linkeval 0xf", ending="uart:~\$")
             self.nic_con.uart_session_cmd(uart_session, "pcieawd dump_linkeval", ending="uart:~\$")
+            self.parse_linkeval_registers(uart_session.before)
 
             self.nic_con.uart_session_stop(uart_session)
             common.session_stop(uart_session)
