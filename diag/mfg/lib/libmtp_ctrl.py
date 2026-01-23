@@ -324,7 +324,7 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("MTP ASIC Version: {:s}".format(self._asic_ver))
 
-        script_ver_match = re.search(r"image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+        script_ver_match = re.search(r"image_amd64_.....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
         if script_ver_match:
             self._script_ver = script_ver_match.group(2)
         self.cli_log_report_inf("MFG Script Version: {:s}".format(self._script_ver))

@@ -560,6 +560,7 @@ class MFG_DIAG_CMDS:
     PANAREA_SUC_CNS_PMCI_TEST_ALL = "cd /home/diag/cns-pmci; ./test_all.py"
     PANAREA_SUC_DIAG_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --component-ids 1 --detach-usb-kernel-driver --no-logs --print-hdrs --print-msgs --allow-early-update-completion --usb {:s} --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
     PANAREA_SUC_SW_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --detach-usb-kernel-driver --no-logs --print-hdrs --print-msgs --allow-early-update-completion --usb {:s} --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
+    PANAREA_SUC_SW_IMAGE_SUC_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --component-ids 1 --detach-usb-kernel-driver --no-logs --print-hdrs --print-msgs --allow-early-update-completion --usb {:s} --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
 
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"

@@ -45,6 +45,7 @@ fipa_img = "fipa"
 fipb_img = "fipb"
 fipg_img = "fipg"
 suc_diag_img = "suc_diag_img"
+inter_suc_diag_img = "inter_suc_diag_img"
 suc_sw_img = "suc_sw_img"
 
 def get_dict_entry(mtp_mgmt_ctrl, img_dict, nic_type):
@@ -328,6 +329,12 @@ def get_suc_diag_img(mtp_mgmt_ctrl, slot, stage):
     "timestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.suc_diagimg_suc_date, nic_type)
     }
 
+def get_inter_suc_diag_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, inter_suc_diag_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.inter_suc_diag_img, nic_type),
+    }
+
 def get_suc_sw_img(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, suc_sw_img)
     return {
@@ -385,6 +392,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         fipg_img: get_fipg_img,
         fipg_img: get_fipg_img,
         suc_diag_img: get_suc_diag_img,
+        inter_suc_diag_img: get_inter_suc_diag_img,
         suc_sw_img: get_suc_sw_img,
         }
 
@@ -422,6 +430,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
             images_needed.append(fail_cpld)
             images_needed.append(fea_cpld)
             images_needed.append(suc_diag_img)
+            images_needed.append(inter_suc_diag_img)
             images_needed.append(suc_sw_img)
 
         if nic_type in FPGA_TYPE_LIST:
