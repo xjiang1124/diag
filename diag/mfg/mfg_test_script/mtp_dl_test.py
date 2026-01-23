@@ -4,6 +4,7 @@ import sys
 import os
 import argparse
 import re
+import time
 import traceback
 
 sys.path.append(os.path.relpath("lib"))
@@ -203,6 +204,13 @@ def dl_uc_img_program(mtp_mgmt_ctrl, slot):
     uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_suc_diag_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
     cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_DIAG_IMAGE_PROG
     return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, uc_img_file)
+
+@parallelize.parallel_nic_using_ssh
+def dl_inter_uc_img_program(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_DL
+    inter_uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_inter_suc_diag_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_SW_IMAGE_PROG
+    return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, inter_uc_img_file)
 
 @parallelize.parallel_nic_using_ssh
 def dl_uc_boot_check(mtp_mgmt_ctrl, slot):
@@ -552,6 +560,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_board_config(nic_list)
             elif test == "uC_DIAG_IMG_PROG":
                 rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "inter_uC_DIAG_IMG_PROG":
+                rlist = dl_inter_uc_img_program(mtp_mgmt_ctrl, nic_list)
             elif test == "uC_VERSION_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_suc_version_read_check(nic_list)
             elif test == "I2C_DEVICE_SCREENING":
@@ -765,6 +775,12 @@ def main():
             run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_dl_test(pass_nic_list, "NIC_TYPE")
             run_dl_test(pass_nic_list, "NIC_INIT")
+            run_dl_test(pass_nic_list, "inter_uC_DIAG_IMG_PROG")
+            time.sleep(3)
+            run_dl_test(pass_nic_list, "inter_uC_DIAG_IMG_PROG")
+            time.sleep(10)
+            run_dl_test(pass_nic_list, "FRU_PROG")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "uC_DIAG_IMG_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "uC_BOOTING_CHK")
@@ -773,6 +789,8 @@ def main():
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_PROG")
             run_dl_test(pass_nic_list, "CPLD_REF")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_VERIFY")
             run_dl_test(pass_nic_list, "FSAFE_CPLD_PROG")

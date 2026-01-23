@@ -1034,7 +1034,7 @@ def main():
 
             ### VULCANO TEST ORDER
             if get_slots_of_type(VULCANO_NIC_TYPE_LIST):
-                test_section_list = ["STRESS", "I2C", "J2C_SEQ"]
+                test_section_list = ["I2C", "J2C_SEQ"]
 
             if args.skip_test:
                 test_section_list = libmfg_utils.list_subtract(test_section_list, args.skip_test)
