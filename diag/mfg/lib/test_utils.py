@@ -127,11 +127,19 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
     swm_test_mode = kwargs.get("swm_test_mode", Swm_Test_Mode.SW_DETECT)
     testsuite     = kwargs.get("testsuite_name", stage)
     mtp_type      = kwargs.get("mtp_type", None)
+    vmarg         = kwargs.get("vmarg", None)
 
     for loop_idx in range(1, loop_cnt+1):
         ### Begin logging
+        # overwrite the varg_list if specified from command line arguments
+        if vmarg:
+            if vmarg[0].startswith("-"):
+                mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG = vmarg[0].replace('-', "_N_")
+            elif vmarg[0].startswith("+"):
+                mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG = vmarg[0].replace('+', "_P_")
+            else:
+                mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG = "_P_" + vmarg[0]
         testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
-
         ### Barcode scanning
         if loop_idx == 1:
             if not ENABLE_SCAN_VERIFY:

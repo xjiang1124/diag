@@ -230,8 +230,13 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequent
         pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot)
         mode = libmfg_utils.get_mode_param(mtp_mgmt_ctrl, slot, test)
         n_vmarg = vmarg
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if vmarg in (Voltage_Margin.high, Voltage_Margin.low):
-            n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
+            if nic_type in VULCANO_NIC_TYPE_LIST and libmfg_utils.pick_voltage_margin_percentage(pn):
+                n_vmarg = libmfg_utils.pick_voltage_margin_percentage(pn)
+            else:
+                n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
+
             mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage using Part Number: {:s} For before run_l1.sh".format(n_vmarg, pn), level=0)
 
         return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg, stage, joo, loopback, offload, esecure, simplified, ite, ddr, lt)
@@ -242,8 +247,12 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequent
         pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot)
         mode = libmfg_utils.get_mode_param(mtp_mgmt_ctrl, slot, test)
         n_vmarg = vmarg
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if vmarg in (Voltage_Margin.high, Voltage_Margin.low):
-            n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
+            if nic_type in VULCANO_NIC_TYPE_LIST and libmfg_utils.pick_voltage_margin_percentage(pn):
+                n_vmarg = libmfg_utils.pick_voltage_margin_percentage(pn)
+            else:
+                n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
             mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage using Part Number: {:s} For before run_l1.sh".format(n_vmarg, pn), level=0)
 
         return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg, stage, joo, loopback, offload, esecure, simplified, ite, ddr, lt)
@@ -344,6 +353,7 @@ def main():
     parser.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--vmarg", help="specify the vmargin in percentage to overwrite internal default, interal defined high and low will be used if not specified", nargs="*", default=[])
     parser.add_argument("--l1_seq", help="asic L1 run under sequence mode", action='store_true')
     parser.add_argument("--loop_idx", help="current loop index of uplevel loop calls; if MFG, this argument not used; if EDVT, for snake and eth_prbs, odd index internal loopback, even external loopback", default=1, type=int)
     args = parser.parse_args()
@@ -416,6 +426,17 @@ def main():
                              apc_cfg = mtp_apc_cfg,
                              slots_to_skip = mtp_slots_to_skip,
                              dbg_mode = verbosity)
+
+    # overwrite the varg_list if specified from command line arguments
+    if args.vmarg:
+        vmarg_list = args.vmarg
+        # overwrite the varg_list if specified from command line arguments
+        if vmarg_list[0].startswith("-"):
+            mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG = vmarg_list[0].replace('-', "_N_")
+        elif vmarg_list[0].startswith("+"):
+            mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG = vmarg_list[0].replace('+', "_P_")
+        else:
+            mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG = "_P_" + vmarg_list[0]
 
     # pass in stop_on_err into mtp_mgmt_ctrl instance
     mtp_mgmt_ctrl.stop_on_err = stop_on_err
@@ -504,12 +525,18 @@ def main():
             fanspd = mtp_mgmt_ctrl.mtp_get_fanspd()
             inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
             mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
-            if vmarg == Voltage_Margin.high:
-                mtp_mgmt_ctrl.cli_log_report_inf("******* HV Corner *******")
-            elif vmarg == Voltage_Margin.low:
-                mtp_mgmt_ctrl.cli_log_report_inf("******* LV Corner *******")
+            if mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG:
+                if mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG.startswith("_P"):
+                    mtp_mgmt_ctrl.cli_log_report_inf("******* HV Corner *******")
+                elif mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG.startswith("_N"):
+                    mtp_mgmt_ctrl.cli_log_report_inf("******* LV Corner *******")
             else:
-                mtp_mgmt_ctrl.cli_log_report_inf("******* NV Corner *******")
+                if vmarg == Voltage_Margin.high:
+                    mtp_mgmt_ctrl.cli_log_report_inf("******* HV Corner *******")
+                elif vmarg == Voltage_Margin.low:
+                    mtp_mgmt_ctrl.cli_log_report_inf("******* LV Corner *******")
+                else:
+                    mtp_mgmt_ctrl.cli_log_report_inf("******* NV Corner *******")
             mtp_mgmt_ctrl.cli_log_report_inf("MTP Fan Speed = {:3d}%".format(fanspd))
             mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(inlet))
             mtp_mgmt_ctrl.cli_log_report_inf("NIC Voltage Margin = {:s}".format(vmarg))
