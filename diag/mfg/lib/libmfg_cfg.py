@@ -1403,54 +1403,54 @@ class NIC_IMAGES:
     suc_swimg_soc_ver["100-700000003"] = "1.125.0-a-49"
 
     # MORTARO is AINIC
-    cpld_img["MORTARO"] = "mortaro_rev01_03_cfg0.jed"
+    cpld_img["MORTARO"] = "mortaro_rev01_04_freezePG_cfg0.jed"
     cpld_ver["MORTARO"] = "0x1"
-    cpld_dat["MORTARO"] = "01-16-26_11:12" #mm-dd-YY_HH:MM
-    sec_cpld_img["MORTARO"] = "mortaro_rev01_03_cfg0.jed"
+    cpld_dat["MORTARO"] = "01-21-26_10:28" #mm-dd-YY_HH:MM
+    sec_cpld_img["MORTARO"] = "mortaro_rev01_04_freezePG_cfg0.jed"
     sec_cpld_ver["MORTARO"] = "0x1"
-    sec_cpld_dat["MORTARO"] = "01-16-26_11:12" #mm-dd-YY_HH:MM
-    fail_cpld_img["MORTARO"] = "mortaro_rev01_03_cfg1.jed"
+    sec_cpld_dat["MORTARO"] = "01-21-26_10:28" #mm-dd-YY_HH:MM
+    fail_cpld_img["MORTARO"] = "mortaro_rev01_04_freezePG_cfg1.jed"
     fail_cpld_ver["MORTARO"] = "0x1"
-    fail_cpld_dat["MORTARO"] = "01-16-26_11:12" #mm-dd-YY_HH:MM
+    fail_cpld_dat["MORTARO"] = "01-21-26_10:28" #mm-dd-YY_HH:MM
     fea_cpld_img["MORTARO"] = "mortaro_impl1.fea"
     suc_diag_img["MORTARO"] = "vulcano/mortaro/ainic_fw_vulcano_0120_2026.pldmfw"
-    suc_diagimg_suc_date["MORTARO"] = "2026-01-15 22:35:29"   #YYYY-mm-dd HH:MM:SS
+    suc_diagimg_suc_date["MORTARO"] = "2026-01-20 16:43:28"   #YYYY-mm-dd HH:MM:SS
     inter_suc_diag_img["MORTARO"] = "vulcano/mortaro/ainic_fw_vulcano_0120_2026.pldmfw"
     suc_sw_img["MORTARO"] = "vulcano/mortaro/ainic_bundle_1.125.0-a-71/firmware/ainic_fw_vulcano.pldmfw"
     suc_swimg_suc_date["MORTARO"] = "2026-01-15 22:35:29"   #YYYY-mm-dd HH:MM:SS
     suc_swimg_soc_date["MORTARO"] = "Jan 17 2026 19:20:30"
     suc_swimg_soc_ver["MORTARO"] = "1.125.0-a-71"
 
-    cpld_img["58-0015-01"] = "mortaro_rev01_03_cfg0.jed"
+    cpld_img["58-0015-01"] = "mortaro_rev01_04_freezePG_cfg0.jed"
     cpld_ver["58-0015-01"] = "0x1"
-    cpld_dat["58-0015-01"] = "01-16-26_11:12" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0015-01"] = "mortaro_rev01_03_cfg0.jed"
+    cpld_dat["58-0015-01"] = "01-21-26_10:28" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0015-01"] = "mortaro_rev01_04_freezePG_cfg0.jed"
     sec_cpld_ver["58-0015-01"] = "0x1"
-    sec_cpld_dat["58-0015-01"] = "01-16-26_11:12" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0015-01"] = "mortaro_rev01_03_cfg1.jed"
+    sec_cpld_dat["58-0015-01"] = "01-21-26_10:28" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0015-01"] = "mortaro_rev01_04_freezePG_cfg1.jed"
     fail_cpld_ver["58-0015-01"] = "0x1"
-    fail_cpld_dat["58-0015-01"] = "01-16-26_11:12" #mm-dd-YY_HH:MM
+    fail_cpld_dat["58-0015-01"] = "01-21-26_10:28" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0015-01"] = "mortaro_impl1.fea"
     suc_diag_img["58-0015-01"] = "vulcano/mortaro/ainic_fw_vulcano_0120_2026.pldmfw"
-    suc_diagimg_suc_date["58-0015-01"] = "2026-01-15 22:35:29"   #YYYY-mm-dd HH:MM:SS
+    suc_diagimg_suc_date["58-0015-01"] = "2026-01-20 16:43:28"   #YYYY-mm-dd HH:MM:SS
     inter_suc_diag_img["58-0015-01"] = "vulcano/mortaro/ainic_fw_vulcano_0120_2026.pldmfw"
     suc_sw_img["58-0015-01"] = "vulcano/mortaro/ainic_bundle_1.125.0-a-71/firmware/ainic_fw_vulcano.pldmfw"
     suc_swimg_suc_date["58-0015-01"] = "2026-01-15 22:35:29"   #YYYY-mm-dd HH:MM:SS
     suc_swimg_soc_date["58-0015-01"] = "Jan 17 2026 19:20:30"
     suc_swimg_soc_ver["58-0015-01"] = "1.125.0-a-71"
 
-    cpld_img["100-700000004"] = "mortaro_rev01_03_cfg0.jed"
+    cpld_img["100-700000004"] = "mortaro_rev01_04_freezePG_cfg0.jed"
     cpld_ver["100-700000004"] = "0x1"
-    cpld_dat["100-700000004"] = "01-16-26_11:12" #mm-dd-YY_HH:MM
-    sec_cpld_img["100-700000004"] = "mortaro_rev01_03_cfg0.jed"
+    cpld_dat["100-700000004"] = "01-21-26_10:28" #mm-dd-YY_HH:MM
+    sec_cpld_img["100-700000004"] = "mortaro_rev01_04_freezePG_cfg0.jed"
     sec_cpld_ver["100-700000004"] = "0x1"
-    sec_cpld_dat["100-700000004"] = "01-16-26_11:12" #mm-dd-YY_HH:MM
-    fail_cpld_img["100-700000004"] = "mortaro_rev01_03_cfg1.jed"
+    sec_cpld_dat["100-700000004"] = "01-21-26_10:28" #mm-dd-YY_HH:MM
+    fail_cpld_img["100-700000004"] = "mortaro_rev01_04_freezePG_cfg1.jed"
     fail_cpld_ver["100-700000004"] = "0x1"
-    fail_cpld_dat["100-700000004"] = "01-16-26_11:12" #mm-dd-YY_HH:MM
+    fail_cpld_dat["100-700000004"] = "01-21-26_10:28" #mm-dd-YY_HH:MM
     fea_cpld_img["100-700000004"] = "mortaro_impl1.fea"
     suc_diag_img["100-700000004"] = "vulcano/mortaro/ainic_fw_vulcano_0120_2026.pldmfw"
-    suc_diagimg_suc_date["100-700000004"] = "2026-01-15 22:35:29"   #YYYY-mm-dd HH:MM:SS
+    suc_diagimg_suc_date["100-700000004"] = "2026-01-20 16:43:28"   #YYYY-mm-dd HH:MM:SS
     inter_suc_diag_img["100-700000004"] = "vulcano/mortaro/ainic_fw_vulcano_0120_2026.pldmfw"
     suc_sw_img["100-700000004"] = "vulcano/mortaro/ainic_bundle_1.125.0-a-71/firmware/ainic_fw_vulcano.pldmfw"
     suc_swimg_suc_date["100-700000004"] = "2026-01-15 22:35:29"   #YYYY-mm-dd HH:MM:SS
@@ -2137,4 +2137,5 @@ VMARG_PERCENTAGE = {
     "68-0075"                    : ("_2",   "_3"),
     "68-0076"                    : ("_2",   "_3"),
     "68-0094"                    : ("_2",   "_3"),
+    "102-P12300"                 : ("5",     "5"),
 }
