@@ -40,7 +40,7 @@ then
 elif [[ $CARD_TYPE == "MTP_PANAREA" ]]
 then
     slot=$1
-    uart_id=0
+    uart_id=1
     if [ $# -eq 2 ]
     then
         uart_id=$(($2 & 0x3))
