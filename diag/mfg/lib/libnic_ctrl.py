@@ -159,6 +159,8 @@ class nic_ctrl():
             self._asic_type = "giglio"
         elif self._nic_type in SALINA_NIC_TYPE_LIST:
             self._asic_type = "salina"
+        elif self._nic_type in VULCANO_NIC_TYPE_LIST:
+            self._asic_type = "vulcano"
 
     def mtp_exec_cmd(self, cmd, timeout=MTP_Const.OS_CMD_DELAY, sig_list=[]):
         rc = True
@@ -680,20 +682,24 @@ class nic_ctrl():
         # Terminate connected device before the new connection
         if self._mtp_type == MTP_TYPE.PANAREA:
             if str(uart_selecttor) == "1":
-                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_FPGA_UART_FMT.format(str(self._slot))
+                #cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_FPGA_UART_FMT.format(str(self._slot))
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot + 1))
             elif str(uart_selecttor) == "2":
                 cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_VULCANO_UART_FMT.format(str(self._slot))
             else:
-                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot + 1))
+                #cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot + 1))
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_FPGA_UART_FMT.format(str(self._slot))
             self._nic_handle.sendline(cmd)
             idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
             # Check if there is still got picocom process running
             if str(uart_selecttor) == "1":
-                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_SOC_FMT.format(str(self._slot))
+                # cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_SOC_FMT.format(str(self._slot))
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT.format(str(self._slot + 1))
             elif str(uart_selecttor) == "2":
                 cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_VULCANO_FMT.format(str(self._slot))
             else:
-                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT.format(str(self._slot + 1))
+                # cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT.format(str(self._slot + 1))
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_SOC_FMT.format(str(self._slot))
             self._nic_handle.sendline(cmd)
             idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
         elif self._mtp_type == MTP_TYPE.MATERA:
@@ -5138,29 +5144,33 @@ class nic_ctrl():
 
         # Panarea and vulcano cards
         if self._nic_type in VULCANO_NIC_TYPE_LIST:
-            # dump cpld reg
-            if not self.nic_dump_reg():
-                self.nic_set_err_msg("Dump CPLD Register Failed")
-                return False
-            dump_info = self.nic_get_cmd_buf()
-            # parse dumpped info
+            time.sleep(30)
+            tout = 6
             parsed_dump = {}
-            found_match = re.findall(r'Addr:\s+0x([0-9a-fA-F]{2});\s+Value:\s+0x([0-9a-fA-F]{2})', dump_info)
-            if found_match:
+            timestamp_registers = ['0x46', '0x45', '0x44', '0x43', '0x42']
+            for address in ['0x40', '0x00', '0x01'] + timestamp_registers:
+                cmd = f"sucutil cpld read -a {address} -s {self._slot + 1}"
+                if not self.mtp_exec_cmd(cmd, timeout=tout):
+                    return False
+                dump_info = self.nic_get_cmd_buf()
+                found_match = re.findall(r'cpld\s+read\s+([0-9a-fA-F]{2}),\s+value\s+([0-9a-fA-F]{2})', dump_info)
+                if not found_match:
+                    print("Error:")
+                    print (dump_info)
+                    return False
                 for k, v in found_match:
                     parsed_dump[k] = v
-            timestamp_registers = ['46', '45', '44', '43', '42']
-            for register in timestamp_registers + ['00', '01', '40']:
-                if register not in parsed_dump:
-                    self.nic_set_err_msg("Parse CPLD Register Failed")
-                    return False
             self._cpld_id = "0x{:X}".format(int(parsed_dump['40'], 16))
             self._cpld_ver = "0x{:X}".format(int(parsed_dump['00'], 16))
             self._cpld_ver_min = "0x{:X}".format(int(parsed_dump['01'], 16))
+            self._cpld_timestamp = parsed_dump['40']
             date_time = []
             for register in timestamp_registers:
-                date_time.append("{:02X}".format(int(parsed_dump[register], 16)))
+                date_time.append("{:02X}".format(int(parsed_dump[register.strip('0x')], 16)))
             self._cpld_timestamp = f'{date_time[1]}-{date_time[2]}-{date_time[0]}_{date_time[3]}:{date_time[4]}'
+            cmd = f"export UUT_{self._slot + 1}={self._nic_type}"
+            self.mtp_exec_cmd(cmd, timeout=tout)
+
             return True
 
         # Matera plus Salina and Turbo plus elba 

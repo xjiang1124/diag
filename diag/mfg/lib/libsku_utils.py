@@ -108,11 +108,11 @@ class PART_NUMBERS_MATCH:
     POLLARA_DELL_PN_FMT = r"0745T9(?:X|A)[0-9]{2}"                                                  #0745T9 X/A         POLLARA DELL PN
     LINGUA_PN_FMT = r"102-P11500-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                                #102-P11500-00B 01  LINGUA
     MALFA_PN_FMT = r"102-P10600-0[0-9]{1}(?:\s[A-Z0-9]{1,2})?"                                      #102-P10600-00 01   MALFA
-    GELSOP_PN_FMT = r"102-P12100-0[A-Z0-9]{1,2}(?: *[A-Z0-9]{0,2}?)"                                #102-P12100-00C 04  GELSOP
-    GELSOX_PN_FMT = r"102-P12200-0[A-Z0-9]{1,2}(?: *[A-Z0-9]{0,2}?)"                                #102-P12200-00A 04  GELSOX
-    SARACENO_PN_FMT = r"102-P12500-0[A-Z0-9]{1,2}(?: *[A-Z0-9]{0,2}?)"                              #102-P12500-00A 04  SARACENO
-    MORTARO_PN_FMT = r"102-P12300-0[A-Z0-9]{1,2}(?: *[A-Z0-9]{0,2}?)"                               #102-P12300-00B 04  MORTARO
-    VULSEI_PN_FMT = r"102-P12000-0[A-Z0-9]{1,2}(?: *[A-Z0-9]{0,2}?)"                                #102-P12000-00B 04  VULSEI
+    GELSOP_PN_FMT = r"102-P12100-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                                #102-P12100-00C 04  GELSOP
+    GELSOX_PN_FMT = r"102-P12200-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                                #102-P12200-00A 04  GELSOX
+    SARACENO_PN_FMT = r"102-P12500-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                              #102-P12500-00A 04  SARACENO
+    MORTARO_PN_FMT = r"102-P12300-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                               #102-P12300-00B 04  MORTARO
+    VULSEI_PN_FMT = r"102-P12000-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                                #102-P12000-00B 04  VULSEI
 
 SN_FORMAT_TABLE = {
     Factory.P1: {
