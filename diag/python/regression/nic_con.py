@@ -115,7 +115,8 @@ class nic_con:
                 session.send("\r")
 
                 i = session.expect(expstr, timeout)
-                if i != len(expstr)-1 and i != len(expstr)-2:
+                # if not already logged in
+                if i != len(expstr)-1 and i != len(expstr)-2 and i != len(expstr)-3:
                     session.sendline(self.usr)
                     session.expect("assword:")
                     session.sendline(self.pwd)
