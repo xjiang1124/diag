@@ -225,10 +225,12 @@ def swi_verify_board_id(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.mtp_nic_assign_board_id(slot, pn, verifyOnly=True)
 
 @parallelize.parallel_nic_using_ssh
-def swi_uc_img_program(mtp_mgmt_ctrl, slot):
+def swi_uc_img_program(mtp_mgmt_ctrl, slot, prog_suc_only=False):
     dsp = FF_Stage.FF_SWI
     uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_suc_sw_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
     cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_SW_IMAGE_PROG
+    if prog_suc_only:
+        cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_SW_IMAGE_SUC_PROG
     return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, uc_img_file)
 
 @parallelize.parallel_nic_using_ssh
@@ -391,6 +393,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_validate_sku_dpn_match(nic_list)
             elif test == "VERIFY_BOARD_ID":
                 rlist = swi_verify_board_id(mtp_mgmt_ctrl, nic_list)
+            elif test == "uC_SUC_IMG_PROG":
+                rlist = swi_uc_img_program(mtp_mgmt_ctrl, nic_list, prog_suc_only=True)
             elif test == "uC_SW_IMG_PROG":
                 rlist = swi_uc_img_program(mtp_mgmt_ctrl, nic_list)
             elif test == "uC_BOOTING_CHK":
@@ -659,7 +663,10 @@ def main():
             # run_swi_test(pass_nic_list, "CPLD_VERIFY")
             # run_swi_test(pass_nic_list, "FSAFE_CPLD_PROG")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
+            run_swi_test(pass_nic_list, "uC_SUC_IMG_PROG")
+            run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(pass_nic_list, "uC_SW_IMG_PROG")
+            time.sleep(10)
             run_swi_test(pass_nic_list, "uC_SW_IMG_PROG")
             run_swi_test(pass_nic_list, "uC_BOOTING_CHK")
             run_swi_test(pass_nic_list, "VULCANO_BOOTING_CHK")

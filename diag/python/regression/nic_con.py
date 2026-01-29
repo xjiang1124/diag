@@ -98,7 +98,7 @@ class nic_con:
     def uart_session_start(self, session, slot, numRetry=10, uart_id=1):
         ret = 0
         cmd = self.get_connect_cmd(slot, uart_id=uart_id)
-        expstr = ["capri login:", "-gold login", "elba-haps login:", "salina-gold login:", "Press g to continue", "elba login:", "\#", "uart:~\$"]
+        expstr = ["capri login:", "-gold login", "elba-haps login:", "salina-gold login:", "Press g to continue", "elba login:", "\#", "uart:~\$", "suc:~\$"]
         session.sendline(cmd)
         for ite in range(numRetry):
             print("ite: ", ite)
@@ -115,7 +115,8 @@ class nic_con:
                 session.send("\r")
 
                 i = session.expect(expstr, timeout)
-                if i != len(expstr)-1 and i != len(expstr)-2:
+                # if not already logged in
+                if i != expstr.index("\#") and i != expstr.index("uart:~\$") and i != expstr.index("suc:~\$"):
                     session.sendline(self.usr)
                     session.expect("assword:")
                     session.sendline(self.pwd)

@@ -1566,6 +1566,7 @@ if __name__ == "__main__":
     parser_4c.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
     parser_4c.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
     parser_4c.add_argument("--stop_on_err", "-stop_on_err", help="Break out of test on failure; default to %(default)s", required=False, action='store_true', default=False)
+    parser_4c.add_argument("--vmarg", "-vmarg", help="sspecify the vmargin in percentage to overwrite internal default, interal defined high and low will be used if not specified", nargs="*", default=[])
     parser_4c.set_defaults(func=run_4c_tests)
 
     parser_swi.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')

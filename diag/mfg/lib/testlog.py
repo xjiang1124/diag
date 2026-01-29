@@ -49,6 +49,9 @@ def find_logfile_path(mtp_mgmt_ctrl, stage):
     log_parent_dir = os.path.join(os.getcwd(), "log/")
     mtp_id = mtp_mgmt_ctrl._id
     stage = str(stage)
+    if mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG:
+        new_stage = str(stage) + str(mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG)
+        stage = new_stage
     search_rgx = r"%s_MTPS?-[0-9A-Za-z\-]{3,}_[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}" % stage
     for item in sorted(os.listdir(log_parent_dir))[::-1]:
         if "tar.gz" in item:
@@ -68,6 +71,9 @@ def create_logfile_path(mtp_mgmt_ctrl, stage, log_parent_dir="log/"):
         return None
     log_timestamp = libmfg_utils.get_timestamp()
     mtp_id = mtp_mgmt_ctrl._id
+    if mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG:
+        new_stage = str(stage) + str(mtp_mgmt_ctrl.CMDLINE_PASSIN_VMARG)
+        stage = new_stage
     log_dir = STAGE_LOG_FOLDER.format(stage, mtp_id, log_timestamp)
     os.system(MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(log_parent_dir + log_dir))
     logfile_path = os.path.join(log_parent_dir, log_dir)

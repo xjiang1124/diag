@@ -103,8 +103,8 @@ def main(args):
         boolean: test results
     """
 
-    print(args)
-    print((sys.argv))
+    # print(args)
+    # print((sys.argv))
 
     if args.subcommand == 'sdl':
         stage = FF_Stage.FF_DL
@@ -497,6 +497,7 @@ if __name__ == "__main__":
     parser_4c.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
     parser_4c.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
     parser_4c.add_argument("--stop_on_err", "-stop_on_err", help="Break out of test on failure; default to %(default)s", required=False, action='store_true', default=False)
+    parser_4c.add_argument("--vmarg", "-vmarg", help="sspecify the vmargin in percentage to overwrite internal default, interal defined high and low will be used if not specified", nargs="*", default=[])
     parser_4c.set_defaults(func=main)
 
     parser_swi.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')

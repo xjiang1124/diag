@@ -116,6 +116,7 @@ class mtp_ctrl():
         self._test_log_folder = None  # relative path to log folder
         self._open_file_handles = []
         self.stop_on_err = False
+        self.CMDLINE_PASSIN_VMARG = ""
 
     def _propogate_properties_to_nic(self, slot):
         if self._nic_ctrl_list[slot]:
@@ -324,7 +325,7 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("MTP ASIC Version: {:s}".format(self._asic_ver))
 
-        script_ver_match = re.search(r"image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+        script_ver_match = re.search(r"image_amd64_.....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
         if script_ver_match:
             self._script_ver = script_ver_match.group(2)
         self.cli_log_report_inf("MFG Script Version: {:s}".format(self._script_ver))
@@ -8206,29 +8207,34 @@ class mtp_ctrl():
 
     def mtp_mgmt_set_nic_avs_post(self, slot):
         self.mtp_nic_send_ctrl_c(slot)  # kill any hung tclsh in this same session
-        cmd = MFG_DIAG_CMDS().NIC_AVS_POST_FMT.format(slot+1)
-        self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
+        if self._mtp_type not in (MTP_TYPE.PANAREA,):
+            cmd = MFG_DIAG_CMDS().NIC_AVS_POST_FMT.format(slot+1)
+            self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
-        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+            cmd_buf = self.mtp_get_nic_cmd_buf(slot)
 
         # clear reg 0x50 after reading
         reg_addr = 0x50
         write_data = 0
-        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
+        if self._mtp_type in (MTP_TYPE.MATERA,):
             cmd = MFG_DIAG_CMDS().NIC_I2C_DUMP_POST_FMT.format(slot+3) + " ;"
             cmd += MFG_DIAG_CMDS().NIC_I2C_DUMP_4B_POST_FMT.format(slot+3) + " ;"
         else:
             cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(slot+1) + " ;"
         cmd += MFG_DIAG_CMDS().MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
+        if self._mtp_type in (MTP_TYPE.PANAREA,):
+            cmd = ""
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.mtp_dump_nic_err_msg(slot)
             return False
 
-        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
+        if self._mtp_type in (MTP_TYPE.MATERA,):
             cmd = ""
         else:
             cmd = MFG_DIAG_CMDS().MTP_SMB_SEL_FMT.format(slot+1) + " ;"
         cmd += MFG_DIAG_CMDS().MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
+        if self._mtp_type in (MTP_TYPE.PANAREA,):
+            cmd = ""
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.mtp_dump_nic_err_msg(slot)
             return False

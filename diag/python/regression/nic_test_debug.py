@@ -106,6 +106,7 @@ class nic_test_debug:
                 self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
                 self.nic_con.uart_session_cmd(uart_session, "pcieawd collect_linkeval 0xf", ending="uart:~\$")
                 self.nic_con.uart_session_cmd(uart_session, "pcieawd dump_linkeval", ending="uart:~\$")
+                self.nic_test_v2.parse_linkeval_registers(uart_session.before)
             except pexpect.TIMEOUT:
                 print ("Faied to dump pcie trace")
                 return -1

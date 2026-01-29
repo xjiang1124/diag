@@ -11,6 +11,7 @@ import (
     "common/misc"
     "protocol/smbusNew"
     "device/fpga/materafpga"
+    "device/sucuart"
     "hardware/i2cinfo"
 )
 
@@ -1440,6 +1441,22 @@ func readField(devName string, offset int, numBytes int) (data []byte, err int) 
 
 func EraseEeprom(devName string, bus uint32, devAddr byte, numBytes int) (err int) {
     var eeData byte = 0xFF
+
+
+    //For Vulcano based platfrom to blank out the Microcontroller fru stored in it's flash
+    if devName == "SUCFRU" {
+        var Length int = 378
+        fmt.Printf("WRITE TO SUC Microcontroller  Bus=%d  Len=%d\n", bus, len(Data));
+        i2cinfo.SwitchI2cTbl("UUT_NONE")
+        fmt.Printf("TBL LEN=%d\n", Length);
+        for i:=0; i<Length; i++ {
+            command := fmt.Sprintf("fru write %d hex %x", i, 0xFF)
+            fmt.Printf("%s\n", command);
+            sucuart.Suc_exec_cmds(int(bus-2), command)
+        }
+        sucuart.Suc_exec_cmds(int(bus-2), "fru save")
+        return
+    } 
 
     err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {

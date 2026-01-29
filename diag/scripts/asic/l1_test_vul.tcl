@@ -74,14 +74,16 @@ if {$ASIC_TYPE == "VULCANO"} {
     puts $rtn
 
     set ::board_rev [vul_get_board_rev]
+    vulcano_setup 0
 
-    plog_msg "calling vul_card_rst 1 0"
-    vul_card_rst 1 0
-    after 2000
+    #plog_msg "calling vul_card_rst 1 0"
+    #vul_card_rst 1 0
+    #after 2000
 
     plog_msg "calling vul_pll_fix"
     vul_pll_fix
-    after 10000
+    vul_vt_init 0
+    after 1000
 
     #reset_to_proto_mode
     #vul_print_voltage_temp
