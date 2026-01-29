@@ -90,7 +90,7 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
         cli.Printf("e", "failed to open %s for slot %d: %v", uut_uart, slot, err_o)
         return nil, errType.FAIL
     }
-    port.SetReadTimeout(1 * time.Second)
+    port.SetReadTimeout(100 * time.Millisecond)
     return &SUCUARTHandle{slot, port, fileLock}, errType.SUCCESS
 }
 

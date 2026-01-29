@@ -267,6 +267,16 @@ control_slot_panarea() {
         slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
         sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
     done
+    if [[ $on_off == "on" ]]
+    then
+        # wait for bootup message to be print first so it won't mix with our command output
+        sleep 3
+        for slot_one_based in $slot_list
+        do
+            #mute backend log on console
+            sucutil exec -s $slot_one_based -c "log backend log_backend_uart disable"
+        done
+    fi
 }
 
 usage() {
