@@ -9,14 +9,15 @@ set esecEn   [lindex $argv 4]
 set logEn    [lindex $argv 5]
 set pct      [lindex $argv 6]
 set skip_l1_report_mode   [lindex $argv 7]
-set tcl_path [lindex $argv 8]
+set skip_serdes_tests     [lindex $argv 8]
+set tcl_path [lindex $argv 9]
 set port 10
 
 if {$logEn == ""} {
     set logEn 1
 }
 
-puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; esecEn: $esecEn; logEn: $logEn; skip_l1_report_mode:$skip_l1_report_mode; tcl_path: $tcl_path"
+puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; esecEn: $esecEn; logEn: $logEn; skip_l1_report_mode: $skip_l1_report_mode; skip_serdes_tests: $skip_serdes_tests; tcl_path: $tcl_path"
 set err_cnt 0
 if { $tcl_path != "" } {
     set ASIC_LIB_BUNDLE "$tcl_path"
@@ -52,7 +53,7 @@ if {($MTP_TYPE == "MTP_PANAREA")} {
     set port $slot
     set slot $slot
 
-    set l1_cmd "vul_l1_screen_diag $sn 0 1 1 $int_lpbk $vmarg $esecEn $logEn $skip_l1_report_mode"
+    set l1_cmd "vul_l1_screen_diag $sn 0 1 1 $int_lpbk $vmarg $esecEn $logEn $skip_l1_report_mode $skip_serdes_tests"
     #set l1_cmd "vul_l1_screen_diag $sn"
     source .tclrc.diag.vul
     #source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
