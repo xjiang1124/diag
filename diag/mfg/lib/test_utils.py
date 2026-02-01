@@ -248,7 +248,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
             tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
             scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
             nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
-            if not mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, nic_fru_cfg, skip_test_list):
+            if not mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, nic_fru_cfg, skip_test_list, mtp_type):
                 return False
         elif stage == FF_Stage.FF_FST:
             if not mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list):
@@ -274,7 +274,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
                     fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
                     return False
             else:
-                if not mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list, scanned_dpn, scanned_sku):
+                if not mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list, scanned_dpn, scanned_sku, mtp_type):
                     return False
 
         fail_nic_list = list()
@@ -406,8 +406,12 @@ def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     return True
 
-def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=None, scanned_sku=None):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "VULCANO_CNS_PMCI_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
+def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=None, scanned_sku=None, mtp_type=MTP_TYPE.MATERA):
+    mtp_mgmt_ctrl._mtp_type = mtp_type
+    if mtp_type == MTP_TYPE.PANAREA:
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "VULCANO_CNS_PMCI_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
+    else:
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_dpn=scanned_dpn, scanned_sku=scanned_sku):
         return False
     return True
@@ -437,8 +441,12 @@ def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
         return False
     return True
 
-def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[]):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "VULCANO_CNS_PMCI_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
+def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[],mtp_type=MTP_TYPE.MATERA):
+    mtp_mgmt_ctrl._mtp_type = mtp_type
+    if mtp_type == MTP_TYPE.PANAREA:
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "VULCANO_CNS_PMCI_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
+    else:
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg):
         return False
     return True
