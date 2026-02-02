@@ -77,9 +77,9 @@ if {$ASIC_TYPE == "VULCANO"} {
     set ::board_rev [vul_get_board_rev]
     vulcano_setup 0
 
-    #plog_msg "calling vul_card_rst 1 0"
-    #vul_card_rst 1 0
-    #after 2000
+    plog_msg "calling vul_card_rst 1 0"
+    vul_card_rst 1 0
+    after 2000
 
     plog_msg "calling vul_pll_fix"
     vul_pll_fix
