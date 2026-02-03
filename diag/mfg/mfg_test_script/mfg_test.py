@@ -1500,6 +1500,7 @@ if __name__ == "__main__":
     # parser_sdl.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP between iterations; default to %(default)s", action='store_true', required=False, default=False)
     parser_sdl.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle", type=int, required=False, default=1)
     parser_sdl.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="c", default=None)
+    parser_sdl.add_argument('--proginterimg', '-proginterimg', action='store_true')
     parser_sdl.set_defaults(func=run_sdl_tests)
 
     parser_dl.add_argument("--verbosity", "-verbosity", help="Increase output verbosity; default to %(default)s", action='store_true', default=False)

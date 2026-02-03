@@ -240,6 +240,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         scanned_sku   = kwargs.get("sku", None)
         testsuite     = kwargs.get("testsuite_name", stage)
         mtp_type      = kwargs.get("mtp_type", None)
+        prog_inter_diagsuc  = kwargs.get("proginterimg", None)
 
         ####### MTP SETUP: start_diag, MTP sanity check, ...
         mtp_mgmt_ctrl.mtp_mgmt_disconnect()
@@ -248,7 +249,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
             tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
             scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
             nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
-            if not mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, nic_fru_cfg, skip_test_list):
+            if not mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, nic_fru_cfg, skip_test_list, prog_inter_diagsuc):
                 return False
         elif stage == FF_Stage.FF_FST:
             if not mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list):
@@ -316,6 +317,10 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
                     cmd_options.append(os.path.basename(v)) # file has been packaged into config/, discard full path
                 continue
             if k == 'jobd_logdir':
+                continue
+            if k == 'proginterimg':
+                if v:
+                    cmd_options.append('--'+ k)
                 continue
             # assemly by option value type
             if isinstance(v, list):
@@ -390,10 +395,10 @@ def mtp_common_setup(mtp_mgmt_ctrl, stage, skip_test_list=[]):
         return False
     return True
 
-def mtp_common_setup_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[]):
+def mtp_common_setup_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[], prog_inter_diagsuc=False):
     test_list = ["MTP_CONNECT", "MTP_HEALTH_CONNECT", "DSP_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT"]
     if not MTP_HEALTH_MONITOR: test_list.remove("MTP_HEALTH_CONNECT")
-    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg):
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg, prog_inter_diagsuc=prog_inter_diagsuc):
         return False
     return True
 
@@ -437,9 +442,9 @@ def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
         return False
     return True
 
-def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[]):
+def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[], prog_inter_diagsuc=False):
     test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "VULCANO_CNS_PMCI_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
-    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg):
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg, prog_inter_diagsuc=prog_inter_diagsuc):
         return False
     return True
 
@@ -530,7 +535,7 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
             ret = mtp_mgmt_ctrl.mtp_nic_init(stage, scanned_dpn=kwargs.get("scanned_dpn", None), scanned_sku=kwargs.get("scanned_sku", None))
 
         elif test == "SCAN_NIC_INIT":
-            ret = mtp_mgmt_ctrl.mtp_nic_init(stage, scanned_fru=kwargs["scanned_fru_cfg"])
+            ret = mtp_mgmt_ctrl.mtp_nic_init(stage, scanned_fru=kwargs["scanned_fru_cfg"], prog_inter_diagsuc=kwargs.get("prog_inter_diagsuc", None))
 
         elif test == "MTP_POWERCYCLE":
             ret  = libmfg_utils.mtpid_list_poweroff([mtp_mgmt_ctrl])
