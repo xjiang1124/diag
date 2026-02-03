@@ -681,27 +681,27 @@ class nic_ctrl():
     def nic_console_attach(self, uart_selecttor=None):
         # Terminate connected device before the new connection
         if self._mtp_type == MTP_TYPE.PANAREA:
-            if str(uart_selecttor) == "1":
-                #cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_FPGA_UART_FMT.format(str(self._slot))
+            if str(uart_selecttor) == "0":
                 cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot + 1))
             elif str(uart_selecttor) == "2":
                 cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_VULCANO_UART_FMT.format(str(self._slot))
+            elif str(uart_selecttor) == "1":
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_FPGA_UART_FMT.format(str(self._slot))
             else:
-                #cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot + 1))
                 cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_STOP_FPGA_UART_FMT.format(str(self._slot))
             self._nic_handle.sendline(cmd)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [":$"], timeout=10)
             # Check if there is still got picocom process running
-            if str(uart_selecttor) == "1":
-                # cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_SOC_FMT.format(str(self._slot))
+            if str(uart_selecttor) == "0":
                 cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT.format(str(self._slot + 1))
             elif str(uart_selecttor) == "2":
                 cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_VULCANO_FMT.format(str(self._slot))
+            elif str(uart_selecttor) == "1":
+                cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_SOC_FMT.format(str(self._slot))
             else:
-                # cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_PICOCOM_FMT.format(str(self._slot + 1))
                 cmd = MFG_DIAG_CMDS().PANAREA_NIC_DIAG_CHECK_SOC_FMT.format(str(self._slot))
             self._nic_handle.sendline(cmd)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [":$"], timeout=10)
         elif self._mtp_type == MTP_TYPE.MATERA:
             cmd = MFG_DIAG_CMDS().MATERA_NIC_DIAG_STOP_PICOCOM_FMT.format(str(self._slot))
             self._nic_handle.sendline(cmd)
@@ -724,11 +724,14 @@ class nic_ctrl():
         if idx < 0:
             self.nic_set_err_msg("{:s} failed - occupied or missing".format(cmd))
             return False
-        if self._nic_type in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST and ( not uart_selecttor ):
+        if self._nic_type in SALINA_NIC_TYPE_LIST and ( not uart_selecttor ):
             self.nic_send_ctrl_c()
         time.sleep(5)
         # send return
-        self._nic_handle.sendline("")
+        if self._nic_type in VULCANO_NIC_TYPE_LIST:
+            self._nic_handle.send('\r\n')
+        else:
+            self._nic_handle.sendline("")
         # TODO: Forio need another enter to connect console
         if self._nic_type == NIC_Type.FORIO or self._nic_type == NIC_Type.VOMERO:
             self._nic_handle.sendline("")
@@ -856,10 +859,10 @@ class nic_ctrl():
                 if self._nic_type in SALINA_DPU_NIC_TYPE_LIST:
                     if uart_selecttor is None:
                         uart_sel = "1"
-                # For Vulcano cards, made the default uart_sekector to uC, namely uart selector to 0
+                # For Vulcano cards, made the default uart_sekector to uC, namely uart selector to 1
                 if self._nic_type in VULCANO_NIC_TYPE_LIST:
                     if uart_selecttor is None:
-                        uart_sel = "0"
+                        uart_sel = "1"
                 if not self.nic_console_attach(uart_sel):
                     self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
                     return False
@@ -1753,7 +1756,7 @@ class nic_ctrl():
 
     @nic_console_test('1')
     def nic_exec_cmd_from_suc_console1(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
-        self._nic_handle.sendline()
+        self._nic_handle.send('\r\n')
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_suc_prompt], self._nic_con_suc_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -1773,7 +1776,7 @@ class nic_ctrl():
 
     @nic_console_test('2')
     def nic_exec_cmd_from_soc_console(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
-        self._nic_handle.sendline()
+        self._nic_handle.sendline('\r\n')
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_vulcano_prompt], self._nic_con_vulcano_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -1793,15 +1796,20 @@ class nic_ctrl():
 
     @nic_console_test('1')
     def uc_get_zephyr_booting_msg(self, monitor_timeout=30):
-        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt, self._nic_con_suc_prompt], self._nic_con_zephyr_prompt, timeout=monitor_timeout)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_suc_prompt], self._nic_con_suc_prompt, timeout=monitor_timeout, nic_type=self._nic_type)
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if idx == 0:
+            cmd_buf += self._nic_con_suc_prompt
         self.nic_set_cmd_buf(cmd_buf)
         return True
 
     @nic_console_test('2')
     def uc_get_vulcano_booting_msg(self, monitor_timeout=60):
-        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_suc_prompt], self._nic_con_suc_prompt, timeout=monitor_timeout)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_vulcano_prompt], self._nic_con_vulcano_prompt, timeout=monitor_timeout)
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if idx == 0:
+            cmd_buf += self._nic_con_vulcano_prompt
+
         self.nic_set_cmd_buf(cmd_buf)
         return True
 
@@ -6493,7 +6501,7 @@ class nic_ctrl():
 
         # calculate buffer crc befor program
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC_BUF.format(partition)
-        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+        if not self.nic_exec_cmd_from_suc_console1(cmd):
             self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
@@ -6510,7 +6518,7 @@ class nic_ctrl():
 
         # program cpld partition
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_PROG_BUF.format(partition)
-        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+        if not self.nic_exec_cmd_from_suc_console1(cmd):
             self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
@@ -6523,7 +6531,7 @@ class nic_ctrl():
         # calculate partition crc and verify
         partition_number = partition.replace('cfg', '')
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC.format(partition)
-        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+        if not self.nic_exec_cmd_from_suc_console1(cmd):
             self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
@@ -6633,14 +6641,9 @@ class nic_ctrl():
         """
 
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_VERSION
-        if stage == FF_Stage.FF_SWI:
-            if not self.nic_exec_cmd_from_suc_console1(cmd):
-                self.nic_set_err_msg("SUC version Command '{:s}' Failed".format(cmd))
-                return False
-        else:
-            if not self.nic_exec_cmd_from_zephyr_console(cmd):
-                self.nic_set_err_msg("Zephyr version Command '{:s}' Failed".format(cmd))
-                return False
+        if not self.nic_exec_cmd_from_suc_console1(cmd):
+            self.nic_set_err_msg("SUC version Command '{:s}' Failed".format(cmd))
+            return False
 
         cmd_buf = self.nic_get_cmd_buf()
         sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)

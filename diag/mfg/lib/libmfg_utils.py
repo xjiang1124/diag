@@ -565,7 +565,7 @@ def load_cfg_from_yaml(yaml_file):
 
     return cfg
 
-def mfg_expect_console_fuzzywuzzy(session, exp_list, cmd_prompt, timeout=-1, similarity=90):
+def mfg_expect_console_fuzzywuzzy(session, exp_list, cmd_prompt, timeout=-1, similarity=90, nic_type=None):
     """
     Sometime if there is a NULL Character(0xo00 or ^@) come out from console, it will cause random char missing, if the missing char is in the expect pattern string, then expect will timeout.
     This function is workaround this kind of issue.
@@ -591,7 +591,11 @@ def mfg_expect_console_fuzzywuzzy(session, exp_list, cmd_prompt, timeout=-1, sim
         cli_log_inf(session.logfile_read, "Timeout Happened, Try to check if session back to prompt after sending a carriage return")
         saved_buffer = session.before
         _exp_list = [pexpect.TIMEOUT, pexpect.EOF] + [cmd_prompt]
-        session.sendline("")
+        if nic_type in VULCANO_NIC_TYPE_LIST:
+            session.send('\r\n')
+        else:
+            session.sendline("")
+
         iidx = session.expect_exact(_exp_list, timeout)
         if iidx == 0:
             cli_log_inf(session.logfile_read, "Timeout after resend a carriage return, Session might not alive, give up")

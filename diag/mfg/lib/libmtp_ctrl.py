@@ -4186,9 +4186,7 @@ class mtp_ctrl():
                 return True
 
             if cur_ver == expected_version and cur_timestamp == expected_timestamp:
-                self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date")
-                self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
-                return True
+                self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date, But Program Again")
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "cfg0"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
@@ -7765,9 +7763,7 @@ class mtp_ctrl():
         expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
 
         if cur_ver == expected_version and cur_timestamp == expected_timestamp:
-            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date")
-            self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
-            return True
+            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date, But Program Again")
 
         support_partitions = ("0", "1")
         if partition not in support_partitions:
@@ -7879,11 +7875,10 @@ class mtp_ctrl():
 
         power_cycle_handle.close()
 
-        if stage == FF_Stage.FF_SWI:
-            if "suc:~$".lower() not in self.mtp_get_nic_cmd_buf(slot).lower():
-                self.cli_log_slot_err_lock(slot, "uc zephyr boot check Failed")
-                self.mtp_get_nic_err_msg(slot)
-                return False
+        if "suc:~$".lower() not in self.mtp_get_nic_cmd_buf(slot).lower():
+            self.cli_log_slot_err_lock(slot, "uc zephyr boot check Failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
         return True
 
     def mtp_nic_vulcano_boot_check(self, slot, monitor_timeout=60, stage=None):
