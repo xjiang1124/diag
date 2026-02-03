@@ -7648,6 +7648,22 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_console
+    def mtp_nic_suc_fru_dump_check(self, slot):
+        """
+        execute suc shell fru dump command, verify the contents with eeutil -disp
+        command example:
+            suc:~$ frudump raw  ==> for log only
+            suc:~$ frudump parsed   ==> for contents compare
+        """
+
+        if not self._nic_ctrl_list[slot].suc_fru_dump_check():
+            self.cli_log_slot_err_lock(slot, "Suc EEUTIL FRU compare Failed")
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_console
     def mtp_nic_vulcano_version_read_check(self, slot, stage=None):
         """
         execute vulcano zephyr shell 'show version' command, verify Build time and CPLD version
@@ -7687,6 +7703,22 @@ class mtp_ctrl():
         cpld_ver = f'{int(nic_cpld_info[0], 16)}.{int(nic_cpld_info[3], 16)}'
         if not self._nic_ctrl_list[slot].zephyr_vulcano_version_check(expected_soc_ver, expected_soc_timestamp, cpld_ver):
             self.cli_log_slot_err_lock(slot, "Vulcano Zephyr Version Check Failed")
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_console
+    def mtp_nic_vulcano_fru_dump_check(self, slot):
+        """
+        execute vulcano shell fru dump command, verify the contents with eeutil -disp
+        command example:
+            vulcano:~$ frudump raw  ==> for log only
+            vulcano:~$ frudump parsed   ==> for contents compare
+        """
+
+        if not self._nic_ctrl_list[slot].vulcano_shell_fru_dump_check():
+            self.cli_log_slot_err_lock(slot, "Vulcano and EEUTIL FRU compare Failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False

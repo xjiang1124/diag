@@ -546,6 +546,8 @@ class MFG_DIAG_CMDS:
     SUC_ZEPHYR_CPLD_REFRESH = "cpld refresh"
     SUC_ZEPHYR_HWINFO_DEVID = "hwinfo devid"
     SUC_ZEPHYR_VERSION = "version"
+    SUC_ZEPHYR_FRUDUMP_RAW = "frudump raw"
+    SUC_ZEPHYR_FRUDUMP_PARSED = "frudump parsed"
     SUC_ZEPHYR_FRU_WRITE = "fru write"                                                   # Write FRU data to cache at a starting address
     SUC_ZEPHYR_FRU_SAVE = "fru save"                                                     # Update FRU cache to partition. Only performable once after booting
     SUC_ZEPHYR_PARTITION_READ = "partition read"                                         # read - Read partition <dev_id> <part_id> <offset> <len>
@@ -556,7 +558,7 @@ class MFG_DIAG_CMDS:
     PANAREA_SUC_UTIL_CPLD_CMD = PANAREA_SUC_UTIL + " cpld"
     PANAREA_SUC_UTIL_RAW_CMD = PANAREA_SUC_UTIL + " exec"
     PANAREA_SUC_UTIL_OSFP_READ_SN = PANAREA_SUC_UTIL_RAW_CMD + ' -c "osfp serialnumber" '
-    PANAREA_SUC_USB_TOOL = "/home/diag/usb/suc_usb_tool.py"
+    PANAREA_SUC_USB_TOOL = "suc_usb_tool.py"
     PANAREA_SUC_CNS_PMCI_TEST_ALL = "cd /home/diag/cns-pmci; ./test_all.py"
     PANAREA_SUC_DIAG_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --component-ids 1 --detach-usb-kernel-driver --no-logs --print-hdrs --print-msgs --allow-early-update-completion --usb {:s} --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
     PANAREA_SUC_SW_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --detach-usb-kernel-driver --no-logs --print-hdrs --print-msgs --allow-early-update-completion --usb {:s} --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"

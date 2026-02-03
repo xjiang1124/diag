@@ -6607,11 +6607,7 @@ class nic_ctrl():
                 current_soc_build_time = line.split(":", 1)[1].strip()
             if "CPLD:" in line:
                 current_cpld_ver = line.split(":")[2].strip()
-        print("-" * 100)
-        print(current_soc_version)
-        print(current_soc_build_time)
-        print(current_cpld_ver)
-        print("-" * 100)
+
         if expected_soc_ver:
             if expected_soc_ver.lower() not in current_soc_version.lower():
                 self.nic_set_err_msg("SOC version :{:s} not in version command output {:s}".format(expected_soc_timestamp, sanitized_cmd_buf))
@@ -6625,6 +6621,72 @@ class nic_ctrl():
                 self.nic_set_err_msg("SOC CPLD version:{:s} not in version command output {:s}".format(cpld_ver, sanitized_cmd_buf))
                 return False
         return True
+
+    def vulcano_shell_fru_dump_check(self,):
+        """
+        execute vulcano shell fru dump command, verify the contents with eeutil -disp
+        command example:
+            vulcano:~$ frudump raw  ==> for log only
+            vulcano:~$ frudump parsed   ==> for contents compare
+        """
+
+        # read FRU from eeutil as reference
+        if not self.nic_read_fru(smb_fru=True, dev="fru"):
+            self.nic_set_err_msg("Display FRU From eeutil failed")
+            return False
+        eeutil_fru = self.zephyr_output_sanitize(self.nic_get_cmd_buf())
+
+        # suc dump fru raw for log purpose only
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_FRUDUMP_RAW
+        if not self.nic_exec_cmd_from_soc_console(cmd):
+            self.nic_set_err_msg("SOC frudump Command '{:s}' Failed".format(cmd))
+            return False
+
+        # suc dump fru parsed
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_FRUDUMP_PARSED
+        if not self.nic_exec_cmd_from_soc_console(cmd):
+            self.nic_set_err_msg("SOC frudump Command '{:s}' Failed".format(cmd))
+            return False
+        soc_fru = self.zephyr_output_sanitize(self.nic_get_cmd_buf())
+
+        # parse fru data and compare
+        soc_fru_dict = {}
+        for line in soc_fru.splitlines():
+            if ": " not in line:
+                continue
+            k, v = re.split(r'\s*:\s+', line)
+            if k == "serial-number":
+                soc_fru_dict["serial-number"] = v.upper()
+            if k == "part-number":
+                soc_fru_dict["part-number"] = v.upper()
+            if k == "board-id":
+                soc_fru_dict["board-id"] = v.upper()
+            if k == "product-name":
+                soc_fru_dict["product-name"] = v.upper()
+
+        eeutil_fru_dict = {}
+        for line in eeutil_fru.splitlines():
+            found = re.findall(r'Serial Number\s{5,}(\w+)', line)
+            if found:
+                eeutil_fru_dict["serial-number"] = found[0].upper()
+            found = re.findall(r'Part Number\s{5,}([0-9\-]+)', line)
+            if found:
+                eeutil_fru_dict["part-number"] = found[0].upper()
+            found = re.findall(r'Board ID\s{5,}(\w+)', line)
+            if found:
+                eeutil_fru_dict["board-id"] = found[0].upper()
+            found = re.findall(r'Product Name\s{5,}(.*)', line)
+            if found:
+                eeutil_fru_dict["product-name"] = found[0].upper()
+
+        # compare
+        compare_pass = True
+        for k, v in soc_fru_dict.items():
+            v1 = eeutil_fru_dict.get(k,"")
+            if v != v1:
+                self.nic_set_err_msg("{:s} from soc is {:s}, not match the value {:s} from eeutil".format(k, v, v1))
+                compare_pass = False
+        return compare_pass
 
     def uc_zephyr_version_check(self, nic_type=None, board_id=None, expected_suc_timestamp=None, cpld_ver=None, stage=None):
         """
@@ -6678,6 +6740,72 @@ class nic_ctrl():
                 self.nic_set_err_msg("Board Name:{:s} not in version command output {:s}".format(nic_type, sanitized_cmd_buf))
                 return False
         return True
+
+    def suc_fru_dump_check(self,):
+        """
+        execute suc shell fru dump command, verify the contents with eeutil -disp
+        command example:
+            suc:~$ frudump raw  ==> for log only
+            suc:~$ frudump parsed   ==> for contents compare
+        """
+
+        # read FRU from eeutil as reference
+        if not self.nic_read_fru(smb_fru=True, dev="fru"):
+            self.nic_set_err_msg("Display FRU From eeutil failed")
+            return False
+        eeutil_fru = self.zephyr_output_sanitize(self.nic_get_cmd_buf())
+
+        # suc dump fru raw for log purpose only
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_FRUDUMP_RAW
+        if not self.nic_exec_cmd_from_suc_console1(cmd):
+            self.nic_set_err_msg("SUC frudump Command '{:s}' Failed".format(cmd))
+            return False
+
+        # suc dump fru raw for log purpose only
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_FRUDUMP_PARSED
+        if not self.nic_exec_cmd_from_suc_console1(cmd):
+            self.nic_set_err_msg("SUC frudump Command '{:s}' Failed".format(cmd))
+            return False
+        suc_fru = self.zephyr_output_sanitize(self.nic_get_cmd_buf())
+
+        # parse fru data and compare
+        suc_fru_dict = {}
+        for line in suc_fru.splitlines():
+            if ": " not in line:
+                continue
+            k, v = re.split(r'\s*:\s+', line)
+            if k == "serial-number":
+                suc_fru_dict["serial-number"] = v.upper()
+            if k == "part-number":
+                suc_fru_dict["part-number"] = v.upper()
+            if k == "board-id":
+                suc_fru_dict["board-id"] = v.upper()
+            if k == "product-name":
+                suc_fru_dict["product-name"] = v.upper()
+
+        eeutil_fru_dict = {}
+        for line in eeutil_fru.splitlines():
+            found = re.findall(r'Serial Number\s{5,}(\w+)', line)
+            if found:
+                eeutil_fru_dict["serial-number"] = found[0].upper()
+            found = re.findall(r'Part Number\s{5,}([0-9\-]+)', line)
+            if found:
+                eeutil_fru_dict["part-number"] = found[0].upper()
+            found = re.findall(r'Board ID\s{5,}(\w+)', line)
+            if found:
+                eeutil_fru_dict["board-id"] = found[0].upper()
+            found = re.findall(r'Product Name\s{5,}(.*)', line)
+            if found:
+                eeutil_fru_dict["product-name"] = found[0].upper()
+
+        # compare
+        compare_pass = True
+        for k, v in suc_fru_dict.items():
+            v1 = eeutil_fru_dict.get(k,"")
+            if v != v1:
+                self.nic_set_err_msg("{:s} from suc is {:s}, not match the value {:s} from eeutil".format(k, v, v1))
+                compare_pass = False
+        return compare_pass
 
     def uc_zephyr_fru_boardid_program(self, date, sn, mac, pn, nic_type, dpn, sku, boardid):
         """
