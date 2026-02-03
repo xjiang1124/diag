@@ -386,6 +386,8 @@ class MFG_DIAG_CMDS:
     MTP_MATERA_QSPI_PROG_SH_CMD_FMT = "./qspi_prog.sh {:s}"
     MTP_MATERA_POLLARA_QSPI_PROG_SH_CMD_FMT = "./qspi_prog.v3.sh {:s}"
     MTP_MATERA_POLLARA_QSPI_PROG_SECURE_SH_CMD_FMT = "./qspi_prog_secure.v3.sh {:s}"
+    MTP_MATERA_POLLARA_QSPI_PROG_V2_SH_CMD_FMT = "./qspi_prog.v2.sh {:s}"
+    MTP_MATERA_POLLARA_QSPI_PROG_SECURE_V2_SH_CMD_FMT = "./qspi_prog_secure.v2.sh {:s}"
     MTP_MATERA_SWITCH_NIC_CONSOLE2A35_FMT = "con_switch.sh {:s} 0"
     MTP_MATERA_SWITCH_NIC_CONSOLE2N1_FMT = "con_switch.sh {:s} 1"
     MTP_CPLD_READ_FMT  = "cpldutil -cpld-rd -addr=0x{:x}"
