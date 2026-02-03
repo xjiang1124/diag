@@ -103,6 +103,7 @@ then
         fi
         if [[ $asic == "vulcano" ]]
         then
+            rmmod fpga_uart
             insmod /home/diag/diag/drivers/fpga_uart.ko
         fi
     else 
@@ -191,6 +192,11 @@ then
     echo "Panarea  MTP"
     echo "export MTP_TYPE=MTP_PANAREA" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/${asic_type,,}
+elif [[ $mtp_id == "0x000e" ]]
+then
+    echo "Ponza  MTP"
+    echo "export MTP_TYPE=MTP_PONZA" >> temp_profile
+    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/${asic_type,,}
 else
     echo "Default MTP to Capri"
     echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
@@ -218,6 +224,11 @@ then
     echo "export CARD_TYPE=MTP_PANAREA" >> temp_profile
     echo "export REDIS_IP=127.0.0.1" >> temp_profile
     export REDIS_IP="127.0.0.1"
+elif [[ $mtp_id == "0x000e" ]]
+then
+    echo "export CARD_TYPE=MTP_PONZA" >> temp_profile
+    echo "export REDIS_IP=127.0.0.1" >> temp_profile
+    export REDIS_IP="127.0.0.1"
 else
     source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
     echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
@@ -226,7 +237,7 @@ fi
 
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
-if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" || $mtp_id == "0x000b" || $mtp_id == "0x000d" ]]
+if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" || $mtp_id == "0x000b" || $mtp_id == "0x000d" || $mtp_id == "0x000e" ]]
 then
     hack_asic_elba.sh
 else
