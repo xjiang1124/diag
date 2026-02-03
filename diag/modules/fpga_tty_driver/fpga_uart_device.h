@@ -10,9 +10,7 @@
 #define BIT06                 (0x1 << 6)
 #define BIT07                 (0x1 << 7)
 
-#define FPGA_UART0_OFFSET     0x10000
-#define FPGA_UART1_OFFSET     0x10B00
-#define FPGA_UART_INST_SIZE   0x0100
+#define FPGA_UART_OFFSET      0x10000
 #define UART_RXDATA_REG       0x0000
 #define UART_TXDATA_REG       0x0004
 #define UART_STAT_REG         0x0008
