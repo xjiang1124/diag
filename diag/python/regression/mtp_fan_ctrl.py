@@ -3,6 +3,7 @@
 import time
 import fcntl
 import sys
+import argparse
 import pexpect
 import re
 
@@ -69,17 +70,34 @@ def calculate_fan_speed(average_temp):
     fan_speed = int(fan_speed)
     return fan_speed
 
-def run_fan_control():
+def run_fan_control(target):
     global last_average_temp, fail_to_read_temp_count
+    slot_num = 0
+    target_desc = "average"
+    if target.isdigit():
+        slot_num = int(target)
+        if slot_num <= 0 or slot_num > 10:
+            print("Invalid slot number:", slot_num)
+            sys.exit()
+        target_desc = "slot " + target
+    elif target != 'all':
+        print("Invalid target:", target)
+        sys.exit()
+
     while True:
         present_slots = get_present_slots()
-        temperatures = []
-
-        for slot in present_slots:
-            temp = read_temperature(slot)
-            temperatures.append(temp)
-
-        average_temp = calculate_average_temperature(temperatures)
+        if target != 'all':
+            if slot_num in present_slots:
+                average_temp = read_temperature(slot_num)
+            else:
+                print("target {} not present").format(target)
+                average_temp = None
+        else:
+            temperatures = []
+            for slot in present_slots:
+                temp = read_temperature(slot)
+                temperatures.append(temp)
+                average_temp = calculate_average_temperature(temperatures)
         if average_temp is None:
             fail_to_read_temp_count += 1
             if fail_to_read_temp_count >= 10:
@@ -102,7 +120,7 @@ def run_fan_control():
                 fan_speed = calculate_fan_speed(average_temp)
                 last_average_temp = average_temp
                 print("===============================================================")
-                print("Setting fan speed to {} percent for average temperature {}C".format(fan_speed, average_temp))
+                print("Setting fan speed to {} percent for {} temperature {}C".format(fan_speed, target_desc, average_temp))
                 print("===============================================================")
                 try:
                     session = common.session_start()
@@ -113,7 +131,7 @@ def run_fan_control():
                     print("Timeout setting fan speed")
             else:
                 print("===========================================================")
-                print("Fan speed remains unchanged for average temperature {}C".format(average_temp))
+                print("Fan speed remains unchanged for {} temperature {}C".format(target_desc, average_temp))
                 print("===========================================================")
             
         try:
@@ -124,16 +142,20 @@ def run_fan_control():
         except pexpect.TIMEOUT:
             print("Timeout reading fan speed")
         print("Sleeping for 60s...")
-        time.sleep(6)
+        time.sleep(60)
 
 def main():
+    parser = argparse.ArgumentParser(description='Fan control script targeting single card or all.')
+    parser.add_argument('--target', type=str, help='target single card (slot) or using average of all cards', default='all')
+    args = parser.parse_args()
+
     lock_file = open("/tmp/fan_control.lock", "w")
     try:
         fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except IOError:
         print("Another instance of the script is already running.")
         sys.exit()
-    run_fan_control()
+    run_fan_control(args.target)
 
 if __name__ == "__main__":
     main()
