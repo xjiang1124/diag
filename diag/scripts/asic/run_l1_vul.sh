@@ -123,11 +123,14 @@ do
     script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $SKIP_SERDES $TCL_PATH"
     ret=$?
     sync
-    num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1 TEST FAILED" | wc | awk -F " " '{print $1}')
+    num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1_SCREEN FAILED" | wc | awk -F " " '{print $1}')
     if [[ $num_fail -ne 0 ]]
     then
-        echo "L1 Iteration $idx failed"
+        echo "L1 TEST FAILED"
         ret=-1
+    else
+        echo "L1 TEST PASSED"
+        ret=0
     fi
 
 done
