@@ -409,6 +409,8 @@ def main():
                 rlist = swi_vulcano_boot_check(mtp_mgmt_ctrl, nic_list)
             elif test == "uC_VERSION_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_suc_version_read_check(nic_list, stage=FF_Stage.FF_SWI)
+            elif test == "SUC_USB_RESCAN":
+                rlist =  mtp_mgmt_ctrl.mtp_uc_usb_resacn(nic_list)
             elif test == "uC_FRU_DUMP_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_suc_fru_dump_check(nic_list)
             elif test == "VULVANO_VERSION_CHK":
@@ -680,6 +682,7 @@ def main():
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(pass_nic_list, "uC_SW_IMG_PROG")
             time.sleep(10)
+            run_swi_test(pass_nic_list, "SUC_USB_RESCAN")
             run_swi_test(pass_nic_list, "uC_SW_IMG_PROG")
             run_swi_test(pass_nic_list, "uC_BOOTING_CHK")
             run_swi_test(pass_nic_list, "VULCANO_BOOTING_CHK")

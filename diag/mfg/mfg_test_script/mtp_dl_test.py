@@ -194,11 +194,11 @@ def dl_cpld_program(mtp_mgmt_ctrl, slot):
         return mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
 
 @parallelize.parallel_nic_using_ssh
-def dl_uc_img_program(mtp_mgmt_ctrl, slot):
+def dl_uc_img_program(mtp_mgmt_ctrl, slot, override_fd_descriptors=False):
     dsp = FF_Stage.FF_DL
     uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_suc_diag_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
     cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_DIAG_IMAGE_PROG
-    return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, uc_img_file)
+    return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, uc_img_file, override_fd_descriptors)
 
 @parallelize.parallel_nic_using_ssh
 def dl_inter_uc_img_program(mtp_mgmt_ctrl, slot):
@@ -559,6 +559,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_board_config(nic_list)
             elif test == "uC_DIAG_IMG_PROG":
                 rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS":
+                rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list, override_fd_descriptors=True)
             elif test == "SUC_USB_RESCAN":
                 rlist =  mtp_mgmt_ctrl.mtp_uc_usb_resacn(nic_list)
             elif test == "inter_uC_DIAG_IMG_PROG":
@@ -780,8 +782,12 @@ def main():
                 run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
                 run_dl_test(pass_nic_list, "NIC_TYPE")
                 run_dl_test(pass_nic_list, "NIC_INIT")
+            run_dl_test(pass_nic_list, "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
+            run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
+            run_dl_test(pass_nic_list, "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             run_dl_test(pass_nic_list, "FRU_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
             run_dl_test(pass_nic_list, "uC_DIAG_IMG_PROG")
             run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
             run_dl_test(pass_nic_list, "uC_DIAG_IMG_PROG")

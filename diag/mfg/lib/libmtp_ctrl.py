@@ -8111,7 +8111,7 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_nic_uc_image_program(self, slot, cmd_format, uc_img_file):
+    def mtp_nic_uc_image_program(self, slot, cmd_format, uc_img_file, override_fd_descriptors=False):
         """
         lsusb
         lsusb -v -d 0438:0001
@@ -8119,7 +8119,7 @@ class mtp_ctrl():
         ./test_all.py --board-type AinicSuc --usb B4A7BA2756444B028820F0E180B0F82E:3 --print-hdrs --print-msgs -vvv --util pldmfwpkg=/home/diag/two_comp_gelso_v0_1_0_0.pldm --test-cases PldmFwUpdateSingleFDUpdateFlow
         """
 
-        if not self._nic_ctrl_list[slot].uc_image_program(cmd_format, uc_img_file):
+        if not self._nic_ctrl_list[slot].uc_image_program(cmd_format, uc_img_file, override_fd_descriptors):
             self.cli_log_slot_err_lock(slot, "Program uC image Failed")
             self.mtp_get_nic_err_msg(slot)
             return False
@@ -8555,6 +8555,8 @@ class mtp_ctrl():
             qspi_erase_cmd = "cd /home/diag/diag/scripts/asic/; tclsh vul_qspi_erase.tcl -slot {:s}".format(str(slot+1))
             if not self.mtp_mgmt_exec_cmd_para(slot, qspi_erase_cmd, timeout=90):
                 rs = False
+            if "QSPI ERASE PASSED" not in self.mtp_get_nic_cmd_buf(slot):
+                self.cli_log_slot_wrn(slot, "QSPI ERASE FAILED May affect L1 TEST results")
 
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=l1_cmd_tout):
             rs = False

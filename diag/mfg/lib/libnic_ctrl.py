@@ -6905,7 +6905,7 @@ class nic_ctrl():
 
         return serial
 
-    def uc_image_program(self, cmd_format, uc_img):
+    def uc_image_program(self, cmd_format, uc_img, override_fd_descriptors=False):
         """
         Get usb device iserial according to self._slot, which mapping to device /dev/SUCUART(self._slot+1).
         For the usb device interface, so far we hardcode 3 here, unless uC firmware change it in the future
@@ -6931,6 +6931,15 @@ class nic_ctrl():
 
         # program uC with MTCP
         cmd = cmd_format.format(device_iSerial, uc_img)
+        if override_fd_descriptors:
+            if self._nic_type == NIC_Type.MORTARO:
+                cmd += " --override-fd-descriptors /home/diag/cns-pmci/board/mortaro_p1.json"
+            elif self._nic_type == NIC_Type.SARACENO:
+                cmd += " --override-fd-descriptors /home/diag/cns-pmci/board/saraceno_p0.json"
+            elif self._nic_type == NIC_Type.GELSOP or self._nic_type == NIC_Type.GELSOX:
+                cmd += " --override-fd-descriptors /home/diag/cns-pmci/board/gelso.json"
+            else:
+                cmd += ""
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             self.nic_set_err_msg("Program uC image Command '{:s}' Failed".format(cmd))
             return False
