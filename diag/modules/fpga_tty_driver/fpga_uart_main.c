@@ -21,10 +21,13 @@
 #include <linux/jiffies.h>
 #include "fpga_uart_device.h"
 
+#define PANAREA_BOARD_ID (0xd)
+#define PONZA_BOARD_ID   (0xe)
+
 #define FPGA_UART_POLL_INTERVAL 10000  // 10 us
 
-#define FPGA_UART_SLOT_NUM  (10)
-#define FPGA_UART_PORT_NUM  (20)
+// Max UART: Vulsei (6 <slot>) * (1 <SuC> + 6 <Vul>) = 42
+#define FPGA_MAX_UART_PORT_NUM  (42)
 
 #define FPGA_UART_RX_BUFFER_SIZE (1024)
 #define FPGA_UART_TX_BUFFER_SIZE (1024)
@@ -59,6 +62,8 @@ typedef struct _fpga_uart_device_ {
     unsigned long last_push_us;
 } fpga_uart_device_t;
 
+static fpga_uart_device_t fpga_uart_dev_list[FPGA_MAX_UART_PORT_NUM];
+
 static struct hrtimer fpga_uart_timer;
 
 static struct task_struct *fpga_uart_tx_thread;
@@ -67,15 +72,42 @@ static void __iomem *fpga_virt_ptr = NULL;
 static unsigned long fpga_phy_address = 0x10020300000UL;
 static unsigned long fpga_virt_address = 0x0UL;
 static unsigned int fpga_mem_size = 0x100000;
+static unsigned int fpga_board_id = 0;
 
 static struct tty_driver *vul_tty_driver;
 static struct tty_driver *suc_tty_driver;
-static fpga_uart_device_t fpga_uart_dev_list[FPGA_UART_PORT_NUM];
 
 static struct proc_dir_entry *fpga_uart_proc_entry;
 
 module_param(fpga_phy_address, ulong, 0444);
 MODULE_PARM_DESC(fpga_phy_address, "FPGA bar address");
+
+static int* vul_map_tbl;
+static int* suc_map_tbl;
+static int fpga_uart_port_num;
+static int fpga_suc_uart_num;
+static int fpga_vul_uart_num;
+// For Panarea: Vul0-9 map to port 0-9; SuC0-9 map to port 10-19
+static int panarea_vul_map_tbl[] = { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9};
+static int panarea_suc_map_tbl[] = {10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+// For Ponza: SuC0 map to port 0; Vul0-Vul5 map to port 1-6; SuC1 map to port 7; Vul6-11 map to port 8-13...
+static int ponza_suc_map_tbl[] = { 0,  7, 14, 21, 28, 35 };
+static int ponza_vul_map_tbl[] = { 1,  2,  3,  4,  5,  6,
+                                   8,  9, 10, 11, 12, 13,
+                                  15, 16, 17, 18, 19, 20,
+                                  22, 23, 24, 25, 26, 27,
+                                  29, 30, 31, 32, 33, 34,
+                                  36, 37, 38, 39, 40, 41 };
+
+static int suc_tty_to_port(int tty_idx)
+{
+    return suc_map_tbl[tty_idx];
+}
+
+static int vul_tty_to_port(int tty_idx)
+{
+    return vul_map_tbl[tty_idx];
+}
 
 static fpga_uart_device_t *port_to_fpga_uart_device(int port)
 {
@@ -127,8 +159,8 @@ static char tx_ringbuf_deque(fpga_uart_device_t *pdev)
 ************************/
 static int fpga_uart_stats_show(struct seq_file *m, void *v)
 {
-    int port;
-    seq_printf(m, "%5s %2s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %10s %10s %10s %10s\n",
+    int tty_idx, port;
+    seq_printf(m, "%6s %2s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %10s %10s %10s %10s\n",
                   "PORT:",
                   "EN",
                   "PARITY",
@@ -146,46 +178,49 @@ static int fpga_uart_stats_show(struct seq_file *m, void *v)
                   "TX_TIMER",
                   "TX_BYTES",
                   "RX_BYTES");
-    for (port = 0; port < FPGA_UART_PORT_NUM; port++) {
+    for (tty_idx = 0; tty_idx < fpga_suc_uart_num; tty_idx++) {
+        port = suc_tty_to_port(tty_idx);
         fpga_uart_device_t *pdev = port_to_fpga_uart_device(port);
-        if (port < FPGA_UART_SLOT_NUM)
-            seq_printf(m, "Vul%d: %2d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %10ld %10ld %10ld %10ld\n",
-                          port,
-                          pdev->enabled,
-                          pdev->parity_error,
-                          pdev->frame_error,
-                          pdev->over_run,
-                          pdev->txfifo_full,
-                          pdev->rxfifo_full,
-                          pdev->violations,
-                          pdev->rx_full,
-                          pdev->tx_write_ptr,
-                          pdev->tx_read_ptr,
-                          pdev->tx_full,
-                          pdev->flip_full,
-                          pdev->rx_timestamp_us/1000000,
-                          pdev->tx_timestamp_s,
-                          pdev->tx_total_bytes,
-                          pdev->rx_total_bytes);
-        else
-            seq_printf(m, "SuC%d: %2d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %10ld %10ld %10ld %10ld\n",
-                          port-10,
-                          pdev->enabled,
-                          pdev->parity_error,
-                          pdev->frame_error,
-                          pdev->over_run,
-                          pdev->txfifo_full,
-                          pdev->rxfifo_full,
-                          pdev->violations,
-                          pdev->rx_full,
-                          pdev->tx_write_ptr,
-                          pdev->tx_read_ptr,
-                          pdev->tx_full,
-                          pdev->flip_full,
-                          pdev->rx_timestamp_us/1000000,
-                          pdev->tx_timestamp_s,
-                          pdev->tx_total_bytes,
-                          pdev->rx_total_bytes);
+        seq_printf(m, "SuC%02d: %2d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %10ld %10ld %10ld %10ld\n",
+                      tty_idx,
+                      pdev->enabled,
+                      pdev->parity_error,
+                      pdev->frame_error,
+                      pdev->over_run,
+                      pdev->txfifo_full,
+                      pdev->rxfifo_full,
+                      pdev->violations,
+                      pdev->rx_full,
+                      pdev->tx_write_ptr,
+                      pdev->tx_read_ptr,
+                      pdev->tx_full,
+                      pdev->flip_full,
+                      pdev->rx_timestamp_us/1000000,
+                      pdev->tx_timestamp_s,
+                      pdev->tx_total_bytes,
+                      pdev->rx_total_bytes);
+    }
+    for (tty_idx = 0; tty_idx < fpga_vul_uart_num; tty_idx++) {
+        port = vul_tty_to_port(tty_idx);
+        fpga_uart_device_t *pdev = port_to_fpga_uart_device(port);
+        seq_printf(m, "Vul%02d: %2d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %8d %10ld %10ld %10ld %10ld\n",
+                      tty_idx,
+                      pdev->enabled,
+                      pdev->parity_error,
+                      pdev->frame_error,
+                      pdev->over_run,
+                      pdev->txfifo_full,
+                      pdev->rxfifo_full,
+                      pdev->violations,
+                      pdev->rx_full,
+                      pdev->tx_write_ptr,
+                      pdev->tx_read_ptr,
+                      pdev->tx_full,
+                      pdev->flip_full,
+                      pdev->rx_timestamp_us/1000000,
+                      pdev->tx_timestamp_s,
+                      pdev->tx_total_bytes,
+                      pdev->rx_total_bytes);
     }
 
     return 0;
@@ -209,9 +244,9 @@ static const struct proc_ops fpga_uart_stats_fops = {
 static int tty_to_uart_port(struct tty_struct *tty)
 {
     if (tty->driver == vul_tty_driver)
-        return tty->index;
+        return vul_tty_to_port(tty->index);
     else
-        return tty->index + FPGA_UART_SLOT_NUM;
+        return suc_tty_to_port(tty->index);
 }
 
 static int fpga_uart_tty_open(struct tty_struct *tty, struct file *filep)
@@ -297,7 +332,7 @@ static int fpga_uart_tx_callback(void *unused)
     unsigned int tx_val;
 
     while (!kthread_should_stop()) {
-        for (port = 0; port < FPGA_UART_PORT_NUM; port++) {
+        for (port = 0; port < fpga_uart_port_num; port++) {
             pdev = port_to_fpga_uart_device(port);
             if (pdev->enabled == 0)
                 continue;
@@ -338,7 +373,7 @@ static enum hrtimer_restart fpga_uart_rx_callback(struct hrtimer *t)
     fpga_uart_device_t *pdev;
     int m=0, n=0, i;
 
-    for (port = 0; port < FPGA_UART_PORT_NUM; port++) {
+    for (port = 0; port < fpga_uart_port_num; port++) {
         pdev = port_to_fpga_uart_device(port);
         if (pdev->enabled == 0)
             continue;
@@ -414,14 +449,10 @@ static enum hrtimer_restart fpga_uart_rx_callback(struct hrtimer *t)
 static int __init fpga_uart_init(void)
 {
     int rc = 0;
-    int port;
+    int slot, vul_inst, tty_idx, port;
+    int num_slot, vul_per_slot;
     unsigned long uart_base_addr;
     fpga_uart_device_t *pdev;
-
-    for (port = 0; port < FPGA_UART_PORT_NUM; port++) {
-        pdev = port_to_fpga_uart_device(port);
-        mutex_init(&(pdev->tx_lock));
-    }
 
     fpga_virt_ptr = ioremap(fpga_phy_address, fpga_mem_size);
     if (fpga_virt_ptr == NULL) {
@@ -429,17 +460,52 @@ static int __init fpga_uart_init(void)
         return -ENOMEM;
     }
 
+    // TODO: Currently diag use FPGA_REV_ID_REG(offset 0x0) upper 16-bits to decide MTP type
+    fpga_board_id = (readl(fpga_virt_ptr) & 0xFFFF0000) >> 16;
+    if (fpga_board_id == PANAREA_BOARD_ID) {
+        pr_info("Panarea MTP is detected.\n");
+        vul_map_tbl = panarea_vul_map_tbl;
+        suc_map_tbl = panarea_suc_map_tbl;
+        num_slot = 10;
+        vul_per_slot = 1;
+    } else if (fpga_board_id == PONZA_BOARD_ID) {
+        pr_info("Ponza MTP is detected.\n");
+        vul_map_tbl = ponza_vul_map_tbl;
+        suc_map_tbl = ponza_suc_map_tbl;
+        num_slot = 6;
+        vul_per_slot = 6;
+    } else {
+        pr_info("Unknown MTP (ID=0x%x) is detected, check MTP type or pass correct fpga base address.\n", fpga_board_id);
+        rc = -ENODEV;
+        goto cleanup_ioremap;
+    }
+    fpga_suc_uart_num = num_slot;
+    fpga_vul_uart_num = num_slot * vul_per_slot;
+    fpga_uart_port_num = fpga_suc_uart_num + fpga_vul_uart_num;
+
     fpga_virt_address = (unsigned long)fpga_virt_ptr;
     pr_info("Map FPGA physical address 0x%lx to virtual address 0x%lx(%p)\n", fpga_phy_address, fpga_virt_address, fpga_virt_ptr);
 
-    // Vulcano ports
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
-        uart_base_addr = fpga_virt_address + FPGA_UART0_OFFSET + FPGA_UART_INST_SIZE * port;
+    // SuC <1> tty port per slot
+    for (slot = 0; slot < num_slot; slot++) {
+        tty_idx = slot;
+        port = suc_tty_to_port(tty_idx);
+        if (fpga_board_id == PANAREA_BOARD_ID) {
+            uart_base_addr = fpga_virt_address + FPGA_UART_OFFSET + 0xB00 + 0x100 * slot;
+        } else if (fpga_board_id == PONZA_BOARD_ID) {
+            uart_base_addr = fpga_virt_address + FPGA_UART_OFFSET + 0x1000 * slot;
+        } else {
+            // Should not reach here.
+            pr_info("Need to add MTP(ID = 0x%x) support here.\n", fpga_board_id);
+            rc = -ENODEV;
+            goto cleanup_ioremap;
+        }
         fpga_uart_dev_list[port].uart_ctrl_reg = (unsigned int __iomem *)(uart_base_addr + UART_CTRL_REG);
         fpga_uart_dev_list[port].uart_status_reg = (unsigned int __iomem *)(uart_base_addr + UART_STAT_REG);
         fpga_uart_dev_list[port].uart_rxdata_reg = (unsigned int __iomem *)(uart_base_addr + UART_RXDATA_REG);
         fpga_uart_dev_list[port].uart_txdata_reg = (unsigned int __iomem *)(uart_base_addr + UART_TXDATA_REG);
-        pr_info("Vul-%02d: Map FPGA registers(base, rxdata, txdata, status, control): 0x%lx, %p, %p, %p, %p\n",
+        pr_info("SuC-%02d: (port=%d) Map FPGA registers(base, rxdata, txdata, status, control): 0x%lx, %p, %p, %p, %p\n",
+                 tty_idx,
                  port,
                  uart_base_addr,
                  fpga_uart_dev_list[port].uart_rxdata_reg,
@@ -449,31 +515,47 @@ static int __init fpga_uart_init(void)
                 );
     }
 
-    // SuC ports
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
-        uart_base_addr = fpga_virt_address + FPGA_UART1_OFFSET + FPGA_UART_INST_SIZE * port;
-        fpga_uart_dev_list[FPGA_UART_SLOT_NUM+port].uart_ctrl_reg = (unsigned int __iomem *)(uart_base_addr + UART_CTRL_REG);
-        fpga_uart_dev_list[FPGA_UART_SLOT_NUM+port].uart_status_reg = (unsigned int __iomem *)(uart_base_addr + UART_STAT_REG);
-        fpga_uart_dev_list[FPGA_UART_SLOT_NUM+port].uart_rxdata_reg = (unsigned int __iomem *)(uart_base_addr + UART_RXDATA_REG);
-        fpga_uart_dev_list[FPGA_UART_SLOT_NUM+port].uart_txdata_reg = (unsigned int __iomem *)(uart_base_addr + UART_TXDATA_REG);
-        pr_info("SuC-%02d: Map FPGA registers(base, rxdata, txdata, status, control): 0x%lx, %p, %p, %p, %p\n",
-                 port,
-                 uart_base_addr,
-                 fpga_uart_dev_list[FPGA_UART_SLOT_NUM+port].uart_rxdata_reg,
-                 fpga_uart_dev_list[FPGA_UART_SLOT_NUM+port].uart_txdata_reg,
-                 fpga_uart_dev_list[FPGA_UART_SLOT_NUM+port].uart_status_reg,
-                 fpga_uart_dev_list[FPGA_UART_SLOT_NUM+port].uart_ctrl_reg
-                );
+    // Vulcano <vul_per_slot> tty ports per slot
+    for (slot = 0; slot < num_slot; slot++) {
+        for (vul_inst = 0; vul_inst < vul_per_slot; vul_inst ++) {
+            tty_idx = vul_per_slot * slot + vul_inst;
+            port = vul_tty_to_port(tty_idx);
+            if (fpga_board_id == PANAREA_BOARD_ID) {
+                uart_base_addr = fpga_virt_address + FPGA_UART_OFFSET + 0x100 * slot;
+            } else if (fpga_board_id == PONZA_BOARD_ID) {
+                uart_base_addr = fpga_virt_address + FPGA_UART_OFFSET + 0x1000 * slot + 0x100 + 0x100 * vul_inst;
+            } else {
+                // Should not reach here.
+                pr_info("Need to add MTP(ID = 0x%x) support here.\n", fpga_board_id);
+                rc = -ENODEV;
+                goto cleanup_ioremap;
+            }
+            fpga_uart_dev_list[port].uart_ctrl_reg = (unsigned int __iomem *)(uart_base_addr + UART_CTRL_REG);
+            fpga_uart_dev_list[port].uart_status_reg = (unsigned int __iomem *)(uart_base_addr + UART_STAT_REG);
+            fpga_uart_dev_list[port].uart_rxdata_reg = (unsigned int __iomem *)(uart_base_addr + UART_RXDATA_REG);
+            fpga_uart_dev_list[port].uart_txdata_reg = (unsigned int __iomem *)(uart_base_addr + UART_TXDATA_REG);
+            pr_info("Vul-%02d: (port=%d) Map FPGA registers(base, rxdata, txdata, status, control): 0x%lx, %p, %p, %p, %p\n",
+                     tty_idx,
+                     port,
+                     uart_base_addr,
+                     fpga_uart_dev_list[port].uart_rxdata_reg,
+                     fpga_uart_dev_list[port].uart_txdata_reg,
+                     fpga_uart_dev_list[port].uart_status_reg,
+                     fpga_uart_dev_list[port].uart_ctrl_reg
+                    );
+        }
     }
 
-    for (port = 0; port < FPGA_UART_PORT_NUM; port++) {
+    for (port = 0; port < fpga_uart_port_num; port++) {
         pdev = port_to_fpga_uart_device(port);
+        mutex_init(&(pdev->tx_lock));
         tty_port_init(&(pdev->uart_port));
     }
+
     pr_info("FPGA UART ports initialized.\n");
 
     // Vulcano tty driver
-    vul_tty_driver = tty_alloc_driver(FPGA_UART_SLOT_NUM, TTY_DRIVER_REAL_RAW);
+    vul_tty_driver = tty_alloc_driver(fpga_vul_uart_num, TTY_DRIVER_REAL_RAW);
     if (IS_ERR(vul_tty_driver)) {
         rc = PTR_ERR(vul_tty_driver);
         goto cleanup_ioremap;
@@ -493,7 +575,7 @@ static int __init fpga_uart_init(void)
     pr_info("Vulcano TTY driver registered.\n");
 
     // SuC tty driver
-    suc_tty_driver = tty_alloc_driver(FPGA_UART_SLOT_NUM, TTY_DRIVER_REAL_RAW);
+    suc_tty_driver = tty_alloc_driver(fpga_suc_uart_num, TTY_DRIVER_REAL_RAW);
     if (IS_ERR(suc_tty_driver)) {
         rc = PTR_ERR(suc_tty_driver);
         goto cleanup_vul_driver;
@@ -513,16 +595,18 @@ static int __init fpga_uart_init(void)
     pr_info("SuC TTY driver registered.\n");
 
     // Vul tty device
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
+    for (tty_idx = 0; tty_idx < fpga_vul_uart_num; tty_idx++) {
+        port = vul_tty_to_port(tty_idx);
         pdev = port_to_fpga_uart_device(port);
-        tty_port_link_device(&(pdev->uart_port), vul_tty_driver, port);
+        tty_port_link_device(&(pdev->uart_port), vul_tty_driver, tty_idx);
     }
     pr_info("Vulcano TTY devices registered.\n");
 
     // SuC tty device
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
-        pdev = port_to_fpga_uart_device(FPGA_UART_SLOT_NUM+port);
-        tty_port_link_device(&(pdev->uart_port), suc_tty_driver, port);
+    for (tty_idx = 0; tty_idx < fpga_suc_uart_num; tty_idx++) {
+        port = suc_tty_to_port(tty_idx);
+        pdev = port_to_fpga_uart_device(port);
+        tty_port_link_device(&(pdev->uart_port), suc_tty_driver, tty_idx);
     }
     pr_info("SuC TTY devices registered.\n");
 
@@ -545,25 +629,29 @@ static int __init fpga_uart_init(void)
     return 0;
 
 cleanup_device:
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
-        pdev = port_to_fpga_uart_device(FPGA_UART_SLOT_NUM+port);
-        if (!IS_ERR(pdev->uart_dev))
-            tty_unregister_device(suc_tty_driver, port);
-    }
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
+    for (tty_idx = 0; tty_idx < fpga_suc_uart_num; tty_idx++) {
+        port = suc_tty_to_port(tty_idx);
         pdev = port_to_fpga_uart_device(port);
         if (!IS_ERR(pdev->uart_dev))
-            tty_unregister_device(vul_tty_driver, port);
+            tty_unregister_device(suc_tty_driver, tty_idx);
+    }
+    for (tty_idx = 0; tty_idx < fpga_vul_uart_num; tty_idx++) {
+        port = vul_tty_to_port(tty_idx);
+        pdev = port_to_fpga_uart_device(port);
+        if (!IS_ERR(pdev->uart_dev))
+            tty_unregister_device(vul_tty_driver, tty_idx);
     }
     tty_unregister_driver(suc_tty_driver);
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
-        pdev = port_to_fpga_uart_device(FPGA_UART_SLOT_NUM+port);
+    for (tty_idx = 0; tty_idx < fpga_suc_uart_num; tty_idx++) {
+        port = suc_tty_to_port(tty_idx);
+        pdev = port_to_fpga_uart_device(port);
         tty_port_destroy(&(pdev->uart_port));
     }
 
 cleanup_vul_driver:
     tty_unregister_driver(vul_tty_driver);
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
+    for (tty_idx = 0; tty_idx < fpga_vul_uart_num; tty_idx++) {
+        port = vul_tty_to_port(tty_idx);
         pdev = port_to_fpga_uart_device(port);
         tty_port_destroy(&(pdev->uart_port));
     }
@@ -577,7 +665,7 @@ cleanup_ioremap:
 
 static void __exit fpga_uart_exit(void)
 {
-    int port;
+    int tty_idx, port;
     fpga_uart_device_t *pdev;
 
     kthread_stop(fpga_uart_tx_thread);
@@ -586,26 +674,30 @@ static void __exit fpga_uart_exit(void)
 
     proc_remove(fpga_uart_proc_entry);
 
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
-        pdev = port_to_fpga_uart_device(FPGA_UART_SLOT_NUM+port);
-        if (!IS_ERR(pdev->uart_dev))
-            tty_unregister_device(suc_tty_driver, port);
-    }
-
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
+    for (tty_idx = 0; tty_idx < fpga_suc_uart_num; tty_idx++) {
+        port = suc_tty_to_port(tty_idx);
         pdev = port_to_fpga_uart_device(port);
         if (!IS_ERR(pdev->uart_dev))
-            tty_unregister_device(vul_tty_driver, port);
+            tty_unregister_device(suc_tty_driver, tty_idx);
+    }
+
+    for (tty_idx = 0; tty_idx < fpga_vul_uart_num; tty_idx++) {
+        port = vul_tty_to_port(tty_idx);
+        pdev = port_to_fpga_uart_device(port);
+        if (!IS_ERR(pdev->uart_dev))
+            tty_unregister_device(vul_tty_driver, tty_idx);
     }
 
     tty_unregister_driver(suc_tty_driver);
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
-        pdev = port_to_fpga_uart_device(FPGA_UART_SLOT_NUM+port);
+    for (tty_idx = 0; tty_idx < fpga_suc_uart_num; tty_idx++) {
+        port = suc_tty_to_port(tty_idx);
+        pdev = port_to_fpga_uart_device(port);
         tty_port_destroy(&(pdev->uart_port));
     }
 
     tty_unregister_driver(vul_tty_driver);
-    for (port = 0; port < FPGA_UART_SLOT_NUM; port++) {
+    for (tty_idx = 0; tty_idx < fpga_vul_uart_num; tty_idx++) {
+        port = vul_tty_to_port(tty_idx);
         pdev = port_to_fpga_uart_device(port);
         tty_port_destroy(&(pdev->uart_port));
     }

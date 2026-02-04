@@ -4,7 +4,6 @@ import (
     "fmt"
     "time"
     "os"
-    "bufio"
     "bytes"
     "strings"
     "strconv"
@@ -90,11 +89,11 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
         cli.Printf("e", "failed to open %s for slot %d: %v", uut_uart, slot, err_o)
         return nil, errType.FAIL
     }
-    port.SetReadTimeout(100 * time.Millisecond)
+    port.SetReadTimeout(1 * time.Second)
     return &SUCUARTHandle{slot, port, fileLock}, errType.SUCCESS
 }
 
-func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
+func (u *SUCUARTHandle) send_cmd_suc_uart_single_attempt(cmd string) (output []byte, err int) {
     if u == nil || u.port == nil {
         cli.Println("e", "SUCUART handle not initialized")
         return nil, errType.FAIL
@@ -112,6 +111,7 @@ func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
                     continue
                 } else {
                     cli.Println("e", "SUCUART write failed after 10 retries: ", err_w)
+                    return nil, errType.FAIL
                 }
             } else {
                 cli.Println("e", "SUCUART write failed:", err_w)
@@ -122,28 +122,29 @@ func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
         }
     }
 
-    reader := bufio.NewReader(u.port)
     prompt1 := []byte("uart:~$")
     prompt2 := []byte("suc:~$")
     var result []byte
     read_count := 0
     retry_count = 0
+    b := make([]byte, 1)
     for {
         read_count++
         // limit the number of read attempts
         if read_count > 65536 || retry_count > 10 {
-            break
+            return nil, errType.FAIL
         }
-        b, err_r := reader.ReadByte()
+        n, err_r := u.port.Read(b)
         if err_r != nil {
-            // Read timeout or error
-            if err_r.Error() == "EOF" {
-                break
-            }
             cli.Println("e", "SUCUART Read error:", err_r)
-            break
+            return nil, errType.FAIL
         }
-        result = append(result, b)
+        // nothing available after timeout
+        if n == 0 {
+            cli.Println("e", "SUCUART Read timeout")
+            return nil, errType.FAIL
+        }
+        result = append(result, b...)
         if bytes.HasSuffix(result, prompt1) || bytes.HasSuffix(result, prompt2) {
             //right after power cycle, we might get prompt from UART before sending any commands
             if idx := bytes.Index(result, []byte(cmd)); idx != -1 {
@@ -173,6 +174,21 @@ func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
     }
     //time.Sleep(200 * time.Millisecond)
     return result, errType.SUCCESS
+}
+
+func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
+    maxRetries := 3
+    for attempt := 1; attempt <= maxRetries; attempt++ {
+        output, err = u.send_cmd_suc_uart_single_attempt(cmd)
+        if err == errType.SUCCESS {
+            return output, err
+        }
+        cli.Printf("e", "Error on uart command attempt %d\n", attempt)
+        if attempt < maxRetries {
+            time.Sleep(1 * time.Second)
+        }
+    }
+    return nil, errType.FAIL
 }
 
 func (u *SUCUARTHandle) close_suc_uart() {

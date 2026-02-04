@@ -7,11 +7,12 @@ ESEC_EN=1
 ITE=1
 PCT=0
 REPORT_MODE=0
+SKIP_SERDES=0
 TCL_PATH=""
 
 usage () {
     echo "=========================="
-    echo "./run_l1.sh -sn <> -slot <> -i <> -v <> -e <> -t <> -r <> -ite <>"
+    echo "./run_l1.sh -sn <> -slot <> -i <> -v <> -e <> -t <> -r <> -k <> -ite <>"
     echo "sn:   SN"
     echo "slot: Slot number"
     echo "i:    0: external loopback; 1 internal loopback; default: 0"
@@ -19,6 +20,7 @@ usage () {
     echo "e:    0: esecure test disabled; 1: esecure test enabled; default: 1"
     echo "t:    Tcl_path"
     echo "r:    skip_l1_report_mode: 0 or 1"
+    echo "k:    skip_serdes_tests: 0 or 1"
     echo "ite:  Number of iterations"
     echo "=========================="
 }
@@ -72,6 +74,12 @@ case $key in
     shift # past value
     ;;
     #-------------
+    -k|--skip_serdes)
+    SKIP_SERDES=${2}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
     -ite)
     ITE=${2}
     shift # past argument
@@ -91,7 +99,7 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-echo "sn: $SN; slot: $SLOT; INT_LPBK: $INT_LPBK; VMARG: $VMARG; ESEC_EN: $ESEC_EN; TCL_PATH: $TCL_PATH"
+echo "sn: $SN; slot: $SLOT; INT_LPBK: $INT_LPBK; VMARG: $VMARG; ESEC_EN: $ESEC_EN; REPORT_MODE: $REPORT_MODE; SKIP_SERDES: $SKIP_SERDES; TCL_PATH: $TCL_PATH"
 if [[ $VMARG == "nom" ]]
 then
     PCT=0
@@ -111,15 +119,18 @@ do
     echo "jtag_accpcie_vulcano clr $SLOT"
     jtag_accpcie_vulcano clr $SLOT
 
-    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $TCL_PATH\""
-    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $TCL_PATH"
+    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $SKIP_SERDES $TCL_PATH\""
+    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $SKIP_SERDES $TCL_PATH"
     ret=$?
     sync
-    num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1 TEST FAILED" | wc | awk -F " " '{print $1}')
+    num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1_SCREEN FAILED" | wc | awk -F " " '{print $1}')
     if [[ $num_fail -ne 0 ]]
     then
-        echo "L1 Iteration $idx failed"
+        echo "L1 TEST FAILED"
         ret=-1
+    else
+        echo "L1 TEST PASSED"
+        ret=0
     fi
 
 done

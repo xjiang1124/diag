@@ -4186,9 +4186,7 @@ class mtp_ctrl():
                 return True
 
             if cur_ver == expected_version and cur_timestamp == expected_timestamp:
-                self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date")
-                self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
-                return True
+                self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date, But Program Again")
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "cfg0"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
@@ -5455,7 +5453,7 @@ class mtp_ctrl():
 
         return []
 
-    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, scanned_fru=None, scanned_dpn=None, scanned_sku=None):
+    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, scanned_fru=None, scanned_dpn=None, scanned_sku=None, prog_inter_diagsuc=None):
         self.cli_log_inf("Init NICs in the MTP Chassis", level=0)
         # open ssh session to each NIC
         if new_ssh_sessions:
@@ -5470,7 +5468,7 @@ class mtp_ctrl():
                 self.cli_log_inf("Failed to init NICs in the FST", level=0)
                 return False
         else:
-            if not self.mtp_init_nic_type(stage, scanned_fru, scanned_dpn, scanned_sku):
+            if not self.mtp_init_nic_type(stage, scanned_fru, scanned_dpn, scanned_sku, prog_inter_diagsuc):
                 self.cli_log_inf("Failed to init NICs in the MTP Chassis", level=0)
                 return False
 
@@ -6405,7 +6403,7 @@ class mtp_ctrl():
         return fail_nic_list
 
 
-    def mtp_init_nic_type(self, stage=None, scanned_fru=None, scanned_dpn=None, scanned_sku=None):
+    def mtp_init_nic_type(self, stage=None, scanned_fru=None, scanned_dpn=None, scanned_sku=None, prog_inter_diagsuc=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
         cmd = MFG_DIAG_CMDS().NIC_PRESENT_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -6413,55 +6411,67 @@ class mtp_ctrl():
             self.mtp_dump_err_msg(self._mgmt_handle.before)
             return False
 
-        # find type
-        self.cli_log_inf("Init NIC Presence, Type")
-        regex_dict = {
-            NIC_Type.NAPLES100:       MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100,
-            NIC_Type.NAPLES100IBM:    MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100IBM,
-            NIC_Type.NAPLES100HPE:    MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100HPE,
-            NIC_Type.NAPLES100DELL:   MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100DELL,
-            NIC_Type.NAPLES25:        MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25,
-            NIC_Type.FORIO:           MFG_DIAG_RE.MFG_NIC_TYPE_FORIO,
-            NIC_Type.VOMERO:          MFG_DIAG_RE.MFG_NIC_TYPE_VOMERO,
-            NIC_Type.VOMERO2:         MFG_DIAG_RE.MFG_NIC_TYPE_VOMERO2,
-            NIC_Type.NAPLES25SWM:     MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWM,
-            NIC_Type.NAPLES25OCP:     MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25OCP,
-            NIC_Type.NAPLES25SWMDELL: MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWMDELL,
-            NIC_Type.NAPLES25SWM833:  MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWM833,
-            NIC_Type.ORTANO:          MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO,
-            NIC_Type.ORTANO2:         MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2,
-            NIC_Type.POMONTEDELL:     MFG_DIAG_RE.MFG_NIC_TYPE_POMONTEDELL,
-            NIC_Type.LACONA32DELL:    MFG_DIAG_RE.MFG_NIC_TYPE_LACONA32DELL,
-            NIC_Type.LACONA32:        MFG_DIAG_RE.MFG_NIC_TYPE_LACONA32,
-            NIC_Type.ORTANO2ADI:      MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2ADI,
-            NIC_Type.ORTANO2INTERP:   MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2INTERP,
-            NIC_Type.ORTANO2SOLO:     MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2SOLO,
-            NIC_Type.ORTANO2ADICR:    MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2ADICR,
-            NIC_Type.GINESTRA_D4:     MFG_DIAG_RE.MFG_NIC_TYPE_GINESTRA_D4,
-            NIC_Type.GINESTRA_D5:     MFG_DIAG_RE.MFG_NIC_TYPE_GINESTRA_D5,
-            NIC_Type.LENI:            MFG_DIAG_RE.MFG_NIC_TYPE_LENI,
-            NIC_Type.LENI48G:         MFG_DIAG_RE.MFG_NIC_TYPE_LENI48G,
-            NIC_Type.MALFA:           MFG_DIAG_RE.MFG_NIC_TYPE_MALFA,
-            NIC_Type.POLLARA:         MFG_DIAG_RE.MFG_NIC_TYPE_POLLARA,
-            NIC_Type.LINGUA:          MFG_DIAG_RE.MFG_NIC_TYPE_LINGUA,
-            NIC_Type.GELSOP:          MFG_DIAG_RE.MFG_NIC_TYPE_GELSOP,
-            NIC_Type.GELSOX:          MFG_DIAG_RE.MFG_NIC_TYPE_GELSOX,
-            NIC_Type.MORTARO:         MFG_DIAG_RE.MFG_NIC_TYPE_MORTARO,
-            NIC_Type.SARACENO:        MFG_DIAG_RE.MFG_NIC_TYPE_SARACENO,
-        }
+        if prog_inter_diagsuc:
+            self.cli_log_inf("Init Vulcano NIC Presence by check USB UART device present, Then Fake NIC Type")
+            for slot in range(self._slots):
+                usbsn = self._nic_ctrl_list[slot].suc_slot2_usb_sn()
+                if "No such file or directory" in usbsn:
+                    continue
+                if usbsn:
+                    self.cli_log_inf(f"Slot {slot + 1} present, USB serial number is {usbsn}")
+                    self._nic_prsnt_list[slot] = True
+                    self._nic_type_list[slot] = "VulcanoFakeNicType"
+                    self._nic_ctrl_list[slot].nic_set_type("VulcanoFakeNicType")
+        else:
+            # find type
+            self.cli_log_inf("Init NIC Presence, Type")
+            regex_dict = {
+                NIC_Type.NAPLES100:       MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100,
+                NIC_Type.NAPLES100IBM:    MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100IBM,
+                NIC_Type.NAPLES100HPE:    MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100HPE,
+                NIC_Type.NAPLES100DELL:   MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100DELL,
+                NIC_Type.NAPLES25:        MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25,
+                NIC_Type.FORIO:           MFG_DIAG_RE.MFG_NIC_TYPE_FORIO,
+                NIC_Type.VOMERO:          MFG_DIAG_RE.MFG_NIC_TYPE_VOMERO,
+                NIC_Type.VOMERO2:         MFG_DIAG_RE.MFG_NIC_TYPE_VOMERO2,
+                NIC_Type.NAPLES25SWM:     MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWM,
+                NIC_Type.NAPLES25OCP:     MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25OCP,
+                NIC_Type.NAPLES25SWMDELL: MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWMDELL,
+                NIC_Type.NAPLES25SWM833:  MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES25SWM833,
+                NIC_Type.ORTANO:          MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO,
+                NIC_Type.ORTANO2:         MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2,
+                NIC_Type.POMONTEDELL:     MFG_DIAG_RE.MFG_NIC_TYPE_POMONTEDELL,
+                NIC_Type.LACONA32DELL:    MFG_DIAG_RE.MFG_NIC_TYPE_LACONA32DELL,
+                NIC_Type.LACONA32:        MFG_DIAG_RE.MFG_NIC_TYPE_LACONA32,
+                NIC_Type.ORTANO2ADI:      MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2ADI,
+                NIC_Type.ORTANO2INTERP:   MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2INTERP,
+                NIC_Type.ORTANO2SOLO:     MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2SOLO,
+                NIC_Type.ORTANO2ADICR:    MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2ADICR,
+                NIC_Type.GINESTRA_D4:     MFG_DIAG_RE.MFG_NIC_TYPE_GINESTRA_D4,
+                NIC_Type.GINESTRA_D5:     MFG_DIAG_RE.MFG_NIC_TYPE_GINESTRA_D5,
+                NIC_Type.LENI:            MFG_DIAG_RE.MFG_NIC_TYPE_LENI,
+                NIC_Type.LENI48G:         MFG_DIAG_RE.MFG_NIC_TYPE_LENI48G,
+                NIC_Type.MALFA:           MFG_DIAG_RE.MFG_NIC_TYPE_MALFA,
+                NIC_Type.POLLARA:         MFG_DIAG_RE.MFG_NIC_TYPE_POLLARA,
+                NIC_Type.LINGUA:          MFG_DIAG_RE.MFG_NIC_TYPE_LINGUA,
+                NIC_Type.GELSOP:          MFG_DIAG_RE.MFG_NIC_TYPE_GELSOP,
+                NIC_Type.GELSOX:          MFG_DIAG_RE.MFG_NIC_TYPE_GELSOX,
+                NIC_Type.MORTARO:         MFG_DIAG_RE.MFG_NIC_TYPE_MORTARO,
+                NIC_Type.SARACENO:        MFG_DIAG_RE.MFG_NIC_TYPE_SARACENO,
+            }
 
-        for nic_type in list(regex_dict.keys()):
-            match = re.findall(regex_dict[nic_type], self._mgmt_handle.before)
-            if match:
-                for idx in range(len(match)):
-                    slot = int(match[idx]) - 1
-                    if not self._slots_to_skip[slot]:
-                        self._nic_prsnt_list[slot] = True
-                        self._nic_type_list[slot] = nic_type
-                        self._nic_ctrl_list[slot].nic_set_type(nic_type)
-                    else:
-                        self._nic_prsnt_list[slot] = False
-                        self.cli_log_slot_wrn(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
+            for nic_type in list(regex_dict.keys()):
+                match = re.findall(regex_dict[nic_type], self._mgmt_handle.before)
+                if match:
+                    for idx in range(len(match)):
+                        slot = int(match[idx]) - 1
+                        if not self._slots_to_skip[slot]:
+                            self._nic_prsnt_list[slot] = True
+                            self._nic_type_list[slot] = nic_type
+                            self._nic_ctrl_list[slot].nic_set_type(nic_type)
+                        else:
+                            self._nic_prsnt_list[slot] = False
+                            self.cli_log_slot_wrn(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
 
         if stage is None or stage == FF_Stage.FF_DL:
             fru_fpo = True
@@ -6505,6 +6515,14 @@ class mtp_ctrl():
                 sn = self.get_scanned_sn(slot)
                 self.mtp_set_nic_sn(slot, sn)
                 self.mtp_set_nic_pn(slot, pn)
+                if prog_inter_diagsuc:
+                    nic_type = "VulcanoFakeNicType"
+                    if pn[0:10] == "102-P12300":
+                        nic_type = NIC_Type.MORTARO
+                    if pn[0:10] == "102-P12500":
+                        nic_type = NIC_Type.SARACENO
+                    self._nic_type_list[slot] = nic_type
+                    self._nic_ctrl_list[slot].nic_set_type(nic_type)
 
         # set final nic_type
         for slot in range(self._slots):
@@ -7745,9 +7763,7 @@ class mtp_ctrl():
         expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
 
         if cur_ver == expected_version and cur_timestamp == expected_timestamp:
-            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date")
-            self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
-            return True
+            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date, But Program Again")
 
         support_partitions = ("0", "1")
         if partition not in support_partitions:
@@ -7859,11 +7875,10 @@ class mtp_ctrl():
 
         power_cycle_handle.close()
 
-        if stage == FF_Stage.FF_SWI:
-            if "suc:~$".lower() not in self.mtp_get_nic_cmd_buf(slot).lower():
-                self.cli_log_slot_err_lock(slot, "uc zephyr boot check Failed")
-                self.mtp_get_nic_err_msg(slot)
-                return False
+        if "suc:~$".lower() not in self.mtp_get_nic_cmd_buf(slot).lower():
+            self.cli_log_slot_err_lock(slot, "uc zephyr boot check Failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
         return True
 
     def mtp_nic_vulcano_boot_check(self, slot, monitor_timeout=60, stage=None):
@@ -8201,7 +8216,7 @@ class mtp_ctrl():
 
     def mtp_nic_stop_tclsh(self, slot):
         if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
-            self._nic_ctrl_list[slot].mtp_exec_cmd("{:s}diag/util/jtag_accpcie_salina clr {:d}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH, slot+1))
+            self._nic_ctrl_list[slot].mtp_exec_cmd("{:s}diag/util/jtag_accpcie_salina clr {:d}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH, slot+1), timeout=MTP_Const.MTP_REBOOT_DELAY)
         else:
             self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
 
@@ -8412,13 +8427,17 @@ class mtp_ctrl():
             l1_cmd_tout = MTP_Const.SALINA_DPU_ASIC_L1_TEST_TIMEOUT
         if nic_type in VULCANO_NIC_TYPE_LIST:
             l1_cmd_tout = MTP_Const.VUCANO_ASIC_L1_TEST_TIMEOUT
+            # Erase QSPI Flash before run L1 since if QSPI image boot will cause snake hung 
+            qspi_erase_cmd = "cd /home/diag/diag/scripts/asic/; tclsh vul_qspi_erase.tcl -slot {:s}".format(str(slot+1))
+            if not self.mtp_mgmt_exec_cmd_para(slot, qspi_erase_cmd, timeout=90):
+                rs = False
 
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=l1_cmd_tout):
             rs = False
             # kill the process in case it's hung/timed out
             # ctrl-c doesnt work
             # needs to be killed from separate session
-            if not self.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh"):  # notify in log
+            if not self.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh", timeout=60):  # notify in log
                 pass
             self.mtp_nic_stop_tclsh(slot)  # use mtp session to kill it
 

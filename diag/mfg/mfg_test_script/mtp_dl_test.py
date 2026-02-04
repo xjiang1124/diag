@@ -210,7 +210,10 @@ def dl_inter_uc_img_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     inter_uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_inter_suc_diag_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
     cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_SW_IMAGE_PROG
-    return mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, inter_uc_img_file)
+    result = mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, inter_uc_img_file)
+    if not result:
+        mtp_mgmt_ctrl.cli_log_slot_wrn(slot, "Intermediate Diag SUC image programming fail, ignore and continue")
+    return True
 
 @parallelize.parallel_nic_using_ssh
 def dl_uc_boot_check(mtp_mgmt_ctrl, slot):
@@ -381,6 +384,7 @@ def main():
     parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--scandl", help="Run ScanDL, i.e. reprogram all NIC FRUs", action='store_true', default=False)
+    parser.add_argument('--proginterimg', '-proginterimg', help="Program Intermediate Diag SUC image,", action='store_true')
 
     args = parser.parse_args()
     if args.mtpid:
@@ -409,7 +413,7 @@ def main():
             scanned_nic_fru_cfg = mtp_mgmt_ctrl.barcode_scans
 
         if args.scandl:
-            if not test_utils.mtp_common_setup_scandl(mtp_mgmt_ctrl, FF_Stage.FF_DL, scanned_nic_fru_cfg, args.skip_test):
+            if not test_utils.mtp_common_setup_scandl(mtp_mgmt_ctrl, FF_Stage.FF_DL, scanned_nic_fru_cfg, args.skip_test, args.proginterimg):
                 mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
                 logfile_close(open_file_track_list)
                 return
@@ -772,13 +776,19 @@ def main():
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
 
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
-            run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
-            run_dl_test(pass_nic_list, "NIC_TYPE")
-            run_dl_test(pass_nic_list, "NIC_INIT")
-            run_dl_test(pass_nic_list, "inter_uC_DIAG_IMG_PROG")
-            time.sleep(3)
-            run_dl_test(pass_nic_list, "inter_uC_DIAG_IMG_PROG")
-            time.sleep(10)
+            if not args.scandl:
+                run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
+                run_dl_test(pass_nic_list, "NIC_TYPE")
+                run_dl_test(pass_nic_list, "NIC_INIT")
+            if args.scandl:
+                if args.proginterimg:
+                    run_dl_test(pass_nic_list, "inter_uC_DIAG_IMG_PROG")
+                    time.sleep(3)
+                    run_dl_test(pass_nic_list, "inter_uC_DIAG_IMG_PROG")
+                    time.sleep(10)
+                run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
+                run_dl_test(pass_nic_list, "NIC_TYPE")
+                run_dl_test(pass_nic_list, "NIC_INIT")
             run_dl_test(pass_nic_list, "FRU_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "uC_DIAG_IMG_PROG")

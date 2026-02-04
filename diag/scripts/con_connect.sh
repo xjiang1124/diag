@@ -66,6 +66,35 @@ then
             picocom -b 115200 $term
         fi
     fi
+elif [[ $CARD_TYPE == "MTP_PONZA" ]]
+then
+    slot=$1
+    if [ $# -eq 1 ]
+    then
+        if [ -e "/dev/SUCUART$slot" ]
+        then
+            picocom -b 115200 -f h "/dev/SUCUART$slot"
+        else
+            picocom -b 115200 "/dev/ttySuC$((slot - 1))"
+        fi
+    elif [ $# -eq 2 ]
+    then
+        uart_id=$(($2 & 0x7))
+        echo "uart_id=$uart_id"
+        if [[ $uart_id -eq 0 ]]
+        then
+            term="/dev/SUCUART$slot"
+            picocom -b 115200 -f h $term
+        elif [[ $uart_id -eq 1 ]]
+        then
+            term="/dev/ttySuC$((slot - 1))"
+            picocom -b 115200 $term
+        else
+            inst=$((6 * (slot - 1) + (uart_id - 2)))
+            term="/dev/ttyVul$inst"
+            picocom -b 115200 $term
+        fi
+    fi
 else
     cpldutil -cpld-wr -addr=0x18 -data=0
     cpldutil -cpld-wr -addr=0x18 -data=$1

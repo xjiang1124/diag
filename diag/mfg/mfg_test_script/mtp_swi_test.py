@@ -109,13 +109,19 @@ def swi_fru_program(mtp_mgmt_ctrl, slot):
 def swi_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
     cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
-    return mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file, dl_step=False)
+    if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+        return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_cpld_update(slot, cpld_img_file)
+    else:
+        return mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file, dl_step=False)
 
 @parallelize.parallel_nic_using_ssh
 def swi_fail_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
     failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
-    return mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, failsafe_cpld_img_file)
+    if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+        return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_cpld_update(slot, failsafe_cpld_img_file, partition='1')
+    else:
+        return mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, failsafe_cpld_img_file)
 
 @parallelize.parallel_nic_using_ssh
 def swi_secure_cpld_program(mtp_mgmt_ctrl, slot):
@@ -411,6 +417,8 @@ def main():
                 rlist = swi_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "FSAFE_CPLD_PROG":
                 rlist = swi_fail_cpld_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "CPLD_VERIFY":
+                rlist = mtp_mgmt_ctrl.mtp_verify_nic_cpld(nic_list, dl_step=False)
             elif test == "SEC_CPLD_PROG":
                 rlist = swi_secure_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "UMF1_PROG":
@@ -655,13 +663,14 @@ def main():
             run_swi_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_swi_test(pass_nic_list, "NIC_TYPE")
             run_swi_test(pass_nic_list, "NIC_INIT")
-            # run_swi_test(pass_nic_list, "FRU_PROG")
-            # run_swi_test(pass_nic_list, "NIC_PWRCYC")
-            # run_swi_test(pass_nic_list, "CPLD_PROG")
-            # run_swi_test(pass_nic_list, "CPLD_REF")
-            # run_swi_test(pass_nic_list, "NIC_PWRCYC")
-            # run_swi_test(pass_nic_list, "CPLD_VERIFY")
-            # run_swi_test(pass_nic_list, "FSAFE_CPLD_PROG")
+            run_swi_test(pass_nic_list, "FRU_PROG")
+            run_swi_test(pass_nic_list, "NIC_PWRCYC")
+            run_swi_test(pass_nic_list, "CPLD_PROG")
+            run_swi_test(pass_nic_list, "NIC_PWRCYC")
+            run_swi_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
+            run_swi_test(pass_nic_list, "NIC_PWRCYC")
+            run_swi_test(pass_nic_list, "CPLD_VERIFY")
+            run_swi_test(pass_nic_list, "FSAFE_CPLD_PROG")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(pass_nic_list, "uC_SUC_IMG_PROG")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
