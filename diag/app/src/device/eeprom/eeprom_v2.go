@@ -109,6 +109,10 @@ const (
     PN_GELSOU           string = "102-P12700"
     PN_MORTARO          string = "102-P12300"
     PN_SARACENO         string = "102-P12500"
+    PN_MTP_PONZA_FRU  string = "102-P12900-00"
+    PN_MTP_PONZA_MB   string = "102-P12900-00"
+    PN_MTP_PONZA_IOB  string = "102-P13000-00"
+    PN_MTP_PONZA_FPIC string = "102-P11900-00" 
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"

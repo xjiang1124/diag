@@ -24,57 +24,64 @@ const (
     DUALFAN = 1
     MAXSLOTS = 10       //10 NORMAL SLOTS
     DEBUGSLOTS = 1      //AND A DEBUG SLOT FOR 10+1 SLOTS
+    PONZA_MAXFAN = 3
+    PONZA_MAXLOT = 6
 )
 
 var Glob_fd0 *os.File = nil
 var Glob_mmap0 []byte
+var cardType string
+var mtpMaxFan uint32 = MAXFAN;
 
 const MAP_SIZE int = 1048576
 
 
 func init () {
-    var cardType string
     cardType = os.Getenv("CARD_TYPE")
-    if cardType == "MTP_PANAREA" {
-    var bar uint64 =0
-    exists, _ := Path_exists("/tmp/fpgabars")
+    if cardType == "MTP_PANAREA" || cardType == "MTP_PONZA" {
+        var bar uint64 =0
+        exists, _ := Path_exists("/tmp/fpgabars")
 
-    //TRY TO STORE THE BAR VALUES IN A FILE.  WE DONT WANT TO SCAN THE PCI AND GET THE BARS EVERYTIME WE USE ONE OF THE DIAG UTILITIES THAT CALLS THIS INIT
-    if exists == true {
-        file, errGo := os.Open("/tmp/fpgabars")
-        if errGo != nil {
-            cli.Println("e", "ERROR: Failed to get FPGA BAR VALUE.   GO ERROR=%v", errGo)
-            return
-        }
-        scanner := bufio.NewScanner(file)
-        for scanner.Scan() {
-            line := scanner.Text()
-            bar, _ = strconv.ParseUint(strings.TrimSuffix(line, "\n"), 0, 64)
-        }
-        file.Close()
-    } else {
-        shcmds := []string{ "lspci -v -d 1dd8:000B | grep 'Memory at' | awk '{print $3}'"}
-        execOutput, errGo := exec.Command("sh", "-c", shcmds[0] ).Output()
-        if errGo != nil {
-            cli.Println("e", "ERROR: Failed to get FPGA BAR VALUE.   GO ERROR=%v", errGo)
-            return
-        }
-        tmp := "0x" + strings.TrimSuffix(string(execOutput), "\n")
-        bar, _ = strconv.ParseUint(tmp, 0, 64) 
+        //TRY TO STORE THE BAR VALUES IN A FILE.  WE DONT WANT TO SCAN THE PCI AND GET THE BARS EVERYTIME WE USE ONE OF THE DIAG UTILITIES THAT CALLS THIS INIT
+        if exists == true {
+            file, errGo := os.Open("/tmp/fpgabars")
+            if errGo != nil {
+                cli.Println("e", "ERROR: Failed to get FPGA BAR VALUE.   GO ERROR=%v", errGo)
+                return
+            }
+            scanner := bufio.NewScanner(file)
+            for scanner.Scan() {
+                line := scanner.Text()
+                bar, _ = strconv.ParseUint(strings.TrimSuffix(line, "\n"), 0, 64)
+            }
+            file.Close()
+        } else {
+            shcmds := []string{ "lspci -v -d 1dd8:000B | grep 'Memory at' | awk '{print $3}'"}
+            execOutput, errGo := exec.Command("sh", "-c", shcmds[0] ).Output()
+            if errGo != nil {
+                cli.Println("e", "ERROR: Failed to get FPGA BAR VALUE.   GO ERROR=%v", errGo)
+                return
+            }
+            tmp := "0x" + strings.TrimSuffix(string(execOutput), "\n")
+            bar, _ = strconv.ParseUint(tmp, 0, 64) 
 
-        file, errGo := os.OpenFile("/tmp/fpgabars", os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
-        if errGo != nil {
-            cli.Println("e", "ERROR: Failed to get open file /tmp/fpgabars.   GO ERROR=%v", errGo)
-            return
+            file, errGo := os.OpenFile("/tmp/fpgabars", os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
+            if errGo != nil {
+                cli.Println("e", "ERROR: Failed to get open file /tmp/fpgabars.   GO ERROR=%v", errGo)
+                return
+            }
+            datawriter := bufio.NewWriter(file)
+            _, _ = datawriter.WriteString(fmt.Sprintf("0x%x\n", bar))
+     
+            datawriter.Flush()
+            file.Close() 
+             
         }
-        datawriter := bufio.NewWriter(file)
-        _, _ = datawriter.WriteString(fmt.Sprintf("0x%x\n", bar))
- 
-        datawriter.Flush()
-        file.Close() 
-         
-    }
-    Glob_mmap0, Glob_fd0, _ = MMAP_Device(int64(bar), MAP_SIZE)
+        Glob_mmap0, Glob_fd0, _ = MMAP_Device(int64(bar), MAP_SIZE)
+
+        if(cardType == "MTP_PONZA") {
+            mtpMaxFan = PONZA_MAXFAN;
+        }
     }
 }
  

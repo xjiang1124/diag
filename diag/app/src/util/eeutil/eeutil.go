@@ -99,7 +99,7 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
         mtpType = os.Getenv("MTP_TYPE")
         if ( mtpType == "MTP_TURBO_ELBA" ) {
             eeprom.EepromTbl = eeprom.MtpTurboTbl
-        } else if ( mtpType == "MTP_MATERA" || mtpType == "MTP_PANAREA") {
+        } else if ( mtpType == "MTP_MATERA" || mtpType == "MTP_PANAREA" || mtpType == "MTP_PONZA") {
             eeprom.CustType = "MTP_MATERA"
             eeprom.EepromTbl = nil
             if strings.Contains(dev, "FRU") || strings.Contains(dev, "MB") {
@@ -107,15 +107,25 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
                 if mtpType == "MTP_PANAREA" {
                     eeprom.EepromTlvs[0] = eeprom.MtpPanareaMbProductName
                 }
+                eeprom.EepromTlvs = eeprom.MtpMateraMbTlvs
+                if mtpType == "MTP_PONZA" {
+                    eeprom.EepromTlvs[0] = eeprom.MtpPonzaMbProductName
+                }
             } else if strings.Contains(dev, "IOB") {
                 eeprom.EepromTlvs = eeprom.MtpMateraIobTlvs
                 if mtpType == "MTP_PANAREA" {
                     eeprom.EepromTlvs[0] = eeprom.MtpPanareaIobProductName
                 }
+                if mtpType == "MTP_PONZA" {
+                    eeprom.EepromTlvs[0] = eeprom.MtpPonzaIobProductName
+                }
             } else if strings.Contains(dev, "FPIC") {
                 eeprom.EepromTlvs = eeprom.MtpMateraFpicTlvs
                 if mtpType == "MTP_PANAREA" {
                     eeprom.EepromTlvs[0] = eeprom.MtpPanareaFpicProductName
+                }
+                if mtpType == "MTP_PONZA" {
+                    eeprom.EepromTlvs[0] = eeprom.MtpPonzaFpicProductName
                 }
             } else {
                 cli.Println("e", "Not supported MTP_TYPE", mtpType, "devName", dev)

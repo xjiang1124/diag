@@ -268,6 +268,12 @@ var MtpPanareaMbProductName = tlvEntry{ product_name,      STRING,   11,  20,   
             0x4d, 0x42, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
             0x20, 0x20, 0x20, 0x20}}
 
+var MtpPonzaMbProductName = tlvEntry{ product_name,      STRING,   11,  20,   []byte{
+            //"PONZA MB"
+            0x50, 0x4F, 0x4E, 0x5A, 0x41, 0x20, 0x4D, 0x42,
+            0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+            0x20, 0x20, 0x20, 0x20}}
+
 var MtpMateraIobTlvs = []tlvEntry {
     //tlvEntry{ tlv_id_str,        STRING,    0,    8,   []byte(TlvInfoId)},
     //tlvEntry{ tlv_hdr_ver,       INT8,      8,    1,   TlvHdrVer},
@@ -317,6 +323,12 @@ var MtpPanareaIobProductName = tlvEntry{ product_name,      STRING,   11,  20,  
             //"PANAREA IOB"
             0x50, 0x41, 0x4E, 0x41, 0x52, 0x45, 0x41, 0x20,
             0x49, 0x4f, 0x42, 0x20, 0x20, 0x20, 0x20, 0x20,
+            0x20, 0x20, 0x20, 0x20}}
+
+var MtpPonzaIobProductName = tlvEntry{ product_name,      STRING,   11,  20,   []byte{
+            //"PONZA MB"
+            0x50, 0x4F, 0x4E, 0x5A, 0x41, 0x20, 0x49, 0x4f,
+            0x42, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
             0x20, 0x20, 0x20, 0x20}}
 
 var MtpMateraFpicTlvs = []tlvEntry {
@@ -370,6 +382,12 @@ var MtpPanareaFpicProductName = tlvEntry{ product_name,      STRING,   11,  20, 
             0x46, 0x50, 0x49, 0x43, 0x20, 0x20, 0x20, 0x20,
             0x20, 0x20, 0x20, 0x20}}
 
+var MtpPonzaFpicProductName = tlvEntry{ product_name,      STRING,   11,  20,   []byte{
+            //"PANAREA FPIC"
+            0x50, 0x4F, 0x4E, 0x5A, 0x41, 0x20, 0x20, 0x20,
+            0x46, 0x50, 0x49, 0x43, 0x20, 0x20, 0x20, 0x20,
+            0x20, 0x20, 0x20, 0x20}}
+
 type cardDevPn struct {
     cardTyp     string
     devName     string
@@ -396,6 +414,12 @@ var CardTypesTlv = []cardDevPn{
     cardDevPn{"MTP_PANAREA", "IOBL",        PN_MTP_PANAREA_IOB},
     cardDevPn{"MTP_PANAREA", "IOBR",        PN_MTP_PANAREA_IOB},
     cardDevPn{"MTP_PANAREA", "FPIC",        PN_MTP_PANAREA_FPIC},
+    //MTP_PONZA
+    cardDevPn{"MTP_PONZA", "FRU",           PN_MTP_PONZA_FRU},
+    cardDevPn{"MTP_PONZA", "MB",            PN_MTP_PONZA_MB},
+    cardDevPn{"MTP_PONZA", "IOBL",          PN_MTP_PONZA_IOB},
+    cardDevPn{"MTP_PONZA", "IOBR",          PN_MTP_PONZA_IOB},
+    cardDevPn{"MTP_PONZA", "FPIC",          PN_MTP_PONZA_FPIC},
 }
 
 type fpgaOffsetW struct {

@@ -29,7 +29,7 @@ func FAN_Get_RPM(fanNumber uint32) (inner uint32, outer uint32, err int) {
     inner = 0
     outer = 0
 
-    if fanNumber > (MAXFAN - 1) {
+    if fanNumber > (mtpMaxFan - 1) {
         cli.Printf("e", " Error: FAN_Get_RPM.  FAN NUMBER PASSED (%d) IS NOT VALID!", fanNumber)
         err = errType.FAIL
         return
@@ -64,14 +64,14 @@ func FAN_Set_PWM(fanNumber uint32, pwmPercent uint32) (err int) {
     var errGo error
     var FanCtrlReg uint64
 
-    if fanNumber > (MAXFAN - 1) {
+    if fanNumber > (mtpMaxFan - 1) {
         cli.Printf("e", " Error: FAN_Set_PWM.  FAN NUMBER PASSED (%d) IS NOT VALID!", fanNumber)
         err = errType.FAIL
         return
     }
 
     //Fan 5 is on control register 1, other 4 are on control register 0
-    if fanNumber == (MAXFAN - 1) {
+    if fanNumber == (mtpMaxFan - 1) {
         FanCtrlReg = FPGA_FAN_PWM_CTRL1_REG
     } else {
         FanCtrlReg = FPGA_FAN_PWM_CTRL0_REG
@@ -127,14 +127,14 @@ func FAN_Get_PWM(fanNumber uint32) (pwm uint32, err int) {
     var FanCtrlReg uint64
 
 
-    if fanNumber > (MAXFAN - 1) {
+    if fanNumber > (mtpMaxFan - 1) {
         cli.Printf("e", " Error: FAN_Get_PWM.  FAN NUMBER PASSED (%d) IS NOT VALID!", fanNumber)
         err = errType.FAIL
         return
     }
 
     //Fan 5 is on control register 1, other 4 are on control register 0
-    if fanNumber == (MAXFAN - 1) {
+    if fanNumber == (mtpMaxFan - 1) {
         FanCtrlReg = FPGA_FAN_PWM_CTRL1_REG
     } else {
         FanCtrlReg = FPGA_FAN_PWM_CTRL0_REG
@@ -179,7 +179,7 @@ func FAN_Get_PWM(fanNumber uint32) (pwm uint32, err int) {
 func FAN_Get_PowerOn_Status(fanNumber uint32) (powerOn uint32, err int) {
     var mask uint32
 
-    if fanNumber > (MAXFAN - 1) {
+    if fanNumber > (mtpMaxFan - 1) {
         cli.Printf("e", " Error: FAN_Get_PowerOn_Status.  FAN NUMBER PASSED (%d) IS NOT VALID!", fanNumber)
         err = errType.FAIL
         return
@@ -215,7 +215,7 @@ func FAN_Get_PowerOn_Status(fanNumber uint32) (powerOn uint32, err int) {
 func FAN_Get_Fault(fanNumber uint32) (fanErr uint32, err int) {
     var errorMask uint32
 
-    if fanNumber > (MAXFAN - 1) {
+    if fanNumber > (mtpMaxFan - 1) {
         cli.Printf("e", " Error: FAN_Get_Fault.  FAN NUMBER PASSED (%d) IS NOT VALID!", fanNumber)
         err = errType.FAIL
         return
@@ -256,7 +256,7 @@ func FAN_Get_Fault(fanNumber uint32) (fanErr uint32, err int) {
 // ***********************************************************************************
 func FAN_Set_Power_Enable(fanNumber uint32, enable uint32) (err int) {
     var mask uint32
-    if fanNumber > (MAXFAN - 1) {
+    if fanNumber > (mtpMaxFan - 1) {
         cli.Printf("e", " Error: FAN_Set_Power_Enable.  FAN NUMBER PASSED (%d) IS NOT VALID!", fanNumber)
         err = errType.FAIL
         return
@@ -294,7 +294,7 @@ func FAN_Set_Power_Enable(fanNumber uint32, enable uint32) (err int) {
 // ***********************************************************************************
 func FAN_Get_Power_Enable(fanNumber uint32) (enable uint32, err int) {
 
-    if fanNumber > (MAXFAN - 1) {
+    if fanNumber > (mtpMaxFan - 1) {
         cli.Printf("e", " Error: FAN_Get_Power_Enable.  FAN NUMBER PASSED (%d) IS NOT VALID!", fanNumber)
         err = errType.FAIL
         return
@@ -323,7 +323,7 @@ func FAN_Get_Power_Enable(fanNumber uint32) (enable uint32, err int) {
 // ***********************************************************************************
 func FAN_Get_Module_present(fanNumber uint32) (present bool, err int) {
 
-    if fanNumber > (MAXFAN - 1) {
+    if fanNumber > (mtpMaxFan - 1) {
         cli.Printf("e", " Error: FAN_Module_present.  FAN NUMBER PASSED (%d) IS NOT VALID!", fanNumber)
         err = errType.FAIL
         return
@@ -350,7 +350,7 @@ func FAN_Get_Module_present(fanNumber uint32) (present bool, err int) {
 func Fan_Init() (err int) {
     var i uint32
 
-    for i=0; i<MAXFAN; i++ {
+    for i=0; i<mtpMaxFan; i++ {
         present, _ := FAN_Get_Module_present(i)
         if present == false {
             cli.Printf("e", " Error: FanInit.  Fan-%d is showing not present at the fpag", i)
@@ -359,7 +359,7 @@ func Fan_Init() (err int) {
     }
 
 
-    for i=0; i<MAXFAN; i++ {
+    for i=0; i<mtpMaxFan; i++ {
         rc := FAN_Set_PWM(i, 40)   //40% PWM
         if rc != errType.SUCCESS {
             cli.Printf("e", " Error: FanInit.  Fan-%d set pwm failed", i)
