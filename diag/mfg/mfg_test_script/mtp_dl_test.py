@@ -559,6 +559,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_board_config(nic_list)
             elif test == "uC_DIAG_IMG_PROG":
                 rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "SUC_USB_RESCAN":
+                rlist =  mtp_mgmt_ctrl.mtp_uc_usb_resacn(nic_list)
             elif test == "inter_uC_DIAG_IMG_PROG":
                 rlist = dl_inter_uc_img_program(mtp_mgmt_ctrl, nic_list)
             elif test == "uC_VERSION_CHK":
@@ -780,6 +782,8 @@ def main():
                 run_dl_test(pass_nic_list, "NIC_INIT")
             run_dl_test(pass_nic_list, "FRU_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            run_dl_test(pass_nic_list, "uC_DIAG_IMG_PROG")
+            run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
             run_dl_test(pass_nic_list, "uC_DIAG_IMG_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "uC_BOOTING_CHK")
