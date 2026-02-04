@@ -362,7 +362,6 @@ then
     then
         slot_list="1 2 3 4 5 6 7 8 9 10"
         control_slot_panarea
-    fi
     elif [[ $MTP_TYPE == "MTP_PONZA" ]]
     then
         slot_list="1 2 3 4 5 6"
