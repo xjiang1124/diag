@@ -1270,6 +1270,7 @@ class NIC_IMAGES:
     fwsel_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.117.3-a-61/fwsel_extosa.bin"
     device_config_dtb["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.117.3-a-61/mainfw/nonsecure/salina/device_config.dtb"
     firmware_config_dtb["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.117.3-a-61/mainfw/nonsecure/salina/firmware_config_POLLARA-1Q400P.dtb"
+    oprom_img["POLLARA-1Q400P-OCP"] = "salina/pollara/ainic_1.117.5-a-56/mainfw/nonsecure/salina/new_oprom.bin"
     qspi_prog_sh_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.117.3-a-61/qspi_prog.v2.sh"
     qspi_prog_secure_sh_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.117.3-a-61/qspi_prog_secure.v2.sh"
     qspi_verify_sh_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.117.3-a-61/qspi_verify.v2.sh"
