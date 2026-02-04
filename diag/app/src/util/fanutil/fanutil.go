@@ -91,6 +91,9 @@ func main() {
         } else if i2cinfo.CardType == "MTP_PANAREA" {
             maxfan = panareafpga.MAXFAN
             daulfan = panareafpga.DUALFAN
+        } else if i2cinfo.CardType == "MTP_PONZA" {
+            maxfan = panareafpga.PONZA_MAXFAN
+            daulfan = panareafpga.DUALFAN
         }
 
         if os.Args[3] == "all" {
@@ -122,7 +125,7 @@ func main() {
                 mask = 0x7
             } else if i2cinfo.CardType == "LIPARI" {
                 mask = 0xF
-            } else if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" {
+            } else if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" || i2cinfo.CardType == "MTP_PONZA" {
                 mask = 0x1F
             } else {
                 mask = 0xFF

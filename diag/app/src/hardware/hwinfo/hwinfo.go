@@ -107,6 +107,7 @@ var LinguaEepList  = []string {"FRU", "DPU_FRU", "CPLD_FRU"}
 var lipariEepList = []string {"FRU", "FRU_CPUBRD", "FRU_SWITCH"}
 var materaEepList = []string {"FRU", "IOBL", "IOBR", "FPIC"}
 var panareaEepList = []string {"FRU", "IOBL", "IOBR", "FPIC"}
+var ponzaEepList   = []string {"FRU", "IOBL", "IOBR", "FPIC"}
 
 //===============================
 // Naples100 
@@ -210,6 +211,7 @@ var mtpEepList = []string {"FRU"}
 var mtpI2cHubMap map[string] I2cHubInfo
 var materaI2cHubMap map[string] I2cHubInfo
 var panareaI2cHubMap map[string] I2cHubInfo
+var ponzaI2cHubMap map[string] I2cHubInfo
 
 //===============================
 // MTP
@@ -223,6 +225,10 @@ var materaDispStaList map[string]DispStaFunc
 // MTP_PANAREA
 // Status display list
 var panareaDispStaList map[string]DispStaFunc
+
+// MTP_PANAREA
+// Status display list
+var ponzaDispStaList map[string]DispStaFunc
 
 //===============================
 // NIC POWER
@@ -635,6 +641,23 @@ func init() {
     panareaI2cHubMap = make(map[string]I2cHubInfo)
 
     //===============================
+    // MTP_PONZA
+    ponzaDispStaList = make(map[string]DispStaFunc)
+    ponzaDispStaList["TSENSOR_MB"]   = lm75a.DispStatus
+    ponzaDispStaList["TSENSOR_IOBL"] = lm75a.DispStatus
+    ponzaDispStaList["TSENSOR_IOBR"] = lm75a.DispStatus
+    ponzaDispStaList["CLK_SYN_FC3_L"] = rc22308.DispStatus
+    ponzaDispStaList["CLK_SYN_FC3_R"] = rc22308.DispStatus
+    ponzaDispStaList["CLK_SYN_VC8_L"] = rc31305.DispStatus
+    ponzaDispStaList["CLK_SYN_VC8_R"] = rc31305.DispStatus
+    ponzaDispStaList["MEM_VDDIO"] = tps53688.DispStatus
+    ponzaDispStaList["P12V"] = tps25990.DispStatus
+    ponzaDispStaList["CPU_VDDCR"] = isl69247.DispStatus
+    ponzaDispStaList["PSU_1"]   = dps2100.DispStatus
+    ponzaDispStaList["PSU_2"]   = dps2100.DispStatus
+
+    ponzaI2cHubMap = make(map[string]I2cHubInfo)
+    //===============================
     // Taormina
     taorDispStaList = make(map[string]DispStaFunc)
     taorDispStaList["P0V8AVDD_GB_A"]   = tps549a20.DispStatus
@@ -755,6 +778,18 @@ func init() {
     panareaI2cHubMap["UUT_9"]  = I2cHubInfo{"HUB_3", 0}
     panareaI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
 
+    ponzaI2cHubMap = make(map[string]I2cHubInfo)
+    ponzaI2cHubMap["UUT_1"]  = I2cHubInfo{"HUB_1", 0}
+    ponzaI2cHubMap["UUT_2"]  = I2cHubInfo{"HUB_1", 1}
+    ponzaI2cHubMap["UUT_3"]  = I2cHubInfo{"HUB_1", 2}
+    ponzaI2cHubMap["UUT_4"]  = I2cHubInfo{"HUB_1", 3}
+    ponzaI2cHubMap["UUT_5"]  = I2cHubInfo{"HUB_2", 0}
+    ponzaI2cHubMap["UUT_6"]  = I2cHubInfo{"HUB_2", 1}
+    ponzaI2cHubMap["UUT_7"]  = I2cHubInfo{"HUB_2", 2}
+    ponzaI2cHubMap["UUT_8"]  = I2cHubInfo{"HUB_2", 3}
+    ponzaI2cHubMap["UUT_9"]  = I2cHubInfo{"HUB_3", 0}
+    ponzaI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
+
     mtpI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4"}
     mtpsI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4", "HUB_5"}
     naplesMtpI2cHubList := []string{"NIC_HUB"}
@@ -826,6 +861,7 @@ func init() {
     dispMap["MTPS"]        = mtpsDispStaList
     dispMap["MTP_MATERA"]  = materaDispStaList
     dispMap["MTP_PANAREA"] = panareaDispStaList
+    dispMap["MTP_PONZA"]   = ponzaDispStaList
     dispMap["NIC_POWER"]   = nicPwrDispStaList
     //===============================
     // Taormina
@@ -885,7 +921,8 @@ func init() {
     eepromMap["MTP"]           = mtpEepList
     eepromMap["MTPS"]          = mtpEepList
     eepromMap["MTP_MATERA"]    = materaEepList
-    eepromMap["MTP_PANAREA"]    = panareaEepList
+    eepromMap["MTP_PANAREA"]   = panareaEepList
+    eepromMap["MTP_PONZA"]     = panareaEepList
     
     //===============================
     // Taormina
@@ -908,6 +945,8 @@ func init() {
     i2cHubMap["MTP_MATERA"]     = materaI2cHubMap
     // MTP_PANAREA
     i2cHubMap["MTP_PANAREA"]    = panareaI2cHubMap
+    // MTP_PONZA
+    i2cHubMap["MTP_PONZA"]      = ponzaI2cHubMap
 
     i2cHubMap["NAPLES100"]      = naples100I2cHubMap
     i2cHubMap["NAPLES100IBM"]   = naples100I2cHubMap

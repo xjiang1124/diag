@@ -21,7 +21,7 @@ import (
 func FanReadReg(devName string, addr uint32) (data byte, err int) {
     var i2cif i2cinfo.I2cInfo
 
-    if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" {
+    if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" || i2cinfo.CardType == "MTP_PONZA" {
         cli.Println("i", "Use fpgautil to read the fan registers for this platform  ")
         return
     }
@@ -47,7 +47,7 @@ func FanReadReg(devName string, addr uint32) (data byte, err int) {
 func FanWriteReg(devName string, addr uint32, data byte) (err int) {
     var i2cif i2cinfo.I2cInfo
 
-    if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" {
+    if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" || i2cinfo.CardType == "MTP_PONZA" {
         cli.Println("i", "Use fpgautil to write the fan registers for this platform  ")
         return
     }
@@ -72,7 +72,7 @@ func FanWriteReg(devName string, addr uint32, data byte) (err int) {
 func FanDumpReg(devName string) (err int) {
     var i2cif i2cinfo.I2cInfo
 
-    if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" {
+    if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" || i2cinfo.CardType == "MTP_PONZA" {
         cli.Println("i", "Use fpgautil to dump the fpga registers for this functionality  ")
         return
     }
@@ -137,8 +137,14 @@ func FanSpeedSet(devName string, pct int, mask uint64) (err int) {
                     materafpga.FAN_Set_PWM(i, uint32(pct))
                 }
             }
-        } else if i2cinfo.CardType == "MTP_PANAREA" {
-            for i = 0; i < materafpga.MAXFAN; i++ {
+        } else if i2cinfo.CardType == "MTP_PANAREA"  {
+            for i = 0; i < panareafpga.MAXFAN; i++ {
+                if (mask & (1 << i)) != 0 {
+                    panareafpga.FAN_Set_PWM(i, uint32(pct))
+                }
+            }
+        } else if i2cinfo.CardType == "MTP_PONZA"{
+            for i = 0; i < panareafpga.PONZA_MAXFAN; i++ {
                 if (mask & (1 << i)) != 0 {
                     panareafpga.FAN_Set_PWM(i, uint32(pct))
                 }
@@ -188,7 +194,7 @@ func FanSpeedGet(devName string, fanIdx uint64) (rpm uint64, rpm2 uint64, err in
             inner_fan, outer_fan, err = liparifpga.FAN_Get_RPM(uint32(fanIdx)) 
         } else if i2cinfo.CardType == "MTP_MATERA"  {
             inner_fan, outer_fan, err = materafpga.FAN_Get_RPM(uint32(fanIdx)) 
-        } else if i2cinfo.CardType == "MTP_PANAREA" {
+        } else if i2cinfo.CardType == "MTP_PANAREA" || i2cinfo.CardType == "MTP_PONZA" {
             inner_fan, outer_fan, err = panareafpga.FAN_Get_RPM(uint32(fanIdx)) 
         } else {
             cli.Println("e", "Unsupported component: ", i2cif.Comp," for cardtype: ", i2cinfo.CardType)
@@ -251,7 +257,7 @@ func FanSetup(devName string) (err int) {
             err = liparifpga.Fan_Init() 
         } else if i2cinfo.CardType == "MTP_MATERA" {
             err = materafpga.Fan_Init() 
-        } else if i2cinfo.CardType == "MTP_PANAREA" {
+        } else if i2cinfo.CardType == "MTP_PANAREA" || i2cinfo.CardType == "MTP_PONZA" {
             err = panareafpga.Fan_Init() 
         } else {
             cli.Println("e", "Unsupported component: ", i2cif.Comp," for cardtype: ", i2cinfo.CardType)
@@ -271,7 +277,7 @@ func FanGetDeviceName(devNumber int) (device string, err int) {
         device = fmt.Sprintf("FAN_%d", devNumber+1)
     } else if i2cinfo.CardType == "LIPARI" {
         device = fmt.Sprintf("FAN")
-    } else if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" {
+    } else if i2cinfo.CardType == "MTP_MATERA" || i2cinfo.CardType == "MTP_PANAREA" || i2cinfo.CardType == "MTP_PONZA" {
         device = fmt.Sprintf("FAN")
     } else {
         cli.Printf("e", "INVALID CARD_TYPE.  Make sure card type is set in the environment\n")

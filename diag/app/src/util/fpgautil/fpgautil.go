@@ -12,6 +12,7 @@ func init() {
     if cardType != "LIPARI" && 
        cardType != "MTP_MATERA" &&
        cardType != "MTP_PANAREA" &&
+       cardType != "MTP_PONZA" &&
        cardType != "TAORMINA" {
         //See if we are SONIC OS.. if yes we are lipari
         exists, _ := Path_exists("/etc/sonic")
@@ -39,7 +40,7 @@ func main() {
         taormina_fpga_cli()
     } else if cardType == "MTP_MATERA" {
         matera_fpga_cli()
-    } else if cardType == "MTP_PANAREA" {
+    } else if cardType == "MTP_PANAREA" || cardType == "MTP_PONZA" {
         panarea_fpga_cli()
     } else {
         cli.Println("e", "Wrong card type:", cardType)
