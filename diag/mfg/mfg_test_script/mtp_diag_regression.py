@@ -327,6 +327,11 @@ def salina_parse_ocp_sn(mtp_mgmt_ctrl, slot):
     return ret
 
 @parallelize.parallel_nic_using_ssh
+def volcano_suc_osfp_sn_read(mtp_mgmt_ctrl, slot):
+    port = "0"
+    return mtp_mgmt_ctrl.mtp_nic_read_vulcano_transceiver_sn(slot, port)
+
+@parallelize.parallel_nic_using_ssh
 def ocp_rmii_linkup(mtp_mgmt_ctrl, slot):
     ret = mtp_mgmt_ctrl.mtp_ocp_rmii_linkup(slot)
     return ret
@@ -786,6 +791,8 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_nic_cpld_register_dump_check(nic_list, check=test_kwargs["check"])
                 elif test == "VUL_SUC_I2C_DEVICE_TEST":
                     rlist = mtp_mgmt_ctrl.mtp_nic_vul_suc_i2c_device_test(nic_list)
+                elif test == "OSFP_SN_READ_TEST":
+                    rlist = volcano_suc_osfp_sn_read(mtp_mgmt_ctrl, nic_list)
                 elif test == "VULVANO_FOGA_UART_STATS_DUMP":
                     rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
                 elif test == "OCP_FRU_SN":
@@ -1376,6 +1383,7 @@ def main():
                     i2c_vulcano_list = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
                     run_regression_test(i2c_vulcano_list, "I2C_DEVICE_SCREENING")
                     run_regression_test(i2c_vulcano_list, "VUL_SUC_I2C_DEVICE_TEST")
+                    run_regression_test(i2c_vulcano_list, "OSFP_SN_READ_TEST")
 
                 elif test_section == "ALOM_LP_MODE":
                     ######################################################################
