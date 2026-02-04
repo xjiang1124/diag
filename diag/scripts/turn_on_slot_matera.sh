@@ -307,9 +307,17 @@ then
         fpgautil r32 $matera_P12V_addr
         fpgautil r32 $matera_P3V3_addr
         fpgautil r32 $matera_perst_addr
-    elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
+    elif [[ $MTP_TYPE == "MTP_PANAREA" || $MTP_TYPE == "MTP_PONZA" ]]
     then
-        slot_list="1 2 3 4 5 6 7 8 9 10"
+        if [[ $MTP_TYPE == "MTP_PANAREA" ]]
+        then
+            slot_list="1 2 3 4 5 6 7 8 9 10"
+        elif [[ $MTP_TYPE == "MTP_PONZA" ]]
+        then
+            slot_list="1 2 3 4 5 6"
+        else
+            slot_list=""
+        fi
         for slot_one_based in $slot_list
         do
             slot_zero_based=$(( $slot_one_based - 1 ))
@@ -354,6 +362,10 @@ then
     then
         slot_list="1 2 3 4 5 6 7 8 9 10"
         control_slot_panarea
+    elif [[ $MTP_TYPE == "MTP_PONZA" ]]
+    then
+        slot_list="1 2 3 4 5 6"
+        control_slot_panarea
     fi
 else
     slot_list=$(echo $2 | tr "," "\n")
@@ -393,7 +405,7 @@ else
     then
         (flock -x -w 50 99 || { echo "ERROR: Failed to acquire lock within 50 seconds"; exit 1;}; control_slot_matera;
         ) 99>/home/diag/turn_on_slot.lock
-    elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
+    elif [[ $MTP_TYPE == "MTP_PANAREA" || $MTP_TYPE == "MTP_PONZA" ]]
     then
         control_slot_panarea
     else
