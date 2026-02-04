@@ -67,19 +67,40 @@ if [ -f "$DIAG_DIR/log/board_env.txt" ]; then
     rm $DIAG_DIR/log/board_env.txt
 fi
 
+if [[ $FPGA_PRST == "YES" ]]
+then
+    mtp_id_str=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 0 0)
+    mtp_id_str1=$(echo "$mtp_id_str" | cut -b 15-20)
+    mtp_id="${mtp_id_str1:0:6}"
+    echo "mtp_id_str: $mtp_id_str; mtp_id_str1: $mtp_id_str1; mtp_id: $mtp_id"
+    echo "setting fan PWM to 40%"
+    /home/diag/diag/util/fanutil 0 pwm 40 all
+    
+else
+    mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
+    mtp_id_str1=($mtp_id_str)
+    mtp_id=${mtp_id_str1[-1]}
+    #echo "mtp_id: $mtp_id"
+fi
+
 # Prepare all paths
 if [[ $arch == "amd64" ]]
 then
     cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
     if [[ $FPGA_PRST == "YES" ]]
     then
-        if [[ $asic == "salina" ]]
+        if [[ $mtp_id == "0x000b" ]]
         then
             export MTP_TYPE=MTP_MATERA
             export CARD_TYPE=MTP_MATERA
-        else
+        elif [[ $mtp_id == "0x000d" ]]
+        then
             export MTP_TYPE=MTP_PANAREA
             export CARD_TYPE=MTP_PANAREA
+        elif [[ $mtp_id == "0x000e" ]]
+        then
+            export MTP_TYPE=MTP_PONZA
+            export CARD_TYPE=MTP_PONZA
         fi
         export UUT_1="UUT_NONE"
         export UUT_2="UUT_NONE"
@@ -142,21 +163,7 @@ echo "PATH=\$PATH:$DIAG_DIR/scripts" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/scripts/asic" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 
-if [[ $FPGA_PRST == "YES" ]]
-then
-    mtp_id_str=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 0 0)
-    mtp_id_str1=$(echo "$mtp_id_str" | cut -b 15-20)
-    mtp_id="${mtp_id_str1:0:6}"
-    echo "mtp_id_str: $mtp_id_str; mtp_id_str1: $mtp_id_str1; mtp_id: $mtp_id"
-    echo "setting fan PWM to 40%"
-    /home/diag/diag/util/fanutil 0 pwm 40 all
-    
-else
-    mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
-    mtp_id_str1=($mtp_id_str)
-    mtp_id=${mtp_id_str1[-1]}
-    #echo "mtp_id: $mtp_id"
-fi
+
 
 #==================================
 ASIC_DIR_TOP=$DIAG_DIR/asic_all
