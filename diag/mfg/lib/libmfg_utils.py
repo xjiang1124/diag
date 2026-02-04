@@ -896,6 +896,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
             image_list.append(NIC_IMAGES.firmware_config_dtb["POLLARA-1Q400P"])
             image_list.append(NIC_IMAGES.qspi_prog_sh_img["POLLARA-1Q400P"])
             image_list.append(NIC_IMAGES.qspi_verify_sh_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.oprom_img["POLLARA-1Q400P"])
         if lingua_family:
             image_list.append(NIC_IMAGES.arm_a_boot0_img["POLLARA-1Q400P-OCP"])
             image_list.append(NIC_IMAGES.arm_a_uboota_img["POLLARA-1Q400P-OCP"])

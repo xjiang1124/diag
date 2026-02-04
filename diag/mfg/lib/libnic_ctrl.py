@@ -3442,11 +3442,18 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 return False
 
-            if self._nic_type in SALINA_AI_NIC_TYPE_LIST:
+            if self._nic_type in SALINA_AI_NIC_QSPI_V3_TYPE_LIST:
                 if img_type == "secure":
                     cmd = MFG_DIAG_CMDS().MTP_MATERA_POLLARA_QSPI_PROG_SECURE_SH_CMD_FMT.format(str(self._slot + 1))
                 elif img_type == "nonsecure":
                     cmd = MFG_DIAG_CMDS().MTP_MATERA_POLLARA_QSPI_PROG_SH_CMD_FMT.format(str(self._slot + 1))
+                else:
+                    cmd = MFG_DIAG_CMDS().MTP_MATERA_QSPI_PROG_SH_CMD_FMT.format(str(self._slot + 1))
+            elif self._nic_type in SALINA_AI_NIC_QSPI_V2_TYPE_LIST:
+                if img_type == "secure":
+                    cmd = MFG_DIAG_CMDS().MTP_MATERA_POLLARA_QSPI_PROG_SECURE_V2_SH_CMD_FMT.format(str(self._slot + 1))
+                elif img_type == "nonsecure":
+                    cmd = MFG_DIAG_CMDS().MTP_MATERA_POLLARA_QSPI_PROG_V2_SH_CMD_FMT.format(str(self._slot + 1))
                 else:
                     cmd = MFG_DIAG_CMDS().MTP_MATERA_QSPI_PROG_SH_CMD_FMT.format(str(self._slot + 1))
             else:
