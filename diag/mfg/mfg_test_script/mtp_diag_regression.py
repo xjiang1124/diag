@@ -861,7 +861,8 @@ def main():
 
                     # post-failure analysis
                     if test in ("SNAKE_ELBA", "ETH_PRBS", "PCIE_PRBS", "ARM_L1", "L1"):
-                        mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                        if nic_type not in VULCANO_NIC_TYPE_LIST:
+                            mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
                         mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, "FAIL", mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list, skip_vrm_check=False, stage=stage)
                     else:
                         mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, "FAIL", mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list, stage=stage)

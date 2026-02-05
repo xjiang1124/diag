@@ -8339,7 +8339,7 @@ class mtp_ctrl():
         return True
 
     def mtp_nic_stop_tclsh(self, slot):
-        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
+        if self._mtp_type in (MTP_TYPE.MATERA,):
             self._nic_ctrl_list[slot].mtp_exec_cmd("{:s}diag/util/jtag_accpcie_salina clr {:d}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH, slot+1), timeout=MTP_Const.MTP_REBOOT_DELAY)
         else:
             self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
@@ -8378,7 +8378,7 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
-        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
+        if self._mtp_type in (MTP_TYPE.MATERA,):
             cmd_list = list()
             cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("17","20","0"))
             cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("17","20","9"))
