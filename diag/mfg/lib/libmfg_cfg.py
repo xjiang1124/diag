@@ -1518,7 +1518,7 @@ class MTP_IMAGES:
     rotctrl_img = "rotctrl"
     nic_ctl_img = "nicctl"
     python_site_package4mtp_img = "python3.6_site_package.tar.gz"
-    vulcano_cns_pmci_img = "cns_pmci_a006af71458b066aa5a25d93151254052dea0705.tar.gz"
+    vulcano_cns_pmci_img = "cns_pmci_90fb4afba29270b9ae3799fcc9d491a1a44b8599.tar.gz"
     vulcano_usb_tool_img = "vulcano_usb_tool.tar.gz"
     mtp_cpu_validation_tool_avt_img = "AVT_Linux_NDA_2.8.24.tar"
 
