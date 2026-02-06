@@ -1818,6 +1818,44 @@ class mtp_ctrl():
 
         return rc
 
+    def matera_penarea_mtp_psu_fw_chk_test(self):
+        """
+            if PSU Firmware is not the follwoing version, we need remind MFG to update PSU firmware, otherwise it's easy to trigger 4C error
+            this is the updated version from Delta, which lift warning/fail trigger threshold
+            and the utility to update PSU firmware only works on Matera MTP now, MFG need update PSU
+            [2026-01-20_19:02:18] diag@MTP:$ fpgautil show psu
+            PSU_1: DELTA DPS-2100BB K    H/W Rev: S0F     S/N: LFCD2545000521
+            PSU_1: FW Rev:  Primary:01  Secondary:f9  Major:00  Downgrade:00
+            PSU_2: DELTA DPS-2100BB K    H/W Rev: S0F     S/N: LFCD2545000585
+            PSU_2: FW Rev:  Primary:01  Secondary:f9  Major:00  Downgrade:00
+            [2026-01-20_19:02:33] diag@MTP:$
+        """
+
+        rc = True
+        # PSU check
+        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA) :
+            if not MFG_BYPASS_PSU_CHECK:
+                # get and parse psu status data
+                cmd = MFG_DIAG_CMDS().MTP_MATERA_SHOW_PSU_FMT
+                if not self.mtp_mgmt_exec_cmd(cmd):
+                    self.cli_log_err("MTP command {:s} failed".format(cmd))
+                    return False
+                fw_check_pass = True
+                if "PSU_1: FW Rev:  Primary:01  Secondary:f9  Major:00  Downgrade:00" not in  self.mtp_get_cmd_buf():
+                    self.cli_log_err("PSU_1 FW is NOT match to 'Primary:01 Secondary:f9'")
+                    fw_check_pass = False
+                if "PSU_2: FW Rev:  Primary:01  Secondary:f9  Major:00  Downgrade:00" not in  self.mtp_get_cmd_buf():
+                    self.cli_log_err("PSU_2 FW is NOT match to 'Primary:01 Secondary:f9'")
+                    fw_check_pass = False
+                if not fw_check_pass:
+                    self.cli_log_err("PSU FW Version Check Failed")
+                return fw_check_pass
+            self.cli_log_inf("SKIP PSU FW Check, since MFG_BYPASS_PSU_CHECK set to True")
+        else:
+            self.cli_log_inf("No PSU FW check for legacy MTPs")
+
+        return rc
+
     def mtp_fan_init(self, fan_pwm):
 
         def parse_fpga_show_fan(data):
@@ -2465,6 +2503,8 @@ class mtp_ctrl():
             rc &= self.mtp_fan_init(fan_spd)
             # PSU fan temp and status check
             rc &= self.mtp_psu_init()
+            # PSU Firmware Check
+            rc &= self.matera_penarea_mtp_psu_fw_chk_test()
             # FPGA revsion, register RW and lspci( gen1 by 1, maybe) check
             rc &= self.mtp_fpga_chk_test()
             # MTP FRU check and display, Serial Number is valid
@@ -2481,6 +2521,8 @@ class mtp_ctrl():
             rc &= self.mtp_fan_init(fan_spd)
             # PSU fan temp and status check
             rc &= self.mtp_psu_init()
+            # PSU Firmware Check
+            rc &= self.matera_penarea_mtp_psu_fw_chk_test()
             # FPGA revsion, register RW and lspci( gen1 by 1, maybe) check
             rc &= self.mtp_fpga_chk_test()
             # MTP FRU check and display, Serial Number is valid
@@ -8069,7 +8111,7 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_nic_uc_image_program(self, slot, cmd_format, uc_img_file):
+    def mtp_nic_uc_image_program(self, slot, cmd_format, uc_img_file, override_fd_descriptors=False):
         """
         lsusb
         lsusb -v -d 0438:0001
@@ -8077,11 +8119,61 @@ class mtp_ctrl():
         ./test_all.py --board-type AinicSuc --usb B4A7BA2756444B028820F0E180B0F82E:3 --print-hdrs --print-msgs -vvv --util pldmfwpkg=/home/diag/two_comp_gelso_v0_1_0_0.pldm --test-cases PldmFwUpdateSingleFDUpdateFlow
         """
 
-        if not self._nic_ctrl_list[slot].uc_image_program(cmd_format, uc_img_file):
+        if not self._nic_ctrl_list[slot].uc_image_program(cmd_format, uc_img_file, override_fd_descriptors):
             self.cli_log_slot_err_lock(slot, "Program uC image Failed")
             self.mtp_get_nic_err_msg(slot)
             return False
         return True
+
+    def mtp_uc_usb_resacn(self, slots_list, retry=1):
+        """
+        device 0000:06:00.3 is frist 6 slots
+        device 0000:06:00.1 is the last 4 slots
+        echo 1 | sudo tee /sys/bus/pci/devices/0000:06:00.3/remove; sleep 1; echo 1 | sudo tee /sys/bus/pci/rescan
+        echo 1 | sudo tee /sys/bus/pci/devices/0000:06:00.1/remove; sleep 1; echo 1 | sudo tee /sys/bus/pci/rescan
+        """
+
+        card_path_dict = dict()
+        card_path_dict[1] = "/sys/devices/pci0000:00/0000:00:01.6/0000:04:00.0/0000:05:08.0/0000:06:00.3/usb3/3-1"
+        card_path_dict[2] = "/sys/devices/pci0000:00/0000:00:01.6/0000:04:00.0/0000:05:08.0/0000:06:00.3/usb3/3-2"
+        card_path_dict[3] = "/sys/devices/pci0000:00/0000:00:01.6/0000:04:00.0/0000:05:08.0/0000:06:00.3/usb3/3-3"
+        card_path_dict[4] = "/sys/devices/pci0000:00/0000:00:01.6/0000:04:00.0/0000:05:08.0/0000:06:00.3/usb3/3-4"
+        card_path_dict[5] = "/sys/devices/pci0000:00/0000:00:01.6/0000:04:00.0/0000:05:08.0/0000:06:00.3/usb3/3-5"
+        card_path_dict[6] = "/sys/devices/pci0000:00/0000:00:01.6/0000:04:00.0/0000:05:08.0/0000:06:00.3/usb3/3-6"
+        card_path_dict[7] = "/sys/devices/pci0000:00/0000:00:01.6/0000:04:00.0/0000:05:08.0/0000:06:00.1/usb1/1-1/"
+        card_path_dict[8] = "/sys/devices/pci0000:00/0000:00:01.6/0000:04:00.0/0000:05:08.0/0000:06:00.1/usb1/1-2/"
+        card_path_dict[9] = "/sys/devices/pci0000:00/0000:00:01.6/0000:04:00.0/0000:05:08.0/0000:06:00.1/usb1/1-3/"
+        card_path_dict[10] = "/sys/devices/pci0000:00/0000:00:01.6/0000:04:00.0/0000:05:08.0/0000:06:00.1/usb1/1-4/"
+
+        for i in range(retry):
+            failed_slots = []
+            cmd = "echo 1 | sudo tee /sys/bus/pci/devices/0000:06:00.3/remove; sleep 1; echo 1 | sudo tee /sys/bus/pci/rescan"
+            if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+                self.cli_log_err("Unable to send uC usb rescan command for slot1-6")
+                return False
+            cmd = "echo 1 | sudo tee /sys/bus/pci/devices/0000:06:00.1/remove; sleep 1; echo 1 | sudo tee /sys/bus/pci/rescan"
+            if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+                self.cli_log_err("Unable to send uC usb rescan command for slot1-6")
+                return False
+            time.sleep(30)
+            all_slots_usb_exist = True
+            for slot in slots_list:
+                slot += 1
+                if not os.path.exists(card_path_dict[slot]):
+                    self.cli_log_wrn(f"Slot { slot} USB device {card_path_dict[slot]} not ready ")
+
+                    failed_slots.append(slot)
+                    all_slots_usb_exist = False
+            if all_slots_usb_exist:
+                break
+
+        for slot in failed_slots:
+            self.cli_log_err(f"Slot { slot} USB device {card_path_dict[slot]} not ready after {retry} retry ")
+
+        if all_slots_usb_exist:
+            return []
+        else:
+            return slots_list
 
     @parallelize.parallel_nic_using_console
     def mtp_program_nic_goldfw_salina(self, slot, stage=FF_Stage.FF_SWI):
@@ -8247,7 +8339,7 @@ class mtp_ctrl():
         return True
 
     def mtp_nic_stop_tclsh(self, slot):
-        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
+        if self._mtp_type in (MTP_TYPE.MATERA,):
             self._nic_ctrl_list[slot].mtp_exec_cmd("{:s}diag/util/jtag_accpcie_salina clr {:d}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH, slot+1), timeout=MTP_Const.MTP_REBOOT_DELAY)
         else:
             self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS().NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
@@ -8286,7 +8378,7 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
-        if self._mtp_type in (MTP_TYPE.MATERA, MTP_TYPE.PANAREA):
+        if self._mtp_type in (MTP_TYPE.MATERA,):
             cmd_list = list()
             cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("17","20","0"))
             cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("17","20","9"))
@@ -8463,6 +8555,8 @@ class mtp_ctrl():
             qspi_erase_cmd = "cd /home/diag/diag/scripts/asic/; tclsh vul_qspi_erase.tcl -slot {:s}".format(str(slot+1))
             if not self.mtp_mgmt_exec_cmd_para(slot, qspi_erase_cmd, timeout=90):
                 rs = False
+            if "QSPI ERASE PASSED" not in self.mtp_get_nic_cmd_buf(slot):
+                self.cli_log_slot_wrn(slot, "QSPI ERASE FAILED May affect L1 TEST results")
 
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=l1_cmd_tout):
             rs = False

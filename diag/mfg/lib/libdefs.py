@@ -367,6 +367,7 @@ class MFG_DIAG_CMDS:
     MTP_PSU_TEST_FMT = "mtptest -psu"
     NIC_CARD_TYPE_SET_FMT = "export CARD_TYPE={:s}"
     MTP_MATERA_DEVMGR_STATUS_FMT = "devmgr_v2 status"
+    MTP_MATERA_SHOW_PSU_FMT = "fpgautil show psu"
     MTP_DEVMGR_LIST_FMT = "devmgr_v2 list"
     MTP_MATERA_FAN_SET_SPD_FMT = "devmgr_v2 fanctrl --pct {:d}"
     MTP_MATERA_INVENTORY_CPU_FMT = "inventory -cpu"
