@@ -562,7 +562,7 @@ class MFG_DIAG_CMDS:
     PANAREA_SUC_UTIL_RAW_CMD = PANAREA_SUC_UTIL + " exec"
     PANAREA_SUC_UTIL_OSFP_READ_SN = PANAREA_SUC_UTIL_RAW_CMD + ' -c "osfp serialnumber" '
     PANAREA_SUC_USB_TOOL = "suc_usb_tool.py"
-    PANAREA_SUC_CNS_PMCI_TEST_ALL = "cd /home/diag/cns-pmci; ./test_all.py"
+    PANAREA_SUC_CNS_PMCI_TEST_ALL = "cd /home/diag/cns-pmci; ./test_all.py --quiet "
     PANAREA_SUC_DIAG_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --component-ids 1 --detach-usb-kernel-driver --no-logs --print-hdrs --print-msgs --allow-early-update-completion --usb {:s} --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
     PANAREA_SUC_SW_IMAGE_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --detach-usb-kernel-driver --no-logs --print-hdrs --print-msgs --allow-early-update-completion --usb {:s} --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"
     PANAREA_SUC_SW_IMAGE_SUC_PROG = PANAREA_SUC_CNS_PMCI_TEST_ALL + " --board-type AinicSuc --component-ids 1 --detach-usb-kernel-driver --no-logs --print-hdrs --print-msgs --allow-early-update-completion --usb {:s} --util pldmfwpkg={:s} --test-cases PldmFwUpdateSingleFDUpdateFlow"

@@ -6947,8 +6947,13 @@ class nic_ctrl():
             self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
 
-        if MFG_DIAG_SIG.PANAREA_MTP_uC_PROG_SIG not in self.nic_get_cmd_buf():
-            self.nic_set_err_msg("Program uC image Command signature check failed")
+        cmd = "echo $?"
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_RETRY):
+            self.nic_set_err_msg("Check Program uC image return code '{:s}' Failed".format(cmd))
+            return False
+
+        if '0' not in self.nic_get_cmd_buf().splitlines()[1]:
+            self.nic_set_err_msg("Program uC image Command got non-zero code")
             return False
 
         return True
