@@ -6738,10 +6738,11 @@ class nic_ctrl():
             if expected_suc_timestamp.lower() not in current_suc_build_time.lower():
                 self.nic_set_err_msg("Suc version timestamp:{:s} not in version command output {:s}".format(expected_suc_timestamp, sanitized_cmd_buf))
                 return False
-        if cpld_ver:
-            if cpld_ver.lower() not in current_cpld_ver.lower():
-                self.nic_set_err_msg("CPLD version:{:s} not in version command output {:s}".format(cpld_ver, sanitized_cmd_buf))
-                return False
+        # # skip CPLD check here, since the cpld version from version command is the CPLD running version, its the cpld version form flash bianray.
+        # if cpld_ver:
+        #     if cpld_ver.lower() not in current_cpld_ver.lower():
+        #         self.nic_set_err_msg("CPLD version:{:s} not in version command output {:s}".format(cpld_ver, sanitized_cmd_buf))
+        #         return False
         if nic_type:
             if nic_type.lower() not in current_board_name.lower():
                 self.nic_set_err_msg("Board Name:{:s} not in version command output {:s}".format(nic_type, sanitized_cmd_buf))
@@ -6947,10 +6948,19 @@ class nic_ctrl():
             self.nic_set_err_msg(self.nic_get_cmd_buf())
             return False
 
-        if MFG_DIAG_SIG.PANAREA_MTP_uC_PROG_SIG not in self.nic_get_cmd_buf():
-            self.nic_set_err_msg("Program uC image Command signature check failed")
+        cmd = "echo My_CMD_RC:$?"
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_RETRY):
+            self.nic_set_err_msg("Check Program uC image return code '{:s}' Failed".format(cmd))
             return False
-
+        m = re.findall(r'My_CMD_RC::(\d+)', self.nic_get_cmd_buf())
+        if not m:
+                self.nic_set_err_msg("Get Program uC image return code failed")
+                return False
+        rc_code = m[0]
+        print(rc_code)
+        if str(rc_code) != '0':
+            self.nic_set_err_msg("Program uC image Command got non-zero code")
+            return False
         return True
 
     def i2c_device_screening(self):
