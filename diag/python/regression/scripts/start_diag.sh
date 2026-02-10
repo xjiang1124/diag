@@ -77,10 +77,8 @@ then
     /home/diag/diag/util/fanutil 0 pwm 40 all
     
 else
-    mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
-    mtp_id_str1=($mtp_id_str)
-    mtp_id=${mtp_id_str1[-1]}
-    #echo "mtp_id: $mtp_id"
+    ## do nothing; setup of $mtp_id for Turbo MTP comes later
+    echo ""
 fi
 
 # Prepare all paths
@@ -146,6 +144,14 @@ then
     done
 else
     cat $DIAG_DIR/python/regression/scripts/dft_profile_nic > temp_profile
+fi
+
+if [[ $FPGA_PRST != "YES" ]]
+then
+    mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
+    mtp_id_str1=($mtp_id_str)
+    mtp_id=${mtp_id_str1[-1]}
+    #echo "mtp_id: $mtp_id"
 fi
 
 echo "-------------------"
