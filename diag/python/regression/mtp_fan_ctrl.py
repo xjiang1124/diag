@@ -166,7 +166,7 @@ def run_fan_control(target):
 
 def main():
     parser = argparse.ArgumentParser(description='Fan control script targeting single card or all.')
-    parser.add_argument('--target', type=str, help='target single card (slot) or using average of all cards', default='all')
+    parser.add_argument('--target', type=str, help='target single slot, slot list or using average temp of all cards', default='all')
     args = parser.parse_args()
 
     lock_file = open("/tmp/fan_control.lock", "w")
