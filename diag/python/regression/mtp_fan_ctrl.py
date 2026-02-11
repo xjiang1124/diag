@@ -74,30 +74,50 @@ def run_fan_control(target):
     global last_average_temp, fail_to_read_temp_count
     slot_num = 0
     target_desc = "average"
+    slot_list = []
     if target.isdigit():
         slot_num = int(target)
         if slot_num <= 0 or slot_num > 10:
             print("Invalid slot number:", slot_num)
             sys.exit()
+        slot_list.append(slot_num)
         target_desc = "slot " + target
+    elif ',' in target:
+        slot_list = []
+        for num in target.split(','):
+            if num.isdigit():
+                slot_num = int(num)
+                if slot_num <= 0 or slot_num > 10:
+                    print("Invalid slot number:", slot_num)
+                    sys.exit()
+                else:
+                    slot_list.append(slot_num)
+            else:
+                print("Invalid slot number:", num)
+                sys.exit()
+        print("target slots: ", slot_list)
+        target_desc = "slots {} average".format(",".join(map(str, slot_list)))
     elif target != 'all':
         print("Invalid target:", target)
         sys.exit()
 
     while True:
         present_slots = get_present_slots()
-        if target != 'all':
-            if slot_num in present_slots:
-                average_temp = read_temperature(slot_num)
+        temperatures = []
+        if slot_list or target == 'all':
+            if slot_list:
+                slot_list_present = list(set(present_slots) & set(slot_list))
             else:
-                print("target {} not present").format(target)
-                average_temp = None
-        else:
-            temperatures = []
-            for slot in present_slots:
+                slot_list_present = present_slots
+            if not slot_list_present:
+                print("target slot(s) not present")
+                sys.exit()
+            for slot in slot_list_present:
                 temp = read_temperature(slot)
                 temperatures.append(temp)
                 average_temp = calculate_average_temperature(temperatures)
+        else:
+            average_temp = None
         if average_temp is None:
             fail_to_read_temp_count += 1
             if fail_to_read_temp_count >= 10:
@@ -146,7 +166,7 @@ def run_fan_control(target):
 
 def main():
     parser = argparse.ArgumentParser(description='Fan control script targeting single card or all.')
-    parser.add_argument('--target', type=str, help='target single card (slot) or using average of all cards', default='all')
+    parser.add_argument('--target', type=str, help='target single slot, slot list or using average temp of all cards', default='all')
     args = parser.parse_args()
 
     lock_file = open("/tmp/fan_control.lock", "w")
