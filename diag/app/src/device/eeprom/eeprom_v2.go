@@ -109,6 +109,7 @@ const (
     PN_GELSOU           string = "102-P12700"
     PN_MORTARO          string = "102-P12300"
     PN_SARACENO         string = "102-P12500"
+    PN_VULSEI           string = "102-P12000"
     PN_MTP_PONZA_FRU  string = "102-P12900-00"
     PN_MTP_PONZA_MB   string = "102-P12900-00"
     PN_MTP_PONZA_IOB  string = "102-P13000-00"
@@ -134,6 +135,8 @@ const (
     PROD_NAME_GELSOP        string = "VULCANO-1O800 100/200/400/800G 1p OSFP224 Card"
     PROD_NAME_MORTARO       string = "VULCANO-1O800-OCP 100/200/400/800G 1p OSFP224 Card"
     PROD_NAME_SARACENO      string = "VULCANO-1O800 100/200/400/800G 1p OSFP224 Card"
+    //PROD_NAME_VULSEI        string = "VULCANO-CUSTOM-3O1600P 100/200/400/800G 3p OSFP224 Card"
+    PROD_NAME_VULSEI        string = "VULCANO-CUSTOM-3O1600P 100/200/400/800G 3p OSFP224"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -172,6 +175,7 @@ const (
     SKU_GELSOX          string = "100-700000002"
     SKU_MORTARO         string = "100-700000004"
     SKU_SARACENO        string = "100-700000003"
+    SKU_VULSEI          string = "100-700000005"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -199,6 +203,7 @@ const (
     FRU_ID_GELSOP        string = "09/26/25"
     FRU_ID_MORTARO       string = "12/04/25"
     FRU_ID_SARACENO      string = "12/04/25"
+    FRU_ID_VULSEI        string = "02/06/26"
 
     // Byte offset
     BYTE_OFFSET_SN_ORACLE      int = 5
@@ -1684,11 +1689,45 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
-    SKU_SARACENO: updateInfo {
+    SKU_VULSEI: updateInfo {
         PenStandardV2vulcanoProdInfoTbl,
-        PROD_NAME_SARACENO,
-        SKU_SARACENO,
-        FRU_ID_SARACENO,
+        PROD_NAME_VULSEI,
+        SKU_VULSEI,
+        FRU_ID_VULSEI,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                FIELD_NUM_BOARD_ID_6,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
+    PN_VULSEI: updateInfo {
+        PenStandardV2vulcanoProdInfoTbl,
+        PROD_NAME_VULSEI,
+        SKU_VULSEI,
+        FRU_ID_VULSEI,
         []progInfo {
             progInfo {
                 FIELD_TYPE_NUM,
@@ -1771,6 +1810,8 @@ var CardTypes = []card{
     card{"MORTARO_SKU",             SKU_MORTARO},
     card{"SARACENO",                PN_SARACENO},
     card{"SARACENO_SKU",            SKU_SARACENO},
+    card{"VULSEI",                  PN_VULSEI},
+    card{"VULSEI_SKU",              SKU_VULSEI},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
@@ -2416,7 +2457,7 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
         sucuart.Suc_exec_cmds(int(bus-2), "fru save")
     } else {
         var lockName string
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" || os.Getenv("CARD_TYPE") == "MTP_PONZA" {
             lockName, _, err = hwinfo.LockDev(devName)
             if err != errType.SUCCESS {
                 return
@@ -2425,7 +2466,7 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
         //Writes FRU data to EEPROM
         err = smbusNew.Open(devName, bus, devAddr)
         if err != errType.SUCCESS {
-            if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+            if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" || os.Getenv("CARD_TYPE") == "MTP_PONZA" {
                 hwinfo.UnlockDev(lockName)
             }
             return
@@ -2440,14 +2481,14 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
             if err != errType.SUCCESS {
                 cli.Printf("e", "ERROR: Failed to write to FRU at offset %d", i)
                 smbusNew.Close()
-                if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+                if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" || os.Getenv("CARD_TYPE") == "MTP_PONZA" {
                     hwinfo.UnlockDev(lockName)
                 }
                 return err
             }
         }
         smbusNew.Close()
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" || os.Getenv("CARD_TYPE") == "MTP_PONZA" {
             hwinfo.UnlockDev(lockName)
         }
     }
@@ -2475,7 +2516,7 @@ func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
     } 
 
     var lockName string
-    if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+    if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" || os.Getenv("CARD_TYPE") == "MTP_PONZA" {
         lockName, _, err = hwinfo.LockDev(devName)
         if err != errType.SUCCESS {
             return
@@ -2483,7 +2524,7 @@ func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
     }
     err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
-        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" || os.Getenv("CARD_TYPE") == "MTP_PONZA" {
             hwinfo.UnlockDev(lockName)
         }
         return
@@ -2494,14 +2535,14 @@ func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
         DataRaw = append(DataRaw, fruData)
         if err != errType.SUCCESS {
             smbusNew.Close()
-            if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+            if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" || os.Getenv("CARD_TYPE") == "MTP_PONZA" {
                 hwinfo.UnlockDev(lockName)
             }
             return
         }
     }
     smbusNew.Close()
-    if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+    if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" || os.Getenv("CARD_TYPE") == "MTP_PONZA" {
         hwinfo.UnlockDev(lockName)
     }
 

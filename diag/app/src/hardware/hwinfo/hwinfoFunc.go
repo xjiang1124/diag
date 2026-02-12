@@ -259,7 +259,7 @@ func PreUutSetup(uutName string) (lockName string, err int) {
     if err != errType.SUCCESS {
         return
     }
-    if cardType == "MTP_MATERA" || cardType == "MTP_PANAREA" {
+    if cardType == "MTP_MATERA" || cardType == "MTP_PANAREA" || cardType == "MTP_PONZA" {
         i2cinfo.UpdateNicI2cBus(uutName)
     }
 
