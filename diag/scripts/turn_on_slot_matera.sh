@@ -279,6 +279,73 @@ control_slot_panarea() {
     fi
 }
 
+control_slot_ponza() {
+    if [[ $on_off == "off" ]]
+    then
+        for slot_one_based in $slot_list
+        do
+            slot_zero_based=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
+            printf "Setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
+            wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
+            wValue=$(( $wValue & 0xFFFFFFF0 ))
+            sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+            sleep 0.2
+        done
+    elif [[ $on_off == "on" ]]
+    then
+        for slot_one_based in $slot_list
+        do
+            slot_zero_based=$(( $slot_one_based - 1 ))
+            slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
+            # read NIC present bit
+            rValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
+            nic_present=$((rValue & 0x200))
+            if [[ "$nic_present" -eq 0 ]]
+            then
+                printf "Card present, setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
+                # 12V
+                wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
+                wValue=$(( $wValue | 0x2 ))
+                sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+                # 54V
+                wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
+                wValue=$(( $wValue | 0xa ))
+                sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+                sleep 1
+                # PERST
+                wValue=$(( $wValue | 0xe ))
+                sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+            else
+                on_off="off"
+                printf "Card not present, setting power control to $on_off at addr 0x%08x\n" $slot_ctrl_reg_addr
+                wValue=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr | awk '{print $4}')
+                wValue=$(( $wValue & 0xFFFFFFF0 ))
+                sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil w32 $slot_ctrl_reg_addr $wValue
+                sleep 0.2
+            fi
+        done
+    fi
+    # display
+    sleep 0.2
+    for slot_one_based in $slot_list
+    do
+        slot_zero_based=$(( $slot_one_based - 1 ))
+        slot_ctrl_reg_addr=$((0x180 + (slot_zero_based * 4)))
+        sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $slot_ctrl_reg_addr
+    done
+    if [[ $on_off == "on" ]]
+    then
+        # wait for bootup message to be print first so it won't mix with our command output
+        sleep 3
+        for slot_one_based in $slot_list
+        do
+            #mute backend log on console
+            sucutil exec -s $slot_one_based -c "log backend log_backend_uart disable"
+        done
+    fi
+}
+
 usage() {
     echo "========================="
     echo "Turn_on_slot.sh Usage"
@@ -365,7 +432,7 @@ then
     elif [[ $MTP_TYPE == "MTP_PONZA" ]]
     then
         slot_list="1 2 3 4 5 6"
-        control_slot_panarea
+        control_slot_ponza
     fi
 else
     slot_list=$(echo $2 | tr "," "\n")
@@ -405,9 +472,12 @@ else
     then
         (flock -x -w 50 99 || { echo "ERROR: Failed to acquire lock within 50 seconds"; exit 1;}; control_slot_matera;
         ) 99>/home/diag/turn_on_slot.lock
-    elif [[ $MTP_TYPE == "MTP_PANAREA" || $MTP_TYPE == "MTP_PONZA" ]]
+    elif [[ $MTP_TYPE == "MTP_PANAREA" ]]
     then
         control_slot_panarea
+    elif [[ $MTP_TYPE == "MTP_PONZA" ]]
+    then
+        control_slot_ponza
     else
         declare -a low_high_list=("low" "high")
         for low_high in "${low_high_list[@]}"
