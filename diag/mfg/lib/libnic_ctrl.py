@@ -1754,6 +1754,26 @@ class nic_ctrl():
         self.nic_set_cmd_buf(cmd_buf)
         return True
 
+    @nic_console_test('0')
+    def nic_exec_cmd_from_suc_console0(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        self._nic_handle.send('\r\n')
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt], self._nic_con_zephyr_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt], self._nic_con_zephyr_prompt, timeout=timeout)
+        if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        self.nic_set_cmd_buf(cmd_buf)
+        return True
+
     @nic_console_test('1')
     def nic_exec_cmd_from_suc_console1(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
         self._nic_handle.send('\r\n')
@@ -6508,7 +6528,7 @@ class nic_ctrl():
 
         # calculate buffer crc befor program
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC_BUF.format(partition)
-        if not self.nic_exec_cmd_from_suc_console1(cmd):
+        if not self.nic_exec_cmd_from_suc_console0(cmd):
             self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
@@ -6525,7 +6545,7 @@ class nic_ctrl():
 
         # program cpld partition
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_PROG_BUF.format(partition)
-        if not self.nic_exec_cmd_from_suc_console1(cmd):
+        if not self.nic_exec_cmd_from_suc_console0(cmd):
             self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
@@ -6538,7 +6558,7 @@ class nic_ctrl():
         # calculate partition crc and verify
         partition_number = partition.replace('cfg', '')
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC.format(partition)
-        if not self.nic_exec_cmd_from_suc_console1(cmd):
+        if not self.nic_exec_cmd_from_suc_console0(cmd):
             self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
@@ -6952,7 +6972,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_RETRY):
             self.nic_set_err_msg("Check Program uC image return code '{:s}' Failed".format(cmd))
             return False
-        m = re.findall(r'My_CMD_RC::(\d+)', self.nic_get_cmd_buf())
+        m = re.findall(r'My_CMD_RC:(\d+)', self.nic_get_cmd_buf())
         if not m:
                 self.nic_set_err_msg("Get Program uC image return code failed")
                 return False
