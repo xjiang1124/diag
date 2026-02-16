@@ -204,7 +204,7 @@ def dl_uc_img_program(mtp_mgmt_ctrl, slot, override_fd_descriptors=False):
 def dl_inter_uc_img_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     inter_uc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_inter_suc_diag_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
-    cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_SW_IMAGE_PROG
+    cmd_format = MFG_DIAG_CMDS().PANAREA_SUC_INTER_DIAG_IMAGE_PROG
     result = mtp_mgmt_ctrl.mtp_nic_uc_image_program(slot, cmd_format, inter_uc_img_file)
     if not result:
         mtp_mgmt_ctrl.cli_log_slot_wrn(slot, "Intermediate Diag SUC image programming fail, ignore and continue")
@@ -777,13 +777,15 @@ def main():
                 if args.proginterimg:
                     run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "inter_uC_DIAG_IMG_PROG")
                     run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "inter_uC_DIAG_IMG_PROG")
-                    time.sleep(3)
-                    run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "inter_uC_DIAG_IMG_PROG")
-                    run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "inter_uC_DIAG_IMG_PROG")
-                    time.sleep(10)
+                    # time.sleep(10)
+                    # run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "inter_uC_DIAG_IMG_PROG")
+                    # run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "inter_uC_DIAG_IMG_PROG")
+                    run_dl_test(pass_nic_list, "NIC_PWRCYC")
+                    time.sleep(15)
                 run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
                 run_dl_test(pass_nic_list, "NIC_TYPE")
                 run_dl_test(pass_nic_list, "NIC_INIT")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
@@ -792,6 +794,7 @@ def main():
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
+            time.sleep(15)
             run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
@@ -800,6 +803,7 @@ def main():
             run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG")
+            time.sleep(15)
             run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG")
