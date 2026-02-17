@@ -2258,6 +2258,7 @@ class nic_test_v2:
         cmd = "cd ~/diag/scripts/asic; tclsh sal_i2c_access.tcl"
         cmd += " -slot {}".format(args.slot)
         cmd += " -vmarg {}".format(args.vmarg)
+        cmd += " -arm_running yes"
         session = common.session_start()
         ret = common.session_cmd(session, cmd, timeout=30*60)
         common.session_stop(session)
@@ -2279,6 +2280,7 @@ class nic_test_v2:
             cmd += " -reset {}".format(args.reset)
         if args.test_list:
             cmd += " -test_list {}".format(args.test_list)
+        cmd += " -arm_running yes"
         session = common.session_start()
         ret = common.session_cmd(session, cmd, timeout=5*60)
         common.session_stop(session)

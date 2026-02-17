@@ -10,6 +10,7 @@ set usage {
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
     {tcl_path.arg   ""                      "ASIC lib location"}
     {reset.arg      "cold"                  "Reset method: warm/cold; default: cold"}
+    {arm_running.arg "no"                   "Is ARM in uboot loaded before running test?"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -254,6 +255,8 @@ plog_msg [eval _msrd]
 
 if { $reset == "warm" } {
     reset_to_proto_mode warm_rot_proto
+} elseif { $arm_running == "no" } {
+    reset_to_proto_mode warm_rot
 }
 
 sal_set_vmarg $vmarg

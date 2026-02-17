@@ -4,6 +4,7 @@ source /home/diag/diag/scripts/asic/cmdline.tcl
 set usage {
     {slot.arg       ""          "Slot number"}
     {vmarg.arg      "none"      "Voltage margin"}
+    {arm_running.arg "no"       "Is ARM in uboot loaded before running test? (yes = sets protomode)"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -84,6 +85,7 @@ exec fpgautil spimode $slot off
 sal_j2c
 plog_msg "_msrd"
 plog_msg [eval _msrd]
+if { $arm_running == "no" } { reset_to_proto_mode }
 sal_set_vmarg $vmarg
 
 # run test
