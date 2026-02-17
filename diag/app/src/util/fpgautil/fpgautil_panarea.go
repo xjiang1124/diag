@@ -242,9 +242,12 @@ func panarea_fpga_cli() {
             if err == nil {
                 fmt.Printf("\nRD: ")
                 for j:=0; j<len(rdData); j++ {
+                    if (j % 16) == 0 {
+                        fmt.Printf("\n%.04x: ", j)
+                    }
                     fmt.Printf("0x%.02x ", rdData[j])
                 }
-                fmt.Printf("\n")
+                
             } else {
                 os.Exit(-1)
             }

@@ -931,19 +931,16 @@ var PanareaI2cTbl = []I2cInfo {
 
 var PonzaI2cTbl = []I2cInfo {
     //       name            comp         Bus  devAddr  page  HubName     HubPort  Flag
+    I2cInfo {"DELTA_VR",     "U50SS",     21,  0x10,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR_MB",   "LM75",      20,  0x48,    0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"FRU",          "AT24C04C",  20,  0x50,    0x0,  "HUB_NONE",  0,    0},   //MB FRU
-    I2cInfo {"IOBL",         "AT24C04C",  18,  0x50,    0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"IOBR",         "AT24C04C",  17,  0x50,    0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"FPIC",         "AT24C04C",  19,  0x50,    0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"CLK_SYN_FC3_L","RC22308",   18,  0x9,     0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"CLK_SYN_FC3_R","RC22308",   17,  0x9,     0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"CLK_SYN_VC8_L","RC31305",   18,  0x58,    0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"CLK_SYN_VC8_R","RC31305",   17,  0x58,    0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"TSENSOR_MB",   "LM75",      20,  0x48,    0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"TSENSOR_IOBL", "LM75",      18,  0x48,    0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"TSENSOR_IOBR", "LM75",      17,  0x48,    0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"MEM_VDDIO",    "TPS53688",  16,  0x5E,    0x0,  "HUB_NONE",  0,    0},   //cannot ping
+    I2cInfo {"IOBL",         "AT24C04C",  18,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"CLK_SYN_VC8_L","RC31305",   18,  0x58,    0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"P12V",         "TPS25990",  16,  0x41,    0x0,  "HUB_NONE",  0,    0},   //hot swap contorller
+    I2cInfo {"MEM_VDDIO",    "TPS53688",  16,  0x5E,    0x0,  "HUB_NONE",  0,    0},   //cannot ping
     I2cInfo {"CPU_VDDCR",    "ISL69247",  16,  0x60,    0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"PSU_1_FRU",    "DPS-2100",  14,  0x50,    0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"PSU_1",        "DPS-2100",  14,  0x58,    0x0,  "HUB_NONE",  0,    0},
@@ -971,6 +968,13 @@ var SaracenoMtpTbl = []I2cInfo {
     //       name               comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"FRU",            "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"SUCFRU",         "AT24C02C",  0x3,   0x7C,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"FILE",           "FILE",      0x3,   0xFF,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},   //use to write fru output to a bin file
+}
+
+var VulseiMtpTbl = []I2cInfo {
+    //       name               comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"FRU",            "AT24C02C",  0x3,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"SUCFRU",         "AT24C02C",  0x3,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"FILE",           "FILE",      0x3,   0xFF,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},   //use to write fru output to a bin file
 }
 
@@ -1239,7 +1243,6 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = I2cTbl
         return
     }
-
     uutType, err := FindUutTypeMtp(uutName)
     if err != errType.SUCCESS {
         return
@@ -1346,6 +1349,8 @@ func SwitchI2cTbl(uutName string) (err int) {
             fmt.Printf("Switching Slot-%d Saracneo I2C address to 0x50\n", slot);
             CurI2cTbl[0].DevAddr = 0x50
         }
+    } else if uutType == "VULSEI" {
+        CurI2cTbl = VulseiMtpTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM

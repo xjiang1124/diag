@@ -43,6 +43,20 @@ echo "ASIC: $asic"
 if [[ $FPGA_PRST == "YES" ]]
 then
     ASIC_IMG=/home/diag/nic_amd64_${asic}_fpga.tar.gz
+    #We need to set the MTP + CARD_TYPE early for 'fpgautil' as it supports 3 different MTP's now.
+    #fpgautil needs to know which platform it's on to work properly
+    if [[ $asic == "salina" ]]
+    then
+        echo "Salina System.. setting CARD_TYPE early for fpgautil"
+        export MTP_TYPE=MTP_MATERA
+        export CARD_TYPE=MTP_MATERA
+    fi
+    if [[ $asic == "vulcano" ]]
+    then
+        echo "Vulcano System.. setting CARD_TYPE early for fpgautil"
+        export MTP_TYPE=MTP_PANAREA
+        export CARD_TYPE=MTP_PANAREA
+    fi
 else
     ASIC_IMG=/home/diag/nic_amd64_${asic}_ftdi.tar.gz
 fi
