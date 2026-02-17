@@ -6528,7 +6528,7 @@ class nic_ctrl():
 
         # calculate buffer crc befor program
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC_BUF.format(partition)
-        if not self.nic_exec_cmd_from_suc_console0(cmd):
+        if not self.nic_exec_cmd_from_suc_console1(cmd):
             self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
@@ -6545,7 +6545,7 @@ class nic_ctrl():
 
         # program cpld partition
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_PROG_BUF.format(partition)
-        if not self.nic_exec_cmd_from_suc_console0(cmd):
+        if not self.nic_exec_cmd_from_suc_console1(cmd):
             self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
@@ -6558,7 +6558,7 @@ class nic_ctrl():
         # calculate partition crc and verify
         partition_number = partition.replace('cfg', '')
         cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC.format(partition)
-        if not self.nic_exec_cmd_from_suc_console0(cmd):
+        if not self.nic_exec_cmd_from_suc_console1(cmd):
             self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
