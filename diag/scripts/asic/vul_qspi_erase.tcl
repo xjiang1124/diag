@@ -50,6 +50,7 @@ plog_msg [eval _msrd]
 vulcano_setup 0
 plog_msg "calling vul_pll_fix"
 vul_pll_fix
+vul_vt_init 0
 after 1000
 set err_cnt_init [ plog_get_err_count ]
 vul_qspi_erase 0x70100000

@@ -42,9 +42,6 @@ set slot $slot
 set port $slot
 set ::slot $slot
 set ::port $port
-set uut "UUT_$slot"
-set card_type $::env($uut)
-plog_msg "card type: $card_type; UUT: $uut"
 exec jtag_accpcie_vulcano clr $slot
 vul_j2c
 plog_msg "_msrd"
@@ -57,10 +54,12 @@ plog_start $fn
 
 set ::board_rev [vul_get_board_rev]
 vulcano_setup 0
-
+vul_card_rst 1 0
 plog_msg "calling vul_pll_fix"
 vul_pll_fix
+vul_vt_init 0
 after 1000
+vul_set_serdes_pn_swap_file
 
 proc vul_l1_testlist_jtag { } {
 

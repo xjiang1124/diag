@@ -45,9 +45,6 @@ set slot $slot
 set port $slot
 set ::slot $slot
 set ::port $port
-set uut "UUT_$slot"
-set card_type $::env($uut)
-plog_msg "card type: $card_type; UUT: $uut"
 exec jtag_accpcie_vulcano clr $slot
 vul_j2c
 plog_msg "_msrd"
@@ -59,17 +56,20 @@ set fn "vul_snake_slot${slot}_${cur_time}.log"
 plog_start $fn
 
 set ::board_rev [vul_get_board_rev]
-
+vulcano_setup 0
+vul_card_rst 1 0
 plog_msg "calling vul_pll_fix"
 vul_pll_fix
+vul_vt_init 0
 after 1000
+vul_set_serdes_pn_swap_file
 
-#set card_type [vul_get_card_type]
-#set cpld_id [ vul_cpld_read 0x80 ]
-#plog_msg "card_type = $card_type"
-#plog_msg "cpld_id = $cpld_id"
-#vul_print_die_id
-vul_set_vmarg $vmarg all
+vul_die_id_print
+vul_get_git_rev
+if { $vmarg != "none" } {
+    vul_set_vmarg $vmarg all
+}
+vul_card_rst 2 0
 
 plog_msg "start snake"
 vul_l1_snake $snake_num 0 $int_lpbk $is_200g_serdes $duration
