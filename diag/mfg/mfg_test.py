@@ -112,6 +112,9 @@ def main(args):
     if args.subcommand == 'dl':
         stage = FF_Stage.FF_DL
         args.testsuite_name = stage
+    if args.subcommand == 'predl':
+        stage = FF_Stage.FF_DL
+        args.testsuite_name = FF_Stage.SCAN_DL
     elif args.subcommand == '2c':
         # wait operator set chamber temperature
         if args.high_temp:
@@ -351,6 +354,7 @@ if __name__ == "__main__":
     parser_sdl = subparsers.add_parser('sdl', help='Invoke NIC card Scan Download test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
     parser_cnic = subparsers.add_parser('cnic', help='Invoke Convert NIC card test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
     parser_dl = subparsers.add_parser('dl', help='Invoke NIC card Download test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
+    parser_predl = subparsers.add_parser('predl', help='Invoke NIC card Pre Download test suite, Vulcano Only', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
     parser_2c = subparsers.add_parser('2c', help='Invoke NIC card 2 Coner test suite,', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
     parser_p2c = subparsers.add_parser('p2c', help='Invoke NIC card Pre 2 Coner test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
     parser_4c = subparsers.add_parser('4c', help='Invoke NIC card 4 Coner test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
@@ -450,6 +454,12 @@ if __name__ == "__main__":
     parser_dl.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s", type=int, required=False, default=1)
     parser_dl.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
     parser_dl.set_defaults(func=main)
+
+    parser_predl.add_argument("--verbosity", "-verbosity", help="Increase output verbosity; default to %(default)s", action='store_true', default=False)
+    parser_predl.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_predl.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
+    parser_predl.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP before test; default to %(default)s", action='store_true', required=False, default=False)
+    parser_predl.set_defaults(func=main)
 
     parser_2c.add_argument("--high_temp", "-high_temp", help="high temperature environment", action='store_true')
     parser_2c.add_argument("--low_temp", "-low_temp", help="low temperature environment", action='store_true')

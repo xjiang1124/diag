@@ -110,7 +110,7 @@ def swi_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
     cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
     if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
-        return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_cpld_update(slot, cpld_img_file)
+        return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_cpld_update(slot, cpld_img_file, dl_step=False)
     else:
         return mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file, dl_step=False)
 
@@ -119,7 +119,7 @@ def swi_fail_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
     failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
     if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
-        return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_cpld_update(slot, failsafe_cpld_img_file, partition='1')
+        return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_cpld_update(slot, failsafe_cpld_img_file, partition='1', dl_step=False)
     else:
         return mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, failsafe_cpld_img_file)
 
