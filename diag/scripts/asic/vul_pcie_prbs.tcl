@@ -3,11 +3,16 @@ source /home/diag/diag/scripts/asic/cmdline.tcl
 
 set usage {
     {slot.arg           ""                  "Slot number"}
-    {vmarg.arg          "normal"            "Voltage margin"}
-    {pcie_gen.arg       1                   "Test duration"}
-    {int_lpbk.arg       0                   "PMA Internal loopback (1 or 0)"}
-    {prbs_pattern.arg   7                   "prbs pattern"}
-    {margin_code.arg    0                   "VRM margin code (0, 1 or 2)"}
+    {vmarg.arg          "nom"              "Voltage margin"}
+    {pcie_gen.arg       1                   "PCIe Gen"}
+    {int_lpbk.arg       0                   "pma internal loopback (1 or 0)"}
+    {runtime.arg        50                  "Run time in seconds"}
+    {prbs_pattern.arg   31                  "prbs pattern"}
+    {ow_refclk.arg      -1                  "ow refclk"}
+    {vreg_code.arg      -1                  "vreg code"}
+    {lane_inc.arg       ""                  "Lanes included"}
+    {lane_exc.arg       ""                  "Lanes excluded"}
+    {fw_ver.arg         ""                  "FW version"}
     {tcl_path.arg       ""                  "ASIC lib location"}
 }
 # rename argv variables to call them more easily
@@ -18,6 +23,12 @@ parray arg
 
 ### initialize asic lib
 set ::VEL_SHELL 0
+set ::SHELL_MODE mtp
+set ::MTP_SHELL 1
+set ::JCS_SHELL 0
+set ::ts_present 0
+set ::reset_cpu 0
+
 if { $tcl_path != "" } {
     set ASIC_LIB_BUNDLE "$tcl_path"
 } elseif { $::env(ASIC_LIB_BUNDLE) != "" } {
@@ -39,9 +50,6 @@ set slot $slot
 set port $slot
 set ::slot $slot
 set ::port $port
-set uut "UUT_$slot"
-set card_type $::env($uut)
-plog_msg "card type: $card_type; UUT: $uut"
 exec jtag_accpcie_vulcano clr $slot
 vul_j2c
 plog_msg "_msrd"
@@ -49,16 +57,26 @@ plog_msg [eval _msrd]
 
 set err_cnt_init [ plog_get_err_count ]
 set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
-set fn "pcie_prbs_slot${slot}_${cur_time}.log"
+set fn "vul_pcie_prbs_slot${slot}_${cur_time}.log"
 plog_start $fn
 
-#vul_print_die_id
-#vul_set_vmarg $vmarg 
-
 set ::board_rev [vul_get_board_rev]
+vulcano_setup 0
+vul_card_rst 1 0
+plog_msg "calling vul_pll_fix"
+vul_pll_fix
+vul_vt_init 0
+after 1000
+vul_set_serdes_pn_swap_file
 
-#vul_card_rst 1 1
-vul_pcie_sd_prbs_check $pcie_gen $int_lpbk $prbs_pattern 1 $margin_code
+vul_die_id_print
+vul_get_git_rev
+if { $vmarg != "none" } {
+    vul_set_vmarg $vmarg all
+}
+
+vul_card_rst 2 0
+vul_pcie_sd_prbs_check $pcie_gen $int_lpbk $runtime $prbs_pattern $ow_refclk 0 $vreg_code $lane_inc $lane_exc $fw_ver
 
 set err_cnt  [ expr ( [plog_get_err_count] - $err_cnt_init ) ]
 if {$err_cnt != 0} {

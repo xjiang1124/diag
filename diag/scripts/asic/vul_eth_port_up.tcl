@@ -1,8 +1,14 @@
-#! /usr/bin/tclsh
+# !/usr/bin/tclsh
 source /home/diag/diag/scripts/asic/cmdline.tcl
 
 set usage {
     {slot.arg           ""                  "Slot number"}
+    {vmarg.arg          "nom"              "Voltage margin"}
+    {int_lpbk.arg       0                   "Internal loopback (1 or 0)"}
+    {num_loop.arg       2                   "Number of loops"}
+    {anlt.arg           0                   "LT"}
+    {reset_in_loop.arg  1                   "Reset in loop (1 or 0)"}
+    {cfg.arg            "8x100"             "Cfg"}
     {tcl_path.arg       ""                  "ASIC lib location"}
 }
 # rename argv variables to call them more easily
@@ -35,31 +41,50 @@ set env(LD_LIBRARY_PATH) "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:${::env(LD_LIBRA
 cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 source .tclrc.diag.vul
 
+set cfgs { "1x800" "1x800_hs" "2x400" "2x400_hs" "4x200" "4x200_hs" "8x100" }
+if {[lsearch -exact $cfgs $cfg] == -1} {
+    plog_err "Invalid cfg: $cfg, the valid cfgs are: $cfgs"
+    plog_err "FRONT PORT UP test FAILED"
+    exit -1
+}
+
 ### initialize card properties
 set slot $slot
 set port $slot
 set ::slot $slot
 set ::port $port
-set uut "UUT_$slot"
-set card_type $::env($uut)
-plog_msg "card type: $card_type; UUT: $uut"
 exec jtag_accpcie_vulcano clr $slot
 vul_j2c
 plog_msg "_msrd"
 plog_msg [eval _msrd]
+
+set err_cnt_init [ plog_get_err_count ]
+set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
+set fn "vul_eth_port_up_slot${slot}_${cur_time}.log"
+plog_start $fn
+
+set ::board_rev [vul_get_board_rev]
 vulcano_setup 0
+vul_card_rst 1 0
 plog_msg "calling vul_pll_fix"
 vul_pll_fix
 vul_vt_init 0
 after 1000
-set err_cnt_init [ plog_get_err_count ]
-vul_qspi_erase 0x70100000
-set err_cnt_fnl [ plog_get_err_count ]
-set err_cnt  [ expr ( $err_cnt_fnl - $err_cnt_init ) ]
-if {$err_cnt != 0} {
-    plog_err "QSPI ERASE FAILED"
-} else {
-    plog_msg "QSPI ERASE PASSED"
+vul_set_serdes_pn_swap_file
+
+vul_die_id_print
+vul_get_git_rev
+if { $vmarg != "none" } {
+    vul_set_vmarg $vmarg all
 }
-diag_close_j2c_if $port $slot
-exit
+
+vul_card_rst 2 0
+vul_front_panel_port_up_${cfg} $int_lpbk $num_loop $anlt $reset_in_loop
+set err_cnt  [ expr ( [plog_get_err_count] - $err_cnt_init ) ]
+if {$err_cnt != 0} {
+    plog_err "FRONT PORT UP test FAILED"
+    exit -1
+} else {
+    plog_msg "FRONT PORT UP test PASSED"
+    exit 0
+}
