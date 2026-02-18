@@ -3,7 +3,7 @@ source /home/diag/diag/scripts/asic/cmdline.tcl
 
 set usage {
     {slot.arg           ""                  "Slot number"}
-    {vmarg.arg          "nom"              "Voltage margin"}
+    {vmarg.arg          "nom"               "Voltage margin"}
     {pcie_gen.arg       1                   "PCIe Gen"}
     {int_lpbk.arg       0                   "pma internal loopback (1 or 0)"}
     {runtime.arg        50                  "Run time in seconds"}

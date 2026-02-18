@@ -3,7 +3,7 @@ source /home/diag/diag/scripts/asic/cmdline.tcl
 
 set usage {
     {slot.arg           ""                  "Slot number"}
-    {vmarg.arg          "nom"              "Voltage margin"}
+    {vmarg.arg          "nom"               "Voltage margin"}
     {int_lpbk.arg       0                   "Internal loopback (1 or 0)"}
     {num_loop.arg       2                   "Number of loops"}
     {anlt.arg           0                   "LT"}
