@@ -387,6 +387,80 @@ def run_dl_tests(args):
 
     return exist_code
 
+def run_predl_tests(args):
+    """
+    trigger the download script to run
+    """
+
+    # launching script from MTP
+    test_cmd = ["python3", "./mtp_vulcano_pre_dl_test.py"]
+    test_cmd_option = sys.argv[2:]
+    stage = FF_Stage.FF_DL
+    libmfg_utils.cli_inf(str(args))
+
+    if not args.run_from_remote:
+        mtpcfg_file = None
+
+        mtp_cfg_db = load_mtp_cfg(subcommand=args.subcommand)
+
+        if args.mtpid:
+            mtp_ids = libmfg_utils.mtpid_list_select(mtp_cfg_db, [args.mtpid])
+            if not mtp_ids:
+                sys.exit(1)
+            mtp_id = mtp_ids[0]
+        else:
+            mtp_id = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)[0]
+            args.mtpid = mtp_id
+
+        # init mtp_ctrl
+        if args.verbosity:
+            diag_log_filep = sys.stdout
+            diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM
+        else:
+            diag_log_filep = None
+            diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
+        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list, skip_slots=[])
+        mfg_test_start_ts = libmfg_utils.timestamp_snapshot()
+
+        logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, False, stage)
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+
+        test_cmd_option = common_args2_cmd_options_list(vars(args))
+
+    # test_cmd = [os.path.basename(sys.argv[0])]
+    # remove log-server command line option
+    if "--run_from_remote" in test_cmd_option:
+        test_cmd_option.remove("--run_from_remote")
+    if "-run_from_remote" in test_cmd_option:
+        test_cmd_option.remove("-run_from_remote")
+
+    test_cmd += test_cmd_option
+    libmfg_utils.cli_inf("Re-assembly command line arguments, and calling Inner Layer Script .....")
+    libmfg_utils.cli_inf(str(" ".join(test_cmd)))
+
+    try:
+        com_proc = subprocess.run(test_cmd, stderr=subprocess.STDOUT, check=True)
+    except subprocess.CalledProcessError as Err:
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Failed with exit code:{:s}".format(args.subcommand.upper(), str(Err.returncode)))
+        err_msg = traceback.format_exc()
+        exist_code = Err.returncode
+        print("-*"*50)
+        print(Err.output)
+        print("-*"*50)
+        print(err_msg)
+    else:
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Passed with exit code:{:s}".format(args.subcommand.upper(), str(com_proc.returncode)))
+        exist_code = com_proc.returncode
+
+    if not args.run_from_remote:
+        mfg_test_stop_ts = libmfg_utils.timestamp_snapshot()
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Duration:{:s}".format(args.subcommand.upper(), str(mfg_test_stop_ts - mfg_test_start_ts)))
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Log in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+        # upload test log to remote log server
+        # under development
+
+    return exist_code
+
 def run_2c_tests(args):
     """
     trigger 2c script to run
@@ -1430,6 +1504,7 @@ if __name__ == "__main__":
     parser_sdl = subparsers.add_parser('sdl', help='Invoke NIC card Scan Download test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
     parser_cnic = subparsers.add_parser('cnic', help='Invoke Convert NIC card test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
     parser_dl = subparsers.add_parser('dl', help='Invoke NIC card Download test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
+    parser_predl = subparsers.add_parser('predl', help='Invoke NIC card Pre Download test suite, Vulcano Only', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
     parser_2c = subparsers.add_parser('2c', help='Invoke NIC card 2 Coner test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
     parser_p2c = subparsers.add_parser('p2c', help='Invoke NIC card Pre 2 Coner test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
     parser_4c = subparsers.add_parser('4c', help='Invoke NIC card 4 Coner test suite', formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=200))
@@ -1516,6 +1591,11 @@ if __name__ == "__main__":
     parser_dl.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle", type=int, required=False, default=1)
     parser_dl.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
     parser_dl.set_defaults(func=run_dl_tests)
+
+    parser_predl.add_argument("--verbosity", "-verbosity", help="Increase output verbosity; default to %(default)s", action='store_true', default=False)
+    parser_predl.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_predl.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=False)
+    parser_predl.set_defaults(func=run_predl_tests)
 
     parser_2c.add_argument("--high_temp", "-high_temp", help="high temperature environment", action='store_true')
     parser_2c.add_argument("--low_temp", "-low_temp", help="low temperature environment", action='store_true')

@@ -6979,7 +6979,7 @@ class nic_ctrl():
         rc_code = m[0]
         print(rc_code)
         if str(rc_code) != '0':
-            self.nic_set_err_msg("Program uC image Command got non-zero code")
+            self.nic_set_err_msg("Program uC image Command got non-zero return code")
             return False
         return True
 
