@@ -6575,6 +6575,83 @@ class nic_ctrl():
 
         return True
 
+    def uc_zephyr_cpld_update_predl(self, cpld_img, partition='0'):
+        """
+        tmp cpld update function for pre DL
+        """
+
+        partition = partition.lower()
+        support_partitions = ("0", "1")
+        if partition not in support_partitions:
+            self.nic_set_err_msg("Program partition {:s} not support yet, so far only support {:s}".format(partition, str(support_partitions)))
+            return False
+
+        # copy cpld image to microncontroller buffer
+        cmd = "{:s} -s {:d} -u {:s}".format(MFG_DIAG_CMDS().PANAREA_SUC_USB_TOOL, self._slot+1, cpld_img)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Upload CPLD image to device Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        if "No such file or directory".lower() in sanitized_cmd_buf.lower() or "No suitable USB devices found".lower() in  sanitized_cmd_buf.lower() or "Uploading: 100%".lower() not in sanitized_cmd_buf.lower():
+            self.nic_set_err_msg(self.nic_get_cmd_buf())
+            return False
+        match = re.findall(r'Image\s+CRC\s+=\s+0x([a-fA-F0-9]+)', sanitized_cmd_buf)
+        if not match:
+            self.nic_set_err_msg("Faield to parse command buffer:")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        image_crc = match[0]
+
+        # calculate buffer crc befor program
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC_BUF.format(partition)
+        if not self.nic_exec_cmd_from_suc_console0(cmd):
+            self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        match = re.findall(r'CRC32\s+of\s+image\s+buffer\s+=\s+0x([a-fA-F0-9]+)', sanitized_cmd_buf)
+        if not match:
+            self.nic_set_err_msg("Faield to parse command buffer:")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        crc_before_prog = match[0]
+        if crc_before_prog != image_crc:
+            self.nic_set_err_msg("CRC verify failed,  image crc:{} vs buffer crc:{}.".format(image_crc, crc_before_prog))
+            return False
+
+        # program cpld partition
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_PROG_BUF.format(partition)
+        if not self.nic_exec_cmd_from_suc_console0(cmd):
+            self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        if ("Writing CFG{:s}...".format(partition)).lower() not in sanitized_cmd_buf.lower() or "Done!".lower() not in sanitized_cmd_buf.lower():
+            self.nic_set_err_msg("Zephyr CPLD program {:s} Failed".format(partition))
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
+        # calculate partition crc and verify
+        partition_number = partition.replace('cfg', '')
+        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC.format(partition)
+        if not self.nic_exec_cmd_from_suc_console0(cmd):
+            self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+        match = re.findall(r'CRC32\s+of\s+sector\s+' + partition_number + r'\s+=\s+0x([a-fA-F0-9]+)', sanitized_cmd_buf)
+        if not match:
+            self.nic_set_err_msg("Faield to parse command buffer:")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        crc_after_prog = match[0]
+        if crc_before_prog != crc_before_prog:
+            self.nic_set_err_msg("CRC verify failed, buffer crc:{} vs flash partion crc:{}.".format(crc_before_prog, crc_after_prog))
+            return False
+
+        return True
+
     def uc_zephyr_hwinfo_devid(self):
         """
         execute hwinfo devid subcomand in zeohyr shell, parse and return devid

@@ -1483,7 +1483,9 @@ class mtp_ctrl():
             if self._swmtestmode[slot] == Swm_Test_Mode.SW_DETECT:
                 read_data[0] = 0x00
                 # See if we can read the MTP Adapter CPLD ID.  This would indicate an ALOM should be present
-                rc = self._nic_ctrl_list[slot].nic_read_mtp_adapt_cpld(0x80, read_data)
+                # Skip mtp_adapt_cpld read on Panarea MTP
+                if self.mtp_get_mtp_type() != MTP_TYPE.PANAREA:
+                    rc = self._nic_ctrl_list[slot].nic_read_mtp_adapt_cpld(0x80, read_data)
                 if read_data[0] == 0x1b:
                     self.cli_log_slot_inf(slot, "NAPLES25SWM ALOM DETECTED")
                     self._swmtestmode[slot] = Swm_Test_Mode.SWMALOM

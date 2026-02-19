@@ -413,11 +413,11 @@ def main():
                 rlist =  mtp_mgmt_ctrl.mtp_uc_usb_resacn(nic_list)
             elif test == "uC_FRU_DUMP_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_suc_fru_dump_check(nic_list)
-            elif test == "VULVANO_VERSION_CHK":
+            elif test == "VUCVANO_VERSION_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_version_read_check(nic_list, stage=FF_Stage.FF_SWI)
-            elif test == "VULVANO_FRU_DUMP_CHK":
+            elif test == "VULCANO_FRU_DUMP_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_fru_dump_check(nic_list)
-            elif test == "VULVANO_FOGA_UART_STATS_DUMP":
+            elif test == "VULCANO_FPGA_UART_STATS_DUMP":
                 rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
             elif test == "CPLD_PROG":
                 rlist = swi_cpld_program(mtp_mgmt_ctrl, nic_list)
@@ -691,9 +691,9 @@ def main():
             run_swi_test(pass_nic_list, "VULCANO_BOOTING_CHK")
             run_swi_test(pass_nic_list, "uC_VERSION_CHK")
             run_swi_test(pass_nic_list, "uC_FRU_DUMP_CHK")
-            run_swi_test(pass_nic_list, "VULVANO_VERSION_CHK")
-            run_swi_test(pass_nic_list, "VULVANO_FRU_DUMP_CHK")
-            run_swi_test(pass_nic_list, "VULVANO_FOGA_UART_STATS_DUMP")
+            run_swi_test(pass_nic_list, "VULCANO_VERSION_CHK")
+            run_swi_test(pass_nic_list, "VULCANO_FRU_DUMP_CHK")
+            run_swi_test(pass_nic_list, "VULCANO_FPGA_UART_STATS_DUMP")
 
         else:
             # power cycle all nic
