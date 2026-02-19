@@ -2,7 +2,7 @@
 
 # Default values
 INT_LPBK=1
-VMARG="normal"
+VMARG="nom"
 ESEC_EN=1
 ITE=1
 PCT=0
