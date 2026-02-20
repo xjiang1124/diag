@@ -1689,8 +1689,42 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    SKU_SARACENO: updateInfo {
+        PenStandardV2VulcanoOCPProdInfoTbl,
+        PROD_NAME_SARACENO,
+        SKU_SARACENO,
+        FRU_ID_SARACENO,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                FIELD_NUM_BOARD_ID_6,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
     SKU_VULSEI: updateInfo {
-        PenStandardV2vulcanoProdInfoTbl,
+        PenStandardV2ProdInfoTbl,
         PROD_NAME_VULSEI,
         SKU_VULSEI,
         FRU_ID_VULSEI,
@@ -1724,7 +1758,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_VULSEI: updateInfo {
-        PenStandardV2vulcanoProdInfoTbl,
+        PenStandardV2ProdInfoTbl,
         PROD_NAME_VULSEI,
         SKU_VULSEI,
         FRU_ID_VULSEI,
