@@ -11,13 +11,16 @@ set pct      [lindex $argv 6]
 set skip_l1_report_mode   [lindex $argv 7]
 set skip_serdes_tests     [lindex $argv 8]
 set tcl_path [lindex $argv 9]
+set test_list [lindex $argv 10]
 set port 10
 
 if {$logEn == ""} {
     set logEn 1
 }
 
-puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; esecEn: $esecEn; logEn: $logEn; skip_l1_report_mode: $skip_l1_report_mode; skip_serdes_tests: $skip_serdes_tests; tcl_path: $tcl_path"
+puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; esecEn: $esecEn; logEn: $logEn; \
+      skip_l1_report_mode: $skip_l1_report_mode; skip_serdes_tests: $skip_serdes_tests; \
+      tcl_path: $tcl_path; test_list: $test_list"
 set err_cnt 0
 if { $tcl_path != "" } {
     set ASIC_LIB_BUNDLE "$tcl_path"
@@ -36,13 +39,14 @@ set env(LD_LIBRARY_PATH) "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:${::env(LD_LIBRA
 set MTP_TYPE $::env(MTP_TYPE)
 set ASIC_TYPE $::env(ASIC_TYPE)
 set ::VEL_SHELL 0
+set ::SHELL_MODE mtp
+set ::MTP_SHELL 1
+set ::JCS_SHELL 0
 set ::ts_present 0
 set ::reset_cpu 0
 
 source /home/diag/diag/scripts/asic/asic_tests.tcl
 
-
-puts "sn: $sn; slot: $slot"
 cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 
 if {($MTP_TYPE == "MTP_PANAREA")} {
@@ -53,8 +57,8 @@ if {($MTP_TYPE == "MTP_PANAREA")} {
     set port $slot
     set slot $slot
 
-    set l1_cmd "vul_l1_screen_diag $sn 0 1 1 $int_lpbk $vmarg $esecEn $logEn $skip_l1_report_mode $skip_serdes_tests"
-    #set l1_cmd "vul_l1_screen_diag $sn"
+    set l1_cmd "vul_l1_screen_diag $sn 0 1 1 $int_lpbk $vmarg $esecEn $logEn $skip_l1_report_mode $skip_serdes_tests \"$test_list\""
+    puts $l1_cmd
     source .tclrc.diag.vul
     #source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
 } else {
@@ -85,10 +89,12 @@ if {$ASIC_TYPE == "VULCANO"} {
     vul_pll_fix
     vul_vt_init 0
     after 1000
+    vul_set_serdes_pn_swap_file
 
     #reset_to_proto_mode
     #vul_print_voltage_temp
-    vul_print_die_id
+    vul_die_id_print
+    vul_get_git_rev
     #plog_msg "Measuring frequencies:"
     #vul_get_freq
 
