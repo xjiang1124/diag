@@ -177,7 +177,7 @@ func (u *SUCUARTHandle) send_cmd_suc_uart_single_attempt(cmd string) (output []b
 }
 
 func (u *SUCUARTHandle) send_cmd_suc_uart(cmd string) (output []byte, err int) {
-    maxRetries := 3
+    maxRetries := 15
     for attempt := 1; attempt <= maxRetries; attempt++ {
         output, err = u.send_cmd_suc_uart_single_attempt(cmd)
         if err == errType.SUCCESS {
