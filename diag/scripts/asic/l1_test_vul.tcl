@@ -57,7 +57,11 @@ if {($MTP_TYPE == "MTP_PANAREA")} {
     set port $slot
     set slot $slot
 
-    set l1_cmd "vul_l1_screen_diag $sn 0 1 1 $int_lpbk $vmarg $esecEn $logEn $skip_l1_report_mode $skip_serdes_tests \"$test_list\""
+    if { $test_list != ""} {
+        set l1_cmd "vul_l1_screen_diag $sn 0 1 1 $int_lpbk $vmarg $esecEn $logEn $skip_l1_report_mode $skip_serdes_tests \"$test_list\""
+    } else {
+        set l1_cmd "vul_l1_screen_diag $sn 0 1 1 $int_lpbk $vmarg $esecEn $logEn $skip_l1_report_mode $skip_serdes_tests"
+    }
     puts $l1_cmd
     source .tclrc.diag.vul
     #source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
