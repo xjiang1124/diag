@@ -966,7 +966,7 @@ var MontaroMtpTbl = []I2cInfo {
 
 var SaracenoMtpTbl = []I2cInfo {
     //       name               comp         Bus    devAddr  page    HubName   HubPort  Flag
-    I2cInfo {"FRU",            "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"FRU",            "AT24C02C",  0x3,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"SUCFRU",         "AT24C02C",  0x3,   0x7C,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"FILE",           "FILE",      0x3,   0xFF,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},   //use to write fru output to a bin file
 }
