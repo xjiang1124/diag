@@ -133,7 +133,7 @@ def dl_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
     if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
-        return mtp_mgmt_ctrl.mtp_nic_uc_zephyr_cpld_update(slot, cpld_img_file)
+        return mtp_nic_uc_zephyr_cpld_update(mtp_mgmt_ctrl, slot, cpld_img_file, partition='0')
     else:
         return mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
 
@@ -147,6 +147,22 @@ def dl_fail_cpld_program(mtp_mgmt_ctrl, slot):
     else:
         return mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, failsafe_cpld_img_file)
 
+@parallelize.parallel_nic_using_ssh
+def dl_fru_program(mtp_mgmt_ctrl, slot, swmtestmode):
+    sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
+    mac = mtp_mgmt_ctrl.get_scanned_mac(slot)
+    pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
+    dpn = mtp_mgmt_ctrl.get_scanned_dpn(slot)
+    prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
+
+    ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, stage=FF_Stage.FF_DL)
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    #skip ALOM programming if Naples25 SWM test mode is SWM only
+    if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+        alom_sn = mtp_mgmt_ctrl.get_scanned_alom_sn(slot)
+        alom_pn = mtp_mgmt_ctrl.get_scanned_alom_pn(slot)
+        ret = mtp_mgmt_ctrl.mtp_program_nic_alom_fru(slot, prog_date, alom_sn, alom_pn)
+    return ret
 
 def mtp_nic_uc_zephyr_cpld_update(mtp_mgmt_ctrl, slot, cpld_img_file, partition='0', dl_step=True):
     """
@@ -200,7 +216,7 @@ def mtp_nic_uc_zephyr_cpld_update(mtp_mgmt_ctrl, slot, cpld_img_file, partition=
     if partition not in support_partitions:
         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Please provide correct cpld partion , it should be in {:d}".format(str(support_partitions)))
         return False
-    if not mtp_mgmt_ctrl._nic_ctrl_list[slot].uc_zephyr_cpld_update(cpld_img_file, partition):
+    if not mtp_mgmt_ctrl._nic_ctrl_list[slot].uc_zephyr_cpld_update_predl(cpld_img_file, partition):
         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Program CPLD Failed")
         mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot)
         return False
@@ -288,8 +304,12 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_check_nic_list_status(nic_list)
             elif test == "NIC_PWRCYC":
                 rlist = mtp_mgmt_ctrl.mtp_power_cycle_nic(nic_list, dl=True)
+            elif test == "SUC_USB_RESCAN":
+                rlist =  mtp_mgmt_ctrl.mtp_uc_usb_resacn(nic_list)
             elif test == "inter_uC_DIAG_IMG_PROG":
                 rlist = dl_inter_uc_img_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "FRU_PROG":
+                rlist = dl_fru_program(mtp_mgmt_ctrl, nic_list, swmtestmode)
             elif test == "CPLD_PROG":
                 rlist = dl_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE":
@@ -302,7 +322,7 @@ def main():
                 rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list, override_fd_descriptors=True)
             elif test == "uC_VERSION_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_suc_version_read_check(nic_list)
-            elif test == "VULVANO_FOGA_UART_STATS_DUMP":
+            elif test == "VULCANO_FPGA_UART_STATS_DUMP":
                 rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
@@ -342,24 +362,31 @@ def main():
             dl_display_program_matrix(mtp_mgmt_ctrl, slot, swmtestmode)
 
         if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+            # 1. Program interim diag image twice, rescan usb in between.
+            run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "inter_uC_DIAG_IMG_PROG")
+            run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "inter_uC_DIAG_IMG_PROG")
+            time.sleep(3)
+            run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "inter_uC_DIAG_IMG_PROG")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "inter_uC_DIAG_IMG_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
-            time.sleep(15)
+            # 2. Update FRU to avoid SuC panic, and CPLD
             run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_dl_test(pass_nic_list, "NIC_TYPE")
             run_dl_test(pass_nic_list, "NIC_INIT")
+            run_dl_test(pass_nic_list, "FRU_PROG")
             run_dl_test(pass_nic_list, "CPLD_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_dl_test(pass_nic_list, "CPLD_VERIFY")
             run_dl_test(pass_nic_list, "FSAFE_CPLD_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            # 3. Program released diag image.
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "uC_VERSION_CHK")
-            run_dl_test(pass_nic_list, "VULVANO_FOGA_UART_STATS_DUMP")
+            run_dl_test(pass_nic_list, "VULCANO_FPGA_UART_STATS_DUMP")
         else:
             mtp_mgmt_ctrl.cli_log_err("The Pre DL test only for Vulcano based cards!", level=0)
 

@@ -557,8 +557,6 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_erase_board_config_ssh(nic_list)
             elif test == "BOARD_CONFIG":
                 rlist = mtp_mgmt_ctrl.mtp_nic_board_config(nic_list)
-            elif test == "uC_DIAG_IMG_PROG":
-                rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list)
             elif test == "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS":
                 rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list, override_fd_descriptors=True)
             elif test == "SUC_USB_RESCAN":
@@ -567,7 +565,7 @@ def main():
                 rlist = dl_inter_uc_img_program(mtp_mgmt_ctrl, nic_list)
             elif test == "uC_VERSION_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_suc_version_read_check(nic_list)
-            elif test == "VULVANO_FOGA_UART_STATS_DUMP":
+            elif test == "VULCANO_FPGA_UART_STATS_DUMP":
                 rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
             elif test == "uC_BOOTING_CHK":
                 rlist = dl_uc_boot_check(mtp_mgmt_ctrl, nic_list)
@@ -769,26 +767,19 @@ def main():
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
 
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+            # Program diag image twice, usb scan in between (do we have to?)
             run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_dl_test(pass_nic_list, "NIC_TYPE")
             run_dl_test(pass_nic_list, "NIC_INIT")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
-            time.sleep(15)
+            time.sleep(3)
             run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
+            # Program FRU and CPLD
             run_dl_test(pass_nic_list, "FRU_PROG")
-            run_dl_test(pass_nic_list, "NIC_PWRCYC")
-            run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
-            run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG")
-            run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG")
-            time.sleep(15)
-            run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
-            run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG")
-            run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG")
-            run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "CPLD_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
@@ -797,7 +788,7 @@ def main():
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "uC_BOOTING_CHK")
             run_dl_test(pass_nic_list, "uC_VERSION_CHK")
-            run_dl_test(pass_nic_list, "VULVANO_FOGA_UART_STATS_DUMP")
+            run_dl_test(pass_nic_list, "VULCANO_FPGA_UART_STATS_DUMP")
         else:
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
