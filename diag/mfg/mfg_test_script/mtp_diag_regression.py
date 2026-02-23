@@ -801,7 +801,8 @@ def main():
                     rlist = ocp_rmii_linkup(mtp_mgmt_ctrl, nic_list)
                 elif test == "OCP_CONN":
                     rlist = ocp_connect(mtp_mgmt_ctrl, nic_list)
-
+                elif test == "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_diag_init_cpld_diag(nic_list, emmc_format=False)
                 elif test == "VULCANO_JTAG_MBIST":
                     rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"], test_type="warm")
                 elif test == "L1":
@@ -1336,6 +1337,8 @@ def main():
                     ######################################################################
                     #  Vulcano NIC JTAG BIST test
                     ######################################################################
+                    cpld_dump_list = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
+                    run_regression_test(cpld_dump_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
 
                     jtag_mbist_list = get_slots_of_type(VULCANO_NIC_TYPE_LIST)
                     run_regression_test(jtag_mbist_list, "VULCANO_JTAG_MBIST", vmarg=vmarg)
