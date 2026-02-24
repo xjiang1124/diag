@@ -41,6 +41,7 @@ set ASIC_TYPE $::env(ASIC_TYPE)
 set ::VEL_SHELL 0
 set ::SHELL_MODE mtp
 set ::MTP_SHELL 1
+set ::ZMTP_SHELL 0
 set ::JCS_SHELL 0
 set ::ts_present 0
 set ::reset_cpu 0

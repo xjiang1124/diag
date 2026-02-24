@@ -275,6 +275,18 @@ control_slot_panarea() {
         do
             #mute backend log on console
             sucutil exec -s $slot_one_based -c "log backend log_backend_uart disable"
+            if [[ $turn_on_vulcano -eq 1 ]]
+            then
+                # make CPLD to turn on Vulcano: set reg 0x2 bit 4 to 0
+                output=$(sucutil cpld read -s $slot_one_based -a 0x2)
+                pattern="^cpld read [0-9A-Fa-f]{2}, value [0-9A-Fa-f]{2}$"
+                if [[ $output =~ $pattern ]]
+                then
+                    wValue=$(echo $output | awk '{print $5}')
+                    wValue=$(( 16#$wValue & 0xef ))
+                    sucutil cpld write -s $slot_one_based -a 0x2 -d $wValue
+                fi
+            fi
         done
     fi
 }
@@ -342,6 +354,18 @@ control_slot_ponza() {
         do
             #mute backend log on console
             sucutil exec -s $slot_one_based -c "log backend log_backend_uart disable"
+            if [[ $turn_on_vulcano -eq 1 ]]
+            then
+                # make CPLD to turn on Vulcano: set reg 0x2 bit 4 to 0
+                output=$(sucutil cpld read -s $slot_one_based -a 0x2)
+                pattern="^cpld read [0-9A-Fa-f]{2}, value [0-9A-Fa-f]{2}$"
+                if [[ $output =~ $pattern ]]
+                then
+                    wValue=$(echo $output | awk '{print $5}')
+                    wValue=$(( 16#$wValue & 0xef ))
+                    sucutil cpld write -s $slot_one_based -a 0x2 -d $wValue
+                fi
+            fi
         done
     fi
 }
@@ -409,9 +433,15 @@ then
 fi
 
 uart_id=0
+turn_on_vulcano=1
 if [ $# -ge 3 ]
 then
-    uart_id=$(($3 & 0x7))
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        uart_id=$(($3 & 0x7))
+    else
+        turn_on_vulcano=$3
+    fi
 fi
 if [ $# -ge 4 ]
 then
