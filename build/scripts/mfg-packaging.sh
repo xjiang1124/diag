@@ -11,6 +11,10 @@ fi
 product=$(echo "$1" | tr '[:lower:]' '[:upper:]')
 
 case "$product" in
+    GELSO)
+        major=2
+        minor=0
+        ;;
     SARACENO)
         major=2
         minor=1
@@ -48,7 +52,7 @@ cp -r $TOP_DIR/diag/mfg $TARGET_DIR
 mkdir -p $TARGET_DIR/mfg/release
 
 case "$product" in
-    SARACENO|MORTARO)
+    GELSO|SARACENO|MORTARO)
         # Copy diag image and update config file
         cp $IMG_DIR/image_amd64_vulcano.tar $TARGET_DIR/mfg/release/image_amd64_vulcano.tar
         touch $TARGET_DIR/mfg/release/image_arm64_vulcano.tar
