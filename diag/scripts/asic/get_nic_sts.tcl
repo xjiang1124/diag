@@ -99,6 +99,11 @@ if {[llength $argv] >= 4} {
 } else {
     set check_ecc_only 0
 }
+if {[llength $argv] >= 5} {
+    set skip_arm_debug [lindex $argv 4]
+} else {
+    set skip_arm_debug 0
+}
 set check_freq 1
 set check_prp 1
 
@@ -122,7 +127,7 @@ if { $BOARD_TYPE == "GINESTRA_D5" } {
     set ddr5 1
     set cpld_id 0x61
 }
-puts "Getting ASIC status - sn: $sn; slot: $slot; check_vrm: $check_vrm; check_ecc_only: $check_ecc_only; board_type: $BOARD_TYPE"
+puts "Getting ASIC status - sn: $sn; slot: $slot; check_vrm: $check_vrm; check_ecc_only: $check_ecc_only; skip_arm_debug: $skip_arm_debug; board_type: $BOARD_TYPE"
 source /home/diag/diag/scripts/asic/asic_tests.tcl
 
 cd $ASIC_SRC/ip/cosim/tclsh
@@ -205,6 +210,8 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || ($MTP_TYPE =
 if {$ASIC_TYPE != "SALINA"} {
     diag_open_j2c_if $port $slot
 }
+
+set err_cnt_init [ plog_get_err_count ]
 set val [_msrd]
 if { $ASIC_TYPE == "SALINA" } {
     if { $val == 0x0 } {
@@ -331,11 +338,13 @@ if {$ASIC_TYPE == "GIGLIO"} {
     gig_health_check
 }
 
-plog_msg "\n\n\n"
-plog_msg "=================="
-plog_msg "ARM status"
-plog_msg "=================="
-arm_hang_dbg_display
+if { $skip_arm_debug != 1 } {
+    plog_msg "\n\n\n"
+    plog_msg "=================="
+    plog_msg "ARM status"
+    plog_msg "=================="
+    arm_hang_dbg_display
+}
 
 set val [_msrd]
 if { $val != 0x00000001 } {
@@ -394,6 +403,16 @@ if { $check_freq != 0 && \
      $ASIC_TYPE == "SALINA" } {
     plog_msg "Measuring ARM frequency:"; sal_PLL_SYSPLL_T_ARM_PLL_DFX_CLK_OBS
     ## ARM freq check is going to put j2c in weird state; keep for the last item.
+}
+
+set err_cnt_fnl [ plog_get_err_count ]
+set err_cnt  [ expr ( $err_cnt_fnl - $err_cnt_init ) ]
+if { $skip_arm_debug == 1 } {
+    if {$err_cnt != 0} {
+        plog_msg "Getting ASIC status - FAILED"
+    } else {
+        plog_msg "Getting ASIC status - PASSED"
+    }
 }
 plog_msg "Getting ASIC status - Done"
 
