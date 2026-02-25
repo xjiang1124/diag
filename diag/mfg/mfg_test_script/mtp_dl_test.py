@@ -767,15 +767,11 @@ def main():
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
 
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
-            # Program diag image twice, usb scan in between (do we have to?)
             run_dl_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_dl_test(pass_nic_list, "NIC_TYPE")
             run_dl_test(pass_nic_list, "NIC_INIT")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
-            run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
-            run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
-            time.sleep(3)
-            run_dl_test(pass_nic_list, "SUC_USB_RESCAN")
+            # Program diag image
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             # Program FRU and CPLD
