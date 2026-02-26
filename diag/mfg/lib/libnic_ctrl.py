@@ -5179,7 +5179,6 @@ class nic_ctrl():
 
         # Panarea and vulcano cards
         if self._nic_type in VULCANO_NIC_TYPE_LIST:
-            time.sleep(30)
             tout = 6
             parsed_dump = {}
             timestamp_registers = ['0x46', '0x45', '0x44', '0x43', '0x42']
@@ -7054,9 +7053,8 @@ class nic_ctrl():
                 self.nic_set_err_msg("Get Program uC image return code failed")
                 return False
         rc_code = m[0]
-        print(rc_code)
         if str(rc_code) != '0':
-            self.nic_set_err_msg("Program uC image Command got non-zero return code")
+            self.nic_set_err_msg("Program uC image Command got non-zero return code:{}".format(rc_code))
             return False
         return True
 

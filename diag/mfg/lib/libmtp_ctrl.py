@@ -5373,6 +5373,12 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Init NIC CPLD failed")
             return False
 
+        if self.mtp_get_nic_type(slot) in VULCANO_NIC_TYPE_LIST:
+            cpld_id = self._nic_ctrl_list[slot]._cpld_id
+            cpld_ver = '.'.join([self._nic_ctrl_list[slot]._cpld_ver, self._nic_ctrl_list[slot]._cpld_ver_min])
+            cpld_ts = self._nic_ctrl_list[slot]._cpld_timestamp
+            cpld_info = "ID: {}, Version: {}, Timestamp: {}".format(cpld_id, cpld_ver, cpld_ts)
+            self.cli_log_slot_inf(slot, "CPLD Info: {}".format(cpld_info))
         return True
 
     def mtp_mgmt_set_nic_sw_boot(self, slot):
