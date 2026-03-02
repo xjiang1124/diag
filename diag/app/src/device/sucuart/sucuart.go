@@ -472,15 +472,24 @@ func Suc_cpld_read_ponza(vul_index int, offset byte) (data byte, err int) {
         return 0, err
     }
 
+    var cmd1 string
+    var cmd2 string
     switch fpga_index {
     case 0: // FPGA 0
-        cmd = "gpio conf pb 6 o0; gpio conf pb 7 o0"
+        cmd1 = "gpio conf pb 6 o0"
+        cmd2 = "gpio conf pb 7 o0"
     case 1: // FPGA 1
-        cmd = "gpio conf pb 6 o1; gpio conf pb 7 o0"
+        cmd1 = "gpio conf pb 6 o1"
+        cmd2 = "gpio conf pb 7 o0"
     case 2: // FPGA 2
-        cmd = "gpio conf pb 6 o0; gpio conf pb 7 o1"
+        cmd1 = "gpio conf pb 6 o0"
+        cmd2 = "gpio conf pb 7 o1"
     }
-    _, err = u.send_cmd_suc_uart(cmd + "\r\n")
+    _, err = u.send_cmd_suc_uart(cmd1 + "\r\n")
+    if err != errType.SUCCESS {
+        return 0, err
+    }
+    _, err = u.send_cmd_suc_uart(cmd2 + "\r\n")
     if err != errType.SUCCESS {
         return 0, err
     }
@@ -536,15 +545,24 @@ func Suc_cpld_write_ponza(vul_index int, offset byte, value byte) (err int) {
         return err
     }
 
+    var cmd1 string
+    var cmd2 string
     switch fpga_index {
     case 0: // FPGA 0
-        cmd = "gpio conf pb 6 o0; gpio conf pb 7 o0"
+        cmd1 = "gpio conf pb 6 o0"
+        cmd2 = "gpio conf pb 7 o0"
     case 1: // FPGA 1
-        cmd = "gpio conf pb 6 o1; gpio conf pb 7 o0"
+        cmd1 = "gpio conf pb 6 o1"
+        cmd2 = "gpio conf pb 7 o0"
     case 2: // FPGA 2
-        cmd = "gpio conf pb 6 o0; gpio conf pb 7 o1"
+        cmd1 = "gpio conf pb 6 o0"
+        cmd2 = "gpio conf pb 7 o1"
     }
-    _, err = u.send_cmd_suc_uart(cmd + "\r\n")
+    _, err = u.send_cmd_suc_uart(cmd1 + "\r\n")
+    if err != errType.SUCCESS {
+        return err
+    }
+    _, err = u.send_cmd_suc_uart(cmd2 + "\r\n")
     if err != errType.SUCCESS {
         return err
     }
