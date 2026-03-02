@@ -30,9 +30,19 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
     uut_uart_fpga := fmt.Sprintf("/dev/ttySuC%d", slot - 1)
     uut_uart := ""
 
-    uutName := "UUT_"+strconv.Itoa(slot)
-    present, _ := panareafpga.SLOTpresentUUT(uutName)
-    SlotPoweredOn, _ := panareafpga.SLOTpoweredOn(uutName);
+    cardType := os.Getenv("CARD_TYPE")
+    var present bool
+    var SlotPoweredOn bool
+
+    if cardType == "MTP_PONZA" {
+        present, _ = ponza_slot_present(slot)
+        SlotPoweredOn, _ = ponza_slot_powered_on(slot)
+    } else {
+        uutName := "UUT_"+strconv.Itoa(slot)
+        present, _ = panareafpga.SLOTpresentUUT(uutName)
+        SlotPoweredOn, _ = panareafpga.SLOTpoweredOn(uutName)
+    }
+
     if present != true || SlotPoweredOn != true {
         cli.Printf("i", "slot %d is not present. Present: %v, PowerOn: %v\n", slot, present, SlotPoweredOn)
         return nil, errType.FAIL
@@ -418,10 +428,8 @@ func Suc_cpld_read(slot int, offset byte) (data byte, err int) {
             }
             return byte(value), errType.SUCCESS
         }
-    } else {
-        return 0, errType.FAIL
     }
-    return
+    return 0, errType.FAIL
 }
 
 func Suc_cpld_write(slot int, offset byte, value byte) (err int) {
@@ -433,16 +441,121 @@ func Suc_cpld_write(slot int, offset byte, value byte) (err int) {
     cmd := "cpld_reg write " + fmt.Sprintf("0x%02x ", offset) + fmt.Sprintf("0x%02x", value)
     buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
     if err != errType.SUCCESS {
-        return
+        return err
     }
     //cli.Println("%s", string(buf))
     parts := strings.Split(string(buf), "= ") // Split on "="
     if len(parts) > 1 {
         return errType.SUCCESS
-    } else {
-        return errType.FAIL
     }
-    return
+    return errType.FAIL
+}
+
+func Suc_cpld_read_ponza(vul_index int, offset byte) (data byte, err int) {
+    // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
+    slot := ((vul_index - 1) / 6) + 1
+    fpga_index := ((vul_index - 1) % 6) / 2
+    vul_on_fpga := (vul_index - 1) % 2
+
+    //cli.Printf("i", "Selecting Vulcano %d: Slot %d (1-based), FPGA %d (0-based), Vul %d (0-based)\n",
+    //    vul_index, slot, fpga_index, vul_on_fpga)
+
+    u, err := open_suc_uart(slot, 115200)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer u.close_suc_uart()
+
+    cmd := "diag_sqi init"
+    _, err = u.send_cmd_suc_uart(cmd + "\r\n")
+    if err != errType.SUCCESS {
+        return 0, err
+    }
+
+    switch fpga_index {
+    case 0: // FPGA 0
+        cmd = "gpio conf pb 6 o0; gpio conf pb 7 o0"
+    case 1: // FPGA 1
+        cmd = "gpio conf pb 6 o1; gpio conf pb 7 o0"
+    case 2: // FPGA 2
+        cmd = "gpio conf pb 6 o0; gpio conf pb 7 o1"
+    }
+    _, err = u.send_cmd_suc_uart(cmd + "\r\n")
+    if err != errType.SUCCESS {
+        return 0, err
+    }
+
+    if vul_on_fpga == 0 {
+        cmd = "diag_sqi reg_rd 0 " + fmt.Sprintf("0x%02x", offset)
+    } else {
+        cmd = "diag_sqi reg_rd 1 " + fmt.Sprintf("0x%02x", offset)
+    }
+
+    buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
+    if err != errType.SUCCESS {
+        return 0, err
+    }
+
+    // buf is now in the format of a one-byte hex value, e.g., "0x72"
+    hexValue := strings.TrimSpace(string(buf))
+
+    // Check if buf is in "0x<hex>" format
+    if !strings.HasPrefix(hexValue, "0x") {
+        cli.Println("e", "Error: buf is not in 0x<hex> format. Got: %s", hexValue)
+        return 0, errType.FAIL
+    }
+
+    // Remove "0x" prefix and parse as base-16
+    value, err_p := strconv.ParseUint(hexValue[2:], 16, 8)
+    if err_p != nil {
+        cli.Println("e", "Error converting hex to integer:", err_p)
+        return 0, errType.FAIL
+    }
+
+    return byte(value), errType.SUCCESS
+}
+
+func Suc_cpld_write_ponza(vul_index int, offset byte, value byte) (err int) {
+    // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
+    slot := ((vul_index - 1) / 6) + 1
+    fpga_index := ((vul_index - 1) % 6) / 2
+    vul_on_fpga := (vul_index - 1) % 2
+
+    //cli.Printf("i", "Selecting Vulcano %d: Slot %d (1-based), FPGA %d (0-based), Vul %d (0-based)\n",
+    //    vul_index, slot, fpga_index, vul_on_fpga)
+
+    u, err := open_suc_uart(slot, 115200)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer u.close_suc_uart()
+
+    cmd := "diag_sqi init"
+    _, err = u.send_cmd_suc_uart(cmd + "\r\n")
+    if err != errType.SUCCESS {
+        return err
+    }
+
+    switch fpga_index {
+    case 0: // FPGA 0
+        cmd = "gpio conf pb 6 o0; gpio conf pb 7 o0"
+    case 1: // FPGA 1
+        cmd = "gpio conf pb 6 o1; gpio conf pb 7 o0"
+    case 2: // FPGA 2
+        cmd = "gpio conf pb 6 o0; gpio conf pb 7 o1"
+    }
+    _, err = u.send_cmd_suc_uart(cmd + "\r\n")
+    if err != errType.SUCCESS {
+        return err
+    }
+
+    if vul_on_fpga == 0 {
+        cmd = "diag_sqi reg_wr 0 " + fmt.Sprintf("0x%02x", offset) + fmt.Sprintf(" 0x%02x", value)
+    } else {
+        cmd = "diag_sqi reg_wr 1 " + fmt.Sprintf("0x%02x", offset) + fmt.Sprintf(" 0x%02x", value)
+    }
+    _, err = u.send_cmd_suc_uart(cmd + "\r\n")
+    return err
 }
 
 /**************************************************************
@@ -498,4 +611,111 @@ func Suc_exec_cmds(slot int, cmds string) () {
         }
     }
     suc_cmd_list(slot, command_list)
+}
+
+func Suc_vul_sel_and_power_on(vul_index int, power_on bool) (err int) {
+    // Validate vul_index (1-36)
+    if vul_index < 1 || vul_index > 36 {
+        cli.Printf("e", "Invalid vul_index %d. Must be between 1 and 36\n", vul_index)
+        return errType.FAIL
+    }
+
+    // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
+    slot := ((vul_index - 1) / 6) + 1
+    fpga_index := ((vul_index - 1) % 6) / 2
+    vul_on_fpga := (vul_index - 1) % 2
+
+    cli.Printf("i", "Selecting Vulcano %d: Slot %d (1-based), FPGA %d (0-based), Vul %d (0-based)\n",
+        vul_index, slot, fpga_index, vul_on_fpga)
+
+    var cmd_list []string
+
+    cmd_list = append(cmd_list, "diag_sqi init")
+
+    switch fpga_index {
+    case 0: // FPGA 0
+        cmd_list = append(cmd_list, "gpio conf pb 6 o0", "gpio conf pb 7 o0")
+    case 1: // FPGA 1
+        cmd_list = append(cmd_list, "gpio conf pb 6 o1", "gpio conf pb 7 o0")
+    case 2: // FPGA 2
+        cmd_list = append(cmd_list, "gpio conf pb 6 o0", "gpio conf pb 7 o1")
+    }
+
+    if vul_on_fpga == 0 {
+        cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x1a 2")
+    } else {
+        cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x1a 4")
+    }
+
+    // Power on the selected Vulcano
+    if power_on == true {
+        if vul_on_fpga == 0 {
+            cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x2 0x80", "diag_sqi reg_wr 0 0x2 0x90")
+        } else {
+            cmd_list = append(cmd_list, "diag_sqi reg_wr 1 0x2 0x80", "diag_sqi reg_wr 1 0x2 0x90")
+        }
+    }
+
+    suc_cmd_list(slot, cmd_list)
+    if power_on == true {
+        cli.Printf("i", "Selected and powered on Vulcano %d\n", vul_index)
+    } else {
+        cli.Printf("i", "Selected Vulcano %d\n", vul_index)
+    }
+    return errType.SUCCESS
+}
+
+func ponza_slot_present(slot_num int) (present bool, err error) {
+    if slot_num < 1 || slot_num > 6 {
+        err = fmt.Errorf("ERROR: ponza_slot_present - slot_num must be in range 1 to 6")
+        return
+    }
+
+    slot_zero_based := slot_num - 1
+    reg_addr := uint64(0x180 + (slot_zero_based * 4))
+
+    rValue, err := panareafpga.ReadU32(reg_addr)
+    if err != nil {
+        return
+    }
+
+    // Check bit 9 (0x200): if 0, card is present
+    nic_present := rValue & 0x200
+    if nic_present == 0 {
+        present = true
+    } else {
+        present = false
+    }
+
+    return
+}
+
+func ponza_slot_powered_on(slot_num int) (isOn bool, err error) {
+    if slot_num < 1 || slot_num > 6 {
+        err = fmt.Errorf("ERROR: ponza_slot_powered_on - slot_num must be in range 1 to 6")
+        return
+    }
+
+    slot_zero_based := slot_num - 1
+    reg_addr := uint64(0x180 + (slot_zero_based * 4))
+
+    rValue, err := panareafpga.ReadU32(reg_addr)
+    if err != nil {
+        return
+    }
+
+    // Check power bits (bits 1 and 3)
+    // Bit 1: 12V power rail (0x2)
+    // Bit 3: 54V power rail (0x8)
+    power_12v := rValue & 0x2
+    power_54v := rValue & 0x8
+
+    // Card is considered powered on if both power bits are set
+    if power_12v != 0 && power_54v != 0 {
+        isOn = true
+    } else {
+        isOn = false
+    }
+
+    return
 }

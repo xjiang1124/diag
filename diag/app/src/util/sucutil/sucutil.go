@@ -30,6 +30,8 @@ func Execute() {
 func init() {
     rootCmd.AddCommand(CreateCpldCmd())
     rootCmd.AddCommand(CreateExecCmd())
+    rootCmd.AddCommand(CreateVulSelCmd())
+    rootCmd.AddCommand(CreateVulPowerOnCmd())
     //add more sucutil commands here
     rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
