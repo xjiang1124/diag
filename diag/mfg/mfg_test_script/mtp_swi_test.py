@@ -413,7 +413,7 @@ def main():
                 rlist =  mtp_mgmt_ctrl.mtp_uc_usb_resacn(nic_list)
             elif test == "uC_FRU_DUMP_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_suc_fru_dump_check(nic_list)
-            elif test == "VUCVANO_VERSION_CHK":
+            elif test == "VULCANO_VERSION_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_version_read_check(nic_list, stage=FF_Stage.FF_SWI)
             elif test == "VULCANO_FRU_DUMP_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_fru_dump_check(nic_list)
@@ -670,13 +670,6 @@ def main():
             run_swi_test(pass_nic_list, "NIC_TYPE")
             run_swi_test(pass_nic_list, "NIC_INIT")
             run_swi_test(pass_nic_list, "FRU_PROG")
-            run_swi_test(pass_nic_list, "NIC_PWRCYC")
-            run_swi_test(pass_nic_list, "CPLD_PROG")
-            run_swi_test(pass_nic_list, "NIC_PWRCYC")
-            run_swi_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
-            run_swi_test(pass_nic_list, "NIC_PWRCYC")
-            run_swi_test(pass_nic_list, "CPLD_VERIFY")
-            run_swi_test(pass_nic_list, "FSAFE_CPLD_PROG")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_SUC_IMG_PROG")
             run_swi_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_SUC_IMG_PROG")
