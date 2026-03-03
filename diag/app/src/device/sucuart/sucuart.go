@@ -239,7 +239,7 @@ func suc_single_cmd(slot int, cmd string, print_output bool) (output []byte) {
     return
 }
 
-func suc_cmd_list(slot int, cmd_list []string) (err int) {
+func suc_cmd_list(slot int, cmd_list []string, print_output bool) (err int) {
     u, err := open_suc_uart(slot, 115200)
     if err != errType.SUCCESS {
         return (err)
@@ -252,18 +252,20 @@ func suc_cmd_list(slot int, cmd_list []string) (err int) {
             return (err)
         }
 
-        lines := strings.Split(string(buf), "\r\n")
-        for _, line := range lines {
-            if (cmd != "voltage mp2861_sensor") {
-            // Skip empty last element if string ends with \r\n
-                if line == "" {
-                    continue
+        if print_output {
+            lines := strings.Split(string(buf), "\r\n")
+            for _, line := range lines {
+                if (cmd != "voltage mp2861_sensor") {
+                // Skip empty last element if string ends with \r\n
+                    if line == "" {
+                        continue
+                    }
                 }
+                cli.Println("i", line)
             }
-            cli.Println("i", line)
-        }
-        if i != len(cmd_list) - 1 {
-            cli.Println("i")
+            if i != len(cmd_list) - 1 {
+                cli.Println("i")
+            }
         }
     }
     return
@@ -271,7 +273,7 @@ func suc_cmd_list(slot int, cmd_list []string) (err int) {
 
 func Suc_dev_list(slot int) () {
     cmd_list := []string{"device list"}
-    suc_cmd_list(slot, cmd_list)
+    suc_cmd_list(slot, cmd_list, true)
 }
 
 func Suc_dev_status(slot int) () {
@@ -292,7 +294,7 @@ func Suc_dev_status(slot int) () {
     } else {
         cli.Println("e", "Environment UUT_<slot> not set for this card or unsupported CARDT_TYPE.  Please run ./start_diag.sh + source ~/.bash_profile to set the UUT_<slot>")
     }
-    suc_cmd_list(slot, cmd_list)
+    suc_cmd_list(slot, cmd_list, true)
     cli.Println("i")
     //print the voltages for those not monitored by ina3221
     results := make(map[string]string)
@@ -327,7 +329,7 @@ func Suc_dev_margin(slot int, voltage_name string, pct int) () {
         cmd_vmarg = "voltage mp2861_margin " + strconv.Itoa(pct)
     }
     cmd_list := []string{cmd_vmarg}
-    suc_cmd_list(slot, cmd_list)
+    suc_cmd_list(slot, cmd_list, true)
     time.Sleep(time.Duration(100) * time.Millisecond)
     return
 }
@@ -396,7 +398,7 @@ func Suc_dev_vset(slot int, voltage_name string, vboot int, vout int, vmin int, 
         }
     }
     if cmd_list != nil {
-        suc_cmd_list(slot, cmd_list)
+        suc_cmd_list(slot, cmd_list, true)
         time.Sleep(time.Duration(100) * time.Millisecond)
     }
     return
@@ -404,7 +406,7 @@ func Suc_dev_vset(slot int, voltage_name string, vboot int, vout int, vmin int, 
 
 func Suc_dev_margin_info(slot int) () {
     cmd_list := []string{"voltage ds4424_info"}
-    suc_cmd_list(slot, cmd_list)
+    suc_cmd_list(slot, cmd_list, true)
 }
 
 func Suc_cpld_read(slot int, offset byte) (data byte, err int) {
@@ -630,7 +632,7 @@ func Suc_exec_cmds(slot int, cmds string) (err int) {
             command_list = append(command_list, trimmed_cmd)
         }
     }
-    err = suc_cmd_list(slot, command_list)
+    err = suc_cmd_list(slot, command_list, true)
     return
 }
 
@@ -646,8 +648,8 @@ func Suc_vul_sel_and_power_on(vul_index int, power_on bool) (err int) {
     fpga_index := ((vul_index - 1) % 6) / 2
     vul_on_fpga := (vul_index - 1) % 2
 
-    cli.Printf("i", "Selecting Vulcano %d: Slot %d (1-based), FPGA %d (0-based), Vul %d (0-based)\n",
-        vul_index, slot, fpga_index, vul_on_fpga)
+    //cli.Printf("i", "Selecting Vulcano %d: Slot %d (1-based), FPGA %d (0-based), Vul %d (0-based)\n",
+    //    vul_index, slot, fpga_index, vul_on_fpga)
 
     var cmd_list []string
 
@@ -677,12 +679,12 @@ func Suc_vul_sel_and_power_on(vul_index int, power_on bool) (err int) {
         }
     }
 
-    suc_cmd_list(slot, cmd_list)
-    if power_on == true {
+    suc_cmd_list(slot, cmd_list, false)
+    /*if power_on == true {
         cli.Printf("i", "Selected and powered on Vulcano %d\n", vul_index)
     } else {
         cli.Printf("i", "Selected Vulcano %d\n", vul_index)
-    }
+    }*/
     return errType.SUCCESS
 }
 
