@@ -7756,7 +7756,9 @@ class mtp_ctrl():
 
         expected_soc_timestamp = image_control.get_suc_sw_img(self, slot, stage)["soctimestamp"]
         expected_soc_ver = image_control.get_suc_sw_img(self, slot, stage)["socver"]
-        cpld_ver = f'{int(nic_cpld_info[0], 16)}.{int(nic_cpld_info[3], 16)}'
+        # set cpld_ver to None to skip version check, as sw bundle will overwrite cpld
+        #cpld_ver = f'{int(nic_cpld_info[0], 16)}.{int(nic_cpld_info[3], 16)}'
+        cpld_ver = None
         if not self._nic_ctrl_list[slot].zephyr_vulcano_version_check(expected_soc_ver, expected_soc_timestamp, cpld_ver):
             self.cli_log_slot_err_lock(slot, "Vulcano Zephyr Version Check Failed")
             self.mtp_get_nic_err_msg(slot)
