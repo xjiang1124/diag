@@ -216,7 +216,7 @@ def mtp_nic_uc_zephyr_cpld_update(mtp_mgmt_ctrl, slot, cpld_img_file, partition=
     if partition not in support_partitions:
         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Please provide correct cpld partion , it should be in {:d}".format(str(support_partitions)))
         return False
-    if not mtp_mgmt_ctrl._nic_ctrl_list[slot].uc_zephyr_cpld_update_predl(cpld_img_file, partition):
+    if not mtp_mgmt_ctrl._nic_ctrl_list[slot].uc_zephyr_cpld_update(cpld_img_file, partition):
         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Program CPLD Failed")
         mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot)
         return False

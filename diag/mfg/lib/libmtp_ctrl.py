@@ -8566,7 +8566,7 @@ class mtp_ctrl():
         if nic_type in SALINA_DPU_NIC_TYPE_LIST:
             l1_cmd_tout = MTP_Const.SALINA_DPU_ASIC_L1_TEST_TIMEOUT
         if nic_type in VULCANO_NIC_TYPE_LIST:
-            l1_cmd_tout = MTP_Const.VUCANO_ASIC_L1_TEST_TIMEOUT
+            l1_cmd_tout = MTP_Const.VULCANO_ASIC_L1_TEST_TIMEOUT
             # Erase QSPI Flash before run L1 since if QSPI image boot will cause snake hung 
             qspi_erase_cmd = "cd /home/diag/diag/scripts/asic/; tclsh vul_qspi_erase.tcl -slot {:s}".format(str(slot+1))
             if not self.mtp_mgmt_exec_cmd_para(slot, qspi_erase_cmd, timeout=90):
