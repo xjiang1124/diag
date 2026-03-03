@@ -121,6 +121,13 @@ func uutPresent(uutName string) (data byte, present bool) {
 
     cli.EnableVerbose()
 
+    if os.Getenv("CARD_TYPE") == "MTP_PONZA" {
+        present, _ = panareafpga.SLOTpresentUUT(uutName)
+        if present == true {
+            data = nicCpldCommon.ID_VULSEI
+        }
+    }
+
     if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
         //Check if the card is present and powered on.  
         //Scripting side does not want to see the card in inventory -present if it's powered off
@@ -176,8 +183,12 @@ func present() (err int) {
     var submatchall [][]string
     var interpoID byte
     var capabilityID byte
+    
 
     maxUut := 10
+    if os.Getenv("CARD_TYPE") == "MTP_PONZA" {
+        maxUut = 6
+    }
     prsntNoneStr := "UUT_NONE"
     regexPN := regexp.MustCompile(`.*Part Number\s+([\dA-Za-z\-]+).*`)
     regexAN := regexp.MustCompile(`.*Assembly Number\s+([\dA-Za-z\-]+).*`)
@@ -273,6 +284,8 @@ func present() (err int) {
                 presentStr = "MORTARO"
             case nicCpldCommon.ID_SARACENO:
                 presentStr = "SARACENO"
+            case nicCpldCommon.ID_VULSEI:
+                presentStr = "VULSEI"
             default:
                 presentStr = "Unknown"
             }
@@ -593,6 +606,8 @@ func sysDetect() (err int) {
                 presentStr = "MORTARO"
             case nicCpldCommon.ID_SARACENO:
                 presentStr = "SARACENO"
+            case nicCpldCommon.ID_VULSEI:
+                presentStr = "VULSEI"
             default:
                 presentStr = "Unknown"
             }

@@ -383,7 +383,7 @@ var MtpPanareaFpicProductName = tlvEntry{ product_name,      STRING,   11,  20, 
             0x20, 0x20, 0x20, 0x20}}
 
 var MtpPonzaFpicProductName = tlvEntry{ product_name,      STRING,   11,  20,   []byte{
-            //"PANAREA FPIC"
+            //"PONZA FPIC"
             0x50, 0x4F, 0x4E, 0x5A, 0x41, 0x20, 0x20, 0x20,
             0x46, 0x50, 0x49, 0x43, 0x20, 0x20, 0x20, 0x20,
             0x20, 0x20, 0x20, 0x20}}
@@ -459,17 +459,32 @@ func CardInListTlv(dev string) (found bool, minPN string) {
 func ProgTlvs(devName string, sn string, pn string, sn2 string, pn2 string,
                  mac string, date string) (err int) {
 
-    if (sn == "") || (pn == "") || (mac == "") || (date == "") {
-        cli.Println("e", "ERROR: Must have values for serial number, part number, MAC address, and date.")
-        err = errType.INVALID_PARAM
-        return
+    if (devName == "FPIC" || devName == "IOBR" || devName == "IOBL") {   
+        //These parts do not input a mac address and will jsut have a mac address of 0x00..00 if one
+        //is not entered.
+        if (sn == "") || (pn == "") || (date == "") {
+            cli.Println("e", "ERROR: Must have values for serial number, part number, and date.")
+            err = errType.INVALID_PARAM
+            return
+        }
+        //If the user didn't enter a mac address, put in a blank one
+        if (len(mac) != 12) {
+            mac = "000000000000"
+        }
+    } else {
+        if (sn == "") || (pn == "") || (mac == "") || (date == "") {
+            cli.Println("e", "ERROR: Must have values for serial number, part number, MAC address, and date.")
+            err = errType.INVALID_PARAM
+            return
+        }
     }
     //no read from FRU, use default values with update of input sn/sn2/pn/pn2/mac/date
     // debug
     cli.Println("i", "Update SN  :", sn)
     cli.Println("i", "Update PN  :", pn)
-    cli.Println("i", fmt.Sprintf("BaseMacAddr: 0x%02X:%02X:%02X:%02X:%02X:%02X",
-                                 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]))
+    cli.Println("i", fmt.Sprintf("BaseMacAddr: %c%c:%c%c:%c%c:%c%c:%c%c:%c%c",
+                                 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], 
+                                 mac[6], mac[7], mac[8], mac[9], mac[10], mac[11]))
     cli.Println("i", "MFG Date   :", date)
     if sn2 != "" {
         cli.Println("i", "Update SN2 :", sn2)
