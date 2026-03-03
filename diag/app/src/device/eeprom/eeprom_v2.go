@@ -2505,6 +2505,27 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
             }
             return
         }
+
+        //Set Write Protect Bit from the Micro-controller to low on DPU's in Panarea MTP.
+        if os.Getenv("CARD_TYPE") == "MTP_PANAREA" && (bus > 2 && bus < 13) {
+            cli.Printf("i", "Removing eeprom write protect");
+            err = sucuart.Suc_exec_cmds(int(bus-2), "gpio conf pb 2 o0")
+            if err != errType.SUCCESS {
+               cli.Printf("e", "ERROR: Failed to disable the eeprom write protect bit on the SuC")
+                return
+            }
+        }
+        //Set Write Protect Bit from the Micro-controller to low on Vulsei boards in Ponza MTP
+        if os.Getenv("CARD_TYPE") == "MTP_PONZA" && (bus > 2 && bus < 9) {
+            cli.Printf("i", "Removing eeprom write protect");
+            err = sucuart.Suc_exec_cmds(int(bus-2), "gpio conf pe 3 o0")
+            if err != errType.SUCCESS {
+               cli.Printf("e", "ERROR: Failed to disable the eeprom write protect bit on the SuC")
+                return
+            }
+        }
+        
+
         for i:=0;i<len(Data);i++ {
             misc.SleepInUSec(5000) //delay for writing
             if I2cAddr16 == true {

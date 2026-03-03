@@ -229,24 +229,26 @@ func suc_single_cmd(slot int, cmd string, print_output bool) (output []byte) {
     return
 }
 
-func suc_cmd_list(slot int, cmd_list []string) () {
+func suc_cmd_list(slot int, cmd_list []string) (err int) {
     u, err := open_suc_uart(slot, 115200)
     if err != errType.SUCCESS {
-        return
+        return (err)
     }
     defer u.close_suc_uart()
 
     for i, cmd := range cmd_list {
         buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
         if err != errType.SUCCESS {
-            return
+            return (err)
         }
 
         lines := strings.Split(string(buf), "\r\n")
         for _, line := range lines {
+            if (cmd != "voltage mp2861_sensor") {
             // Skip empty last element if string ends with \r\n
-            if line == "" {
-                continue
+                if line == "" {
+                    continue
+                }
             }
             cli.Println("i", line)
         }
@@ -488,7 +490,7 @@ func Suc_fru_read(slot int) (data []byte, err int) {
     return
 }
 
-func Suc_exec_cmds(slot int, cmds string) () {
+func Suc_exec_cmds(slot int, cmds string) (err int) {
     raw_commands := strings.Split(cmds, ";")
     var command_list []string
     for _, command := range raw_commands {
@@ -497,5 +499,6 @@ func Suc_exec_cmds(slot int, cmds string) () {
             command_list = append(command_list, trimmed_cmd)
         }
     }
-    suc_cmd_list(slot, command_list)
+    err = suc_cmd_list(slot, command_list)
+    return
 }

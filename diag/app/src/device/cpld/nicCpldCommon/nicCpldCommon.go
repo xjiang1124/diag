@@ -47,6 +47,7 @@ const (
     ID_GELSOU          = 0x6B
     ID_MORTARO         = 0x70
     ID_SARACENO        = 0x71
+    ID_VULSEI          = 0x72
     ID_TAORMINA_ELBA   = 0x80    //PENSANDO+HPE SWITCH
     ID_LIPARI_ELBA     = 0x81    //PENSANDO SWITCH
     ID_MTFUJI_ELBA     = 0x82    //CISCO SWITCH
