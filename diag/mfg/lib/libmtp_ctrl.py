@@ -325,10 +325,16 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("MTP ASIC Version: {:s}".format(self._asic_ver))
 
-        script_ver_match = re.search(r"image_amd64_.....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
-        if script_ver_match:
-            self._script_ver = script_ver_match.group(2)
-        self.cli_log_report_inf("MFG Script Version: {:s}".format(self._script_ver))
+        if libmfg_utils.MFG_GIT_VERSION:
+            self.cli_log_report_inf("Build Hashtag: {:s}".format(libmfg_utils.MFG_GIT_VERSION))
+
+        if libmfg_utils.MFG_PKG_VERSION:
+            self.cli_log_report_inf("MFG Script Version: {:s}".format(libmfg_utils.MFG_PKG_VERSION))
+        else:
+            script_ver_match = re.search(r"image_amd64_.....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+            if script_ver_match:
+                self._script_ver = script_ver_match.group(2)
+            self.cli_log_report_inf("MFG Script Version: {:s}".format(self._script_ver))
 
         self.cli_log_inf("MTP System Info Dump End\n", level=0)
         return True
@@ -7750,7 +7756,9 @@ class mtp_ctrl():
 
         expected_soc_timestamp = image_control.get_suc_sw_img(self, slot, stage)["soctimestamp"]
         expected_soc_ver = image_control.get_suc_sw_img(self, slot, stage)["socver"]
-        cpld_ver = f'{int(nic_cpld_info[0], 16)}.{int(nic_cpld_info[3], 16)}'
+        # set cpld_ver to None to skip version check, as sw bundle will overwrite cpld
+        #cpld_ver = f'{int(nic_cpld_info[0], 16)}.{int(nic_cpld_info[3], 16)}'
+        cpld_ver = None
         if not self._nic_ctrl_list[slot].zephyr_vulcano_version_check(expected_soc_ver, expected_soc_timestamp, cpld_ver):
             self.cli_log_slot_err_lock(slot, "Vulcano Zephyr Version Check Failed")
             self.mtp_get_nic_err_msg(slot)

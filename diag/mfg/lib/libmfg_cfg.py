@@ -12,6 +12,8 @@ FST_SCAN_ENABLE = False
 SALINA_HMAC_PROGRAM_ENABLE = False
 MTP_HEALTH_MONITOR = False
 DRY_RUN = False
+MFG_GIT_VERSION = ''
+MFG_PKG_VERSION = ''
 
 class NIC_IMAGES:
     ### IMAGES VERSION CONTROL FOR DL AND SWI:
@@ -1424,10 +1426,10 @@ class NIC_IMAGES:
     suc_diag_img["MORTARO"] = "vulcano/mortaro/ainic_fw_vulcano_0124_2026.pldmfw"
     suc_diagimg_suc_date["MORTARO"] = "2026-01-24 13:21:37"   #YYYY-mm-dd HH:MM:SS
     inter_suc_diag_img["MORTARO"] = "vulcano/mortaro/interim-v0_2_6_0.pldm"
-    suc_sw_img["MORTARO"] = "vulcano/mortaro/ainic_bundle_1.125.0-a-82/firmware/ainic_fw_vulcano.pldmfw"
-    suc_swimg_suc_date["MORTARO"] = "2026-01-24 09:34:41"   #YYYY-mm-dd HH:MM:SS
-    suc_swimg_soc_date["MORTARO"] = "Jan 24 2026 10:39:15"
-    suc_swimg_soc_ver["MORTARO"] = "1.125.0-a-82"
+    suc_sw_img["MORTARO"] = "vulcano/mortaro/ainic_bundle_1.125.1-a-8/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["MORTARO"] = "2026-02-23 01:52:01"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["MORTARO"] = "Feb 22 2026 23:37:52"
+    suc_swimg_soc_ver["MORTARO"] = "1.125.1-a-8"
 
     cpld_img["58-0015-01"] = "mortaro_rev02_02_TS_26-02-24-14-58_cfg0.jed"
     cpld_ver["58-0015-01"] = "0x2"
@@ -1442,10 +1444,10 @@ class NIC_IMAGES:
     suc_diag_img["58-0015-01"] = "vulcano/mortaro/ainic_fw_vulcano_0124_2026.pldmfw"
     suc_diagimg_suc_date["58-0015-01"] = "2026-01-24 13:21:37"   #YYYY-mm-dd HH:MM:SS
     inter_suc_diag_img["58-0015-01"] = "vulcano/mortaro/interim-v0_2_6_0.pldm"
-    suc_sw_img["58-0015-01"] = "vulcano/mortaro/ainic_bundle_1.125.0-a-82/firmware/ainic_fw_vulcano.pldmfw"
-    suc_swimg_suc_date["58-0015-01"] = "2026-01-24 09:34:41"   #YYYY-mm-dd HH:MM:SS
-    suc_swimg_soc_date["58-0015-01"] = "Jan 24 2026 10:39:15"
-    suc_swimg_soc_ver["58-0015-01"] = "1.125.0-a-82"
+    suc_sw_img["58-0015-01"] = "vulcano/mortaro/ainic_bundle_1.125.1-a-8/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["58-0015-01"] = "2026-02-23 01:52:01"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["58-0015-01"] = "Feb 22 2026 23:37:52"
+    suc_swimg_soc_ver["58-0015-01"] = "1.125.1-a-8"
 
     cpld_img["100-700000004"] = "mortaro_rev02_02_TS_26-02-24-14-58_cfg0.jed"
     cpld_ver["100-700000004"] = "0x2"
@@ -1460,10 +1462,10 @@ class NIC_IMAGES:
     suc_diag_img["100-700000004"] = "vulcano/mortaro/ainic_fw_vulcano_0124_2026.pldmfw"
     suc_diagimg_suc_date["100-700000004"] = "2026-01-24 13:21:37"   #YYYY-mm-dd HH:MM:SS
     inter_suc_diag_img["100-700000004"] = "vulcano/mortaro/interim-v0_2_6_0.pldm"
-    suc_sw_img["100-700000004"] = "vulcano/mortaro/ainic_bundle_1.125.0-a-82/firmware/ainic_fw_vulcano.pldmfw"
-    suc_swimg_suc_date["100-700000004"] = "2026-01-24 09:34:41"   #YYYY-mm-dd HH:MM:SS
-    suc_swimg_soc_date["100-700000004"] = "Jan 24 2026 10:39:15"
-    suc_swimg_soc_ver["100-700000004"] = "1.125.0-a-82"
+    suc_sw_img["100-700000004"] = "vulcano/mortaro/ainic_bundle_1.125.1-a-8/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["100-700000004"] = "2026-02-23 01:52:01"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["100-700000004"] = "Feb 22 2026 23:37:52"
+    suc_swimg_soc_ver["100-700000004"] = "1.125.1-a-8"
 
 
 class MTP_IMAGES:

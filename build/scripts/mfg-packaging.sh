@@ -51,12 +51,19 @@ mkdir -p $TARGET_DIR
 cp -r $TOP_DIR/diag/mfg $TARGET_DIR
 mkdir -p $TARGET_DIR/mfg/release
 
+# Update some variables, if required.
 case "$product" in
     GELSO|SARACENO|MORTARO)
+        git_str=$(git log -1 --format="%H %D")
+        echo "GIT hashtag is $git_str"
         # Copy diag image and update config file
         cp $IMG_DIR/image_amd64_vulcano.tar $TARGET_DIR/mfg/release/image_amd64_vulcano.tar
         touch $TARGET_DIR/mfg/release/image_arm64_vulcano.tar
         cd $TARGET_DIR
+        # Update the diag version and mfg version
+        sed -i "s|MFG_GIT_VERSION = ''|MFG_GIT_VERSION = '$git_str'|" mfg/lib/libmfg_cfg.py
+        sed -i "s|MFG_PKG_VERSION = ''|MFG_PKG_VERSION = '$version'|" mfg/lib/libmfg_cfg.py
+        # Update the diag package name
         sed -i 's|MTP_AMD64_IMAGE = ".*\.tar"|MTP_AMD64_IMAGE = "image_amd64_vulcano.tar"|' mfg/lib/libmfg_cfg.py
         sed -i 's|MTP_ARM64_IMAGE = ".*\.tar"|MTP_ARM64_IMAGE = "image_arm64_vulcano.tar"|' mfg/lib/libmfg_cfg.py
         # Set power on delay to 30 seconds for Saraceno/Mortaro
