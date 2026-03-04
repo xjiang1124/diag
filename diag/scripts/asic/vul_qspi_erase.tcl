@@ -45,6 +45,31 @@ set uut "UUT_$slot"
 set card_type $::env($uut)
 plog_msg "card type: $card_type; UUT: $uut"
 exec jtag_accpcie_vulcano clr $slot
+set ::board_rev [vul_get_board_rev]
+if {${::board_rev} eq "board-other"} {
+    plog_err "Failed to get board_rev, exit"
+    plog_err "QSPI ERASE FAILED"
+    exit
+}
+if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
+    plog_msg "config QSPI mux"
+    set config_mux_fail 0
+    if {[catch {set output [exec sucutil exec -s $::slot -c "gpio conf pb 0 o0"]}]} {
+        set config_mux_fail 1
+    }
+    plog_msg $output
+    # Strip ANSI codes and check for content
+    set clean_output [regsub -all {\x1b\[[0-9;]*[a-zA-Z]} $output ""]
+    if { [regexp {\[INFO\]\s+\[.+\]\s+\S} $clean_output] } {
+        set config_mux_fail 1
+    }
+    if {$config_mux_fail == 1} {
+        plog_err "Failed to config QSPI mux, exit"
+        plog_err "QSPI ERASE FAILED"
+        exit
+    }
+}
+
 vul_j2c
 plog_msg "_msrd"
 plog_msg [eval _msrd]
