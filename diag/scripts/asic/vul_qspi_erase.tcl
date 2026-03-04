@@ -51,14 +51,6 @@ if {${::board_rev} eq "board-other"} {
     plog_err "QSPI ERASE FAILED"
     exit
 }
-vul_j2c
-plog_msg "_msrd"
-plog_msg [eval _msrd]
-vulcano_setup 0
-plog_msg "calling vul_pll_fix"
-vul_pll_fix
-vul_vt_init 0
-after 1000
 if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
     plog_msg "config QSPI mux"
     set config_mux_fail 0
@@ -78,6 +70,15 @@ if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
         exit
     }
 }
+
+vul_j2c
+plog_msg "_msrd"
+plog_msg [eval _msrd]
+vulcano_setup 0
+plog_msg "calling vul_pll_fix"
+vul_pll_fix
+vul_vt_init 0
+after 1000
 set err_cnt_init [ plog_get_err_count ]
 vul_qspi_erase 0x70100000
 set err_cnt_fnl [ plog_get_err_count ]
