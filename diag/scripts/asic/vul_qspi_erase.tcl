@@ -66,7 +66,6 @@ if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
     if {$config_mux_fail == 1} {
         plog_err "Failed to config QSPI mux, exit"
         plog_err "QSPI ERASE FAILED"
-        diag_close_j2c_if $port $slot
         exit
     }
 }
