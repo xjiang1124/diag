@@ -77,13 +77,37 @@ if {$ASIC_TYPE == "VULCANO"} {
     puts "Vulcano L1"
     set ::slot $slot
     set ::port $port
+
+    set ::board_rev [vul_get_board_rev]
+    if {${::board_rev} eq "board-other"} {
+        plog_err "Failed to get board_rev, exit"
+        exit -1
+    }
+
+    if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
+        plog_msg "config QSPI mux"
+        set config_mux_fail 0
+        if {[catch {set output [exec sucutil exec -s $::slot -c "gpio conf pb 0 o0"]}]} {
+            set config_mux_fail 1
+        }
+        plog_msg $output
+        # Strip ANSI codes and check for content
+        set clean_output [regsub -all {\x1b\[[0-9;]*[a-zA-Z]} $output ""]
+        if { [regexp {\[INFO\]\s+\[.+\]\s+\S} $clean_output] } {
+            set config_mux_fail 1
+        }
+        if {$config_mux_fail == 1} {
+            plog_err "Failed to config QSPI mux, exit"
+            exit -1
+        }
+    }
+
     vul_j2c
 
     puts "_msrd"
     set rtn [eval _msrd]
     puts $rtn
 
-    set ::board_rev [vul_get_board_rev]
     vulcano_setup 0
 
     plog_msg "calling vul_card_rst 1 0"
@@ -96,12 +120,8 @@ if {$ASIC_TYPE == "VULCANO"} {
     after 1000
     vul_set_serdes_pn_swap_file
 
-    #reset_to_proto_mode
-    #vul_print_voltage_temp
     vul_die_id_print
     vul_get_git_rev
-    #plog_msg "Measuring frequencies:"
-    #vul_get_freq
 
     set err_cn [eval $l1_cmd]
 
