@@ -13,7 +13,7 @@ import threading
 from collections import OrderedDict
 from time import sleep
 
-import datetime
+
 
 sys.path.append("../lib")
 import common
@@ -34,7 +34,7 @@ class nic_test_vul:
         ret = 0
         try:
             uart_session = common.session_start()
-            ret = self.vul_con.usb_uart_session_connect(uart_session, args.slot, uart_id=0)
+            ret = self.vul_con.vul_uart_session_connect(uart_session, args.slot, uart_id=1)
             if ret == 0:
                 cmdret, output = self.vul_con.uart_session_cmd_w_ot(uart_session, cmd, ending=["uart:~\$","suc:~\$"], timeout=30)
                 if cmdret != 0:
@@ -219,11 +219,22 @@ class nic_test_vul:
             common.session_cmd(session, "turn_on_slot.sh on "+str(args.slot), timeout=90)
             ret = self.suc_dev_test_common("cpld_reg read 0x54", "CPLD[0x54] = 0xff", args)
             if ret != 0:
-                print("PC_TEST has failed!", ite)
                 common.session_stop(session)
+                print("PC_TEST has failed!", ite)
                 return -1
-            print("PC_TEST has passed!", ite)
             common.session_stop(session)
+            # check vulcano console
+            uart_session = common.session_start()
+            ret = self.vul_con.vul_uart_session_connect(uart_session, args.slot, uart_id=2)
+            if ret != 0:
+                self.nic_con.uart_session_stop(uart_session)
+                common.session_stop(uart_session)
+                print("PC_TEST has failed!", ite)
+                return -1
+            else:
+                print("PC_TEST has passed!", ite)
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
         return ret
 
 if __name__ == "__main__":
