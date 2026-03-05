@@ -18,24 +18,34 @@ var marginCmd = &cobra.Command{
         slot, _ := cmd.Flags().GetInt("slot")
         devName, _ := cmd.Flags().GetString("dev")
         marginPercent, _ := cmd.Flags().GetInt("pct")
-        if slot >= 1 && slot <= 10 {
-            if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
-                sucuart.Suc_dev_margin(slot, strings.ToUpper(devName), marginPercent)
+        if os.Getenv("CARD_TYPE") == "MTP_PONZA" {
+            // For MTP_PONZA, slot represents vul_index (1-36)
+            if slot >= 1 && slot <= 36 {
+                sucuart.Suc_dev_margin_ponza(slot, strings.ToUpper(devName), marginPercent)
                 return
+            } else {
+                fmt.Printf("ERROR: For MTP_PONZA, vul_index must be in range 1 to 36\n")
             }
-            uut = "UUT_" + strconv.Itoa(slot)
-        }
+        } else {
+            if slot >= 1 && slot <= 10 {
+                if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+                    sucuart.Suc_dev_margin(slot, strings.ToUpper(devName), marginPercent)
+                    return
+                }
+                uut = "UUT_" + strconv.Itoa(slot)
+            }
 
-        if marginPercent > 10 || marginPercent < -10 {
-            fmt.Printf("ERROR: Margin percent must be between -10 and 10.  You entered %d\n", marginPercent)
-            os.Exit(-1)
+            if marginPercent > 10 || marginPercent < -10 {
+                fmt.Printf("ERROR: Margin percent must be between -10 and 10.  You entered %d\n", marginPercent)
+                os.Exit(-1)
+            }
+            hwdev.Margin(strings.ToUpper(devName), marginPercent, uut)
         }
-        hwdev.Margin(strings.ToUpper(devName), marginPercent, uut)
     },
 }
 
 func init() {
-    marginCmd.Flags().IntP("slot", "s", 0, "UUT Slot")
+    marginCmd.Flags().IntP("slot", "s", 0, "UUT Slot (or vul_index for MTP_PONZA)")
     marginCmd.Flags().StringP("dev", "d", "ALL", "Device name")
     marginCmd.Flags().IntP("pct", "p", 0, "Voltage margin percent between -10 and 10")
     marginCmd.MarkFlagRequired("pct")
@@ -76,7 +86,7 @@ func createSetCommand() *cobra.Command {
             }
         },
     }
-    setCmd.Flags().IntP("slot", "s", 0, "UUT Slot")
+    setCmd.Flags().IntP("slot", "s", 0, "UUT Slot (or vul_index for MTP_PONZA)")
     setCmd.Flags().StringP("dev", "d", "ALL", "Device name")
     setCmd.Flags().IntP("vboot", "b", -1, "vboot(mv)")
     setCmd.Flags().IntP("vout", "o", -1, "vout(mv)")

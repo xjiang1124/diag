@@ -321,6 +321,17 @@ func Suc_dev_status(slot int) () {
     }
 }
 
+func Suc_dev_status_ponza(vul_index int) () {
+    var cmd_list []string
+    // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
+    slot := ((vul_index - 1) / 6) + 1
+    //fpga_index := ((vul_index - 1) % 6) / 2
+    //vul_on_fpga := (vul_index - 1) % 2
+    // TBD: build the cmd_list based on the vulcano index
+    cmd_list = []string{"cmd1", "cmd2", "cmd3"}
+    suc_cmd_list(slot, cmd_list, true)
+}
+
 func Suc_dev_margin(slot int, voltage_name string, pct int) () {
     var cmd_vmarg string
     if voltage_name != "VDDCR_0P65" {
@@ -328,6 +339,20 @@ func Suc_dev_margin(slot int, voltage_name string, pct int) () {
     } else {
         cmd_vmarg = "voltage mp2861_margin " + strconv.Itoa(pct)
     }
+    cmd_list := []string{cmd_vmarg}
+    suc_cmd_list(slot, cmd_list, true)
+    time.Sleep(time.Duration(100) * time.Millisecond)
+    return
+}
+
+func Suc_dev_margin_ponza(vul_index int, voltage_name string, pct int) () {
+    var cmd_vmarg string
+    // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
+    slot := ((vul_index - 1) / 6) + 1
+    //fpga_index := ((vul_index - 1) % 6) / 2
+    //vul_on_fpga := (vul_index - 1) % 2
+    // TBD: build the cmd_vmarg based on the vulcano index
+    cmd_vmarg = "cmd1"
     cmd_list := []string{cmd_vmarg}
     suc_cmd_list(slot, cmd_list, true)
     time.Sleep(time.Duration(100) * time.Millisecond)
