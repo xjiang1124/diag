@@ -453,7 +453,7 @@ func Suc_dev_margin_info_ponza(vul_index int) () {
     //fpga_index := ((vul_index - 1) % 6) / 2
     //vul_on_fpga := (vul_index - 1) % 2
     // TBD: build the cmd_vinfo based on the vulcano index
-    cmd = "cmd1"
+    cmd := "cmd1"
     cmd_list := []string{cmd}
     suc_cmd_list(slot, cmd_list, true)
 }
