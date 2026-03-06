@@ -2286,6 +2286,102 @@ class nic_test_v2:
         common.session_stop(session)
         return ret
 
+    def sal_qspi_zephyr(self, args, action="erase"):
+        ret = 0
+        if action == "erase":
+            qspi_image_path = "/home/diag/diag/scripts/dpu_zephyr_qspi/"
+            qspi_sh_script = "qspi_erase_zephyr.sh"
+            pass_sig = "QSPI ERASE PASSED"
+        else:
+            qspi_image_path = "/home/diag/diag/scripts/dpu_zephyr_qspi/"
+            qspi_sh_script = "qspi_prog_zephyr.sh"
+            pass_sig = "QSPI PROG PASSED"
+
+        if not os.path.exists(os.path.join(qspi_image_path, qspi_sh_script)):
+            print("===== FAILED: Unable to locate {} in {} directory".format(qspi_sh_script, qspi_image_path))
+            return -1
+        cur_dir = os.getcwd()
+        session = common.session_start()
+        common.session_cmd(session, "cd {}".format(qspi_image_path))
+        ret = common.session_cmd(session, "./{} {}".format(qspi_sh_script, args.slot), ending=[pass_sig, "FAILED"], timeout=600)
+        if ret == 1:
+            print("QSPI {} passed".format(action))
+            ret = 0
+        else:
+            print("ERROR :: QSPI {} has failed!".format(action))
+            ret = -1
+        common.session_cmd(session, "cd {}".format(cur_dir))
+        common.session_stop(session)
+        return ret
+
+    def sal_set_bootdelay(self, args, unset=False):
+        """
+            Newer uboot keeps bootdelay=0 to help pciemgr timing. That makes stopping in uboot by hitting Ctrl-C impossible from pexpect.
+            This workaround involves erasing the zephyr image to allow stopping at uboot, change the bootdelay, then reprogram back the same zephyr image.
+            Further diag tests can be run with this increased bootdelay in MTP.
+            At the end of testing, the bootdelay *must* be set back to default of 0 at the risk of shipping it out with these test settings.
+
+            The summary of steps is:
+
+            cd ~/diag/scripts/dpu_zephyr_qspi/; ./qspi_erase_zephyr.sh 1
+            cd ~/diag/python/regression; ./sal_con.py -s <> -b a35_uboot
+            DSC# env set bootdelay 2
+            DSC# env save
+            DSC# env print
+            cd ~/diag/scripts/dpu_zephyr_qspi/; ./qspi_prog_zephyr.sh 1
+
+            This overly elaborate workaround was thought to be more future-proof than using a private uboot image with a different bootdelay setting...
+            - as experienced at the time of hitting this issue, maintaining that private image became a point of failure.
+        """
+        ret = 0
+        session = common.session_start()
+
+        # Erase zephyr
+        if 0 != self.sal_qspi_zephyr(args, action="erase"):
+            common.session_stop(session)
+            print("===== FAILED: Aborting setting bootdelay uboot env")
+            return -1
+
+        # Stop in uboot
+        if sal_con.enter_a35_uboot(int(args.slot), session):
+            print("===== FAILED: slot {} couldn't boot a35 uboot".format(args.slot))
+            common.session_stop(session)
+            return -1
+        print("\nDisable WDT")
+        cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(args.slot) + 2)
+        common.session_cmd(session, cmd)
+        cmd = "i2cget -y {} 0x4f 0x1".format(int(args.slot)+2)
+        common.session_cmd(session, cmd)
+
+        # Write new bootdelay value
+        ret = self.nic_con.uart_session_connect(session, args.slot, uart_id=0)
+        if ret != 0:
+            common.session_stop(session)
+            return ret
+        try:
+            if unset:
+                self.nic_con.uart_session_cmd(session, "env default bootdelay")
+            else:
+                self.nic_con.uart_session_cmd(session, "env set bootdelay 2") ## higher values cause other bootup issues aside from PCIE
+            self.nic_con.uart_session_cmd(session, "env save")
+            self.nic_con.uart_session_cmd(session, "env print")
+        except pexpect.TIMEOUT:
+            print ("Failed to set bootdelay uboot env")
+            ret = -1
+        self.nic_con.uart_session_stop(session)
+        common.session_stop(session)
+
+        # Reprogram back the same zephyr image
+        if 0 != self.sal_qspi_zephyr(args, action="prog"):
+            print("===== FAILED: Aborting setting bootdelay uboot env")
+            return -1
+
+        print("Done setting bootdelay uboot env")
+        return ret
+
+    def sal_unset_bootdelay(self, args):
+        return self.sal_set_bootdelay(args, unset=True)
+
 if __name__ == "__main__":
 
     test = nic_test_v2()
@@ -2715,6 +2811,14 @@ if __name__ == "__main__":
     parser_sal_mbist.add_argument("-reset",         "--reset",      help="Reset (warm/cold)", type=str, default="cold")
     parser_sal_mbist.add_argument("-test_list",     "--test_list",  help="Run only some tests, e.g. ALGO22. default: MBIST", type=str, default="")
     parser_sal_mbist.set_defaults(func=test.sal_mbist_func)
+
+    # BOOTDELAY
+    parser_sal_set_bootdelay = sal_misc_subp.add_parser('set_bootdelay', help='Allow more time to hit Ctrl-C while booting zephyr', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_set_bootdelay.add_argument("-slot",          "--slot",       help="NIC slot", type=str, required=True)
+    parser_sal_set_bootdelay.set_defaults(func=test.sal_set_bootdelay)
+    parser_sal_unset_bootdelay = sal_misc_subp.add_parser('unset_bootdelay', help='Revert bootdelay settings back to default', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_unset_bootdelay.add_argument("-slot",          "--slot",       help="NIC slot", type=str, required=True)
+    parser_sal_unset_bootdelay.set_defaults(func=test.sal_unset_bootdelay)
 
     try:
         args = parser.parse_args()
