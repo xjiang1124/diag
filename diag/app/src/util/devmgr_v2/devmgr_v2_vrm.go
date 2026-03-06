@@ -49,7 +49,7 @@ func init() {
     marginCmd.Flags().StringP("dev", "d", "ALL", "Device name")
     marginCmd.Flags().IntP("pct", "p", 0, "Voltage margin percent between -10 and 10")
     marginCmd.MarkFlagRequired("pct")
-    if os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
+    if os.Getenv("CARD_TYPE") == "MTP_PANAREA" || os.Getenv("CARD_TYPE") == "MTP_PONZA" {
         marginCmd.AddCommand(createMarginInfoCommand())
         marginCmd.AddCommand(createSetCommand())
     }
@@ -61,8 +61,18 @@ func createMarginInfoCommand() *cobra.Command {
         Short: "Show voltage margin info from DS4424",
         Run: func(cmd *cobra.Command, args []string) {
             slot, _ := cmd.Flags().GetInt("slot")
-            if slot >= 1 && slot <= 10 {
-                sucuart.Suc_dev_margin_info(slot)
+            if os.Getenv("CARD_TYPE") == "MTP_PONZA" {
+                // For MTP_PONZA, slot represents vul_index (1-36)
+                if slot >= 1 && slot <= 36 {
+                    sucuart.Suc_dev_margin_info_ponza(slot)
+                    return
+                } else {
+                    fmt.Printf("ERROR: For MTP_PONZA, vul_index must be in range 1 to 36\n")
+                }
+            } else {
+                if slot >= 1 && slot <= 10 {
+                    sucuart.Suc_dev_margin_info(slot)
+                }
             }
         },
     }
@@ -81,8 +91,18 @@ func createSetCommand() *cobra.Command {
             vout, _ := cmd.Flags().GetInt("vout")
             vmin, _ := cmd.Flags().GetInt("vmin")
             vmax, _ := cmd.Flags().GetInt("vmax")
-            if slot >= 1 && slot <= 10 {
-                sucuart.Suc_dev_vset(slot, strings.ToUpper(devName), vboot, vout, vmin, vmax)
+            if os.Getenv("CARD_TYPE") == "MTP_PONZA" {
+                // For MTP_PONZA, slot represents vul_index (1-36)
+                if slot >= 1 && slot <= 36 {
+                    sucuart.Suc_dev_vset_ponza(slot, strings.ToUpper(devName), vboot, vout, vmin, vmax)
+                    return
+                } else {
+                    fmt.Printf("ERROR: For MTP_PONZA, vul_index must be in range 1 to 36\n")
+                }
+            } else {
+                if slot >= 1 && slot <= 10 {
+                    sucuart.Suc_dev_vset(slot, strings.ToUpper(devName), vboot, vout, vmin, vmax)
+                }
             }
         },
     }

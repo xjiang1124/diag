@@ -429,8 +429,32 @@ func Suc_dev_vset(slot int, voltage_name string, vboot int, vout int, vmin int, 
     return
 }
 
+func Suc_dev_vset_ponza(vul_index int, voltage_name string, vboot int, vout int, vmin int, vmax int) () {
+    var cmd_list []string
+    // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
+    slot := ((vul_index - 1) / 6) + 1
+    //fpga_index := ((vul_index - 1) % 6) / 2
+    //vul_on_fpga := (vul_index - 1) % 2
+    // TBD: build the cmd_vset based on the vulcano index
+    if cmd_list != nil {
+        suc_cmd_list(slot, cmd_list, true)
+        time.Sleep(time.Duration(100) * time.Millisecond)
+    }
+}
+
 func Suc_dev_margin_info(slot int) () {
     cmd_list := []string{"voltage ds4424_info"}
+    suc_cmd_list(slot, cmd_list, true)
+}
+
+func Suc_dev_margin_info_ponza(vul_index int) () {
+    // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
+    slot := ((vul_index - 1) / 6) + 1
+    //fpga_index := ((vul_index - 1) % 6) / 2
+    //vul_on_fpga := (vul_index - 1) % 2
+    // TBD: build the cmd_vinfo based on the vulcano index
+    cmd = "cmd1"
+    cmd_list := []string{cmd}
     suc_cmd_list(slot, cmd_list, true)
 }
 
@@ -704,13 +728,13 @@ func Suc_vul_sel_and_power_on(vul_index int, power_on bool) (err int) {
         }
     }
 
-    suc_cmd_list(slot, cmd_list, false)
+    err = suc_cmd_list(slot, cmd_list, false)
     /*if power_on == true {
         cli.Printf("i", "Selected and powered on Vulcano %d\n", vul_index)
     } else {
         cli.Printf("i", "Selected Vulcano %d\n", vul_index)
     }*/
-    return errType.SUCCESS
+    return err
 }
 
 func ponza_slot_present(slot_num int) (present bool, err error) {
