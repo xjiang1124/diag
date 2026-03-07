@@ -188,11 +188,25 @@ proc mbist_algo22 {} {
     set east_err 0
     set west_err 0
 
+    set card_type [sal_get_card_type]
     set hvt [sal_harvested_asic]
 
-    set arm_err  [sal_jtag_algo22_mbist_arm]
     set east_err [sal_jtag_algo22_mbist_east]
     set west_err [sal_jtag_algo22_mbist_west]
+
+    if {$card_type == "LENI" || $card_type == "LENI48G"} {
+        # algo22_mbist_arm causes VDD_CORE fault
+        # but for undiscovered reason, if we run at half-speed first then rerun normally, it works
+        sal_ow; wr sal0.ms.soc.cfg_clk 0x6
+        plog_msg "sal0.ms.soc.cfg_clk:"; plog_msg [eval {rd sal0.ms.soc.cfg_clk}]
+        set arm_err1  [sal_jtag_algo22_mbist_arm]
+        sal_ow; wr sal0.ms.soc.cfg_clk 0x7
+        plog_msg "sal0.ms.soc.cfg_clk:"; plog_msg [eval {rd sal0.ms.soc.cfg_clk}]
+        set arm_err2  [sal_jtag_algo22_mbist_arm]
+        set arm_err [expr $arm_err1 + $arm_err2]
+    } else {
+        set arm_err  [sal_jtag_algo22_mbist_arm]
+    }
 
     set err [ expr { $arm_err | $east_err | $west_err } ]
     if {$err == 0} {
