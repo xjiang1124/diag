@@ -777,6 +777,10 @@ def main():
                     rlist = salina_snake_qspi_program(mtp_mgmt_ctrl, nic_list)
                 elif test == "SALINA_QSPI_ERASE":
                     rlist = salina_erase_qspi(mtp_mgmt_ctrl, nic_list)
+                elif test == "SALINA_BOOTDELAY_SET":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_bootdelay(nic_list, set_delay=True)
+                elif test == "SALINA_BOOTDELAY_RESTORE":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_bootdelay(nic_list, set_delay=False)
                 elif test == "SALINA_SET_PCIEAWD_ENV":
                     rlist = mtp_mgmt_ctrl.mtp_set_piceawd_env_salina(nic_list)
                 elif test in ("SNAKE_SALINA_ASIC_WORK_DIR_PREPARE",):
@@ -1433,9 +1437,7 @@ def main():
                     #prog special image
                     run_regression_test(salina_dpu_snake, "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE")
                     run_regression_test(salina_dpu_snake, "SALINA_SNAKE_QSPI_IMG_PROG")
-                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr", warm_reset=False)
-                    #set a35 to mainfwa, since this sname image not wort with a35 goldfw
-                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWA")
+                    run_regression_test(salina_dpu_snake, "SALINA_BOOTDELAY_SET")
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux", warm_reset=False)
                 elif test_section == "STRESS":
                     ######################################################################
@@ -1535,6 +1537,7 @@ def main():
                     # run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
                     # run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
                     # run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
+                    run_regression_test(salina_dpu_snake, "SALINA_BOOTDELAY_RESTORE")
 
                 # print temperature after the test
                 if GLB_CFG_MFG_TEST_MODE:
