@@ -99,6 +99,7 @@ class mtp_ctrl():
         self._os_ver = None
         self._diag_ver = None
         self._asic_ver = None
+        self._asic_hashtag = None
         self._script_ver = ""
         self._swmtestmode = [Swm_Test_Mode.SWMALOM] * self._slots
         self._fst_ver = None
@@ -326,7 +327,10 @@ class mtp_ctrl():
         self.cli_log_report_inf("MTP ASIC Version: {:s}".format(self._asic_ver))
 
         if libmfg_utils.MFG_GIT_VERSION:
-            self.cli_log_report_inf("Build Hashtag: {:s}".format(libmfg_utils.MFG_GIT_VERSION))
+            self.cli_log_report_inf("Diag Build Hashtag: {:s}".format(libmfg_utils.MFG_GIT_VERSION))
+
+        if self._asic_hashtag:
+            self.cli_log_report_inf("MTP ASIC Hashtag: {:s}".format(self._asic_hashtag))
 
         if libmfg_utils.MFG_PKG_VERSION:
             self.cli_log_report_inf("MFG Script Version: {:s}".format(libmfg_utils.MFG_PKG_VERSION))
@@ -1459,6 +1463,10 @@ class mtp_ctrl():
         self._asic_ver = libmfg_utils.rgx_extract_commit_date(self.mtp_get_cmd_buf())
         if not self._asic_ver:
             self.cli_log_err("Failed to find asic util version", level=0)
+            return False
+        self._asic_hashtag = libmfg_utils.rgx_extract_commit_hashtag(self.mtp_get_cmd_buf())
+        if not self._asic_hashtag:
+            self.cli_log_err("Failed to find asic lib hashtag", level=0)
             return False
         return True
 
@@ -8127,6 +8135,13 @@ class mtp_ctrl():
             return False
         return True
 
+    def mtp_nic_vul_qspi_erase(self, slot):
+        if not self._nic_ctrl_list[slot].vul_nic_erase_qspi():
+            self.cli_log_slot_err_lock(slot, "Erase NIC QSPI failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
     def mtp_nic_uc_image_program(self, slot, cmd_format, uc_img_file, override_fd_descriptors=False):
         """
         lsusb
@@ -8567,12 +8582,6 @@ class mtp_ctrl():
             l1_cmd_tout = MTP_Const.SALINA_DPU_ASIC_L1_TEST_TIMEOUT
         if nic_type in VULCANO_NIC_TYPE_LIST:
             l1_cmd_tout = MTP_Const.VULCANO_ASIC_L1_TEST_TIMEOUT
-            # Erase QSPI Flash before run L1 since if QSPI image boot will cause snake hung 
-            qspi_erase_cmd = "cd /home/diag/diag/scripts/asic/; tclsh vul_qspi_erase.tcl -slot {:s}".format(str(slot+1))
-            if not self.mtp_mgmt_exec_cmd_para(slot, qspi_erase_cmd, timeout=90):
-                rs = False
-            if "QSPI ERASE PASSED" not in self.mtp_get_nic_cmd_buf(slot):
-                self.cli_log_slot_wrn(slot, "QSPI ERASE FAILED May affect L1 TEST results")
 
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=l1_cmd_tout):
             rs = False

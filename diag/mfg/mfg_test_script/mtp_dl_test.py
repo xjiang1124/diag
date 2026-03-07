@@ -288,6 +288,10 @@ def dl_ibm_fail_cpld_program(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.mtp_program_nic_adi_ibm_failsafe_cpld(slot, failsafe_cpld_img_file)
 
 @parallelize.parallel_nic_using_ssh
+def vulcano_erase_qspi(mtp_mgmt_ctrl, slot):
+    return mtp_mgmt_ctrl.mtp_nic_vul_qspi_erase(slot)
+
+@parallelize.parallel_nic_using_ssh
 def dl_fru_program(mtp_mgmt_ctrl, slot, swmtestmode):
     sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
     mac = mtp_mgmt_ctrl.get_scanned_mac(slot)
@@ -530,7 +534,8 @@ def main():
                 rlist = dl_diagfw_store(mtp_mgmt_ctrl, nic_list)
             elif test == "QSPI_VERIFY":
                 rlist = dl_verify_diagfw(mtp_mgmt_ctrl, nic_list)
-
+            elif test == "VULCANO_QSPI_ERASE":
+                rlist = vulcano_erase_qspi(mtp_mgmt_ctrl, nic_list)
             elif test == "FRU_PROG":
                 rlist = dl_fru_program(mtp_mgmt_ctrl, nic_list, swmtestmode)
             elif test == "FRU_VERIFY":
@@ -782,6 +787,10 @@ def main():
             run_dl_test(pass_nic_list, "CPLD_VERIFY")
             run_dl_test(pass_nic_list, "FSAFE_CPLD_PROG")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            # Erase QSPI as DUT may return from SWI
+            run_dl_test(pass_nic_list, "VULCANO_QSPI_ERASE")
+            run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            # Final Diag sw version check
             run_dl_test(pass_nic_list, "uC_BOOTING_CHK")
             run_dl_test(pass_nic_list, "uC_VERSION_CHK")
             run_dl_test(pass_nic_list, "VULCANO_FPGA_UART_STATS_DUMP")
