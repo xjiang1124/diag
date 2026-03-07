@@ -2,7 +2,7 @@
 
 # Default values
 INT_LPBK=1
-VMARG="nom"
+VMARG="none"
 ESEC_EN=1
 ITE=1
 PCT=0
@@ -113,14 +113,18 @@ then
     PCT=0
 fi
 #echo "vmarg: $VMARG; pct: $PCT"
+
+# For MTP_PONZA, append _VUL$SLOT to SN
+if [[ $CARD_TYPE == "MTP_PONZA" ]]
+then
+    SN="${SN}_VUL${SLOT}"
+fi
+
 TCL_PATH="\"$TCL_PATH\""
 TEST_LIST="\"$TEST_LIST\""
 
 time_stamp=$(date "+%m%d%y_%H%M%S")
 fn="l1_screen_board_${SN}_${time_stamp}.log"
-if [[ $JOO == "0" ]]; then
-    fn="l1_ow_screen_board_${SN}_${time_stamp}.log"
-fi
 echo $fn
 
 for (( idx=0; idx<$ITE; idx++ ))

@@ -2,6 +2,7 @@
 puts "argv: $argv"
 
 set sn       [lindex $argv 0]
+# reuse slot as vulcano_index for Vulsei
 set slot     [lindex $argv 1]
 set int_lpbk [lindex $argv 2]
 set vmarg    [lindex $argv 3]
@@ -40,7 +41,7 @@ set MTP_TYPE $::env(MTP_TYPE)
 set ASIC_TYPE $::env(ASIC_TYPE)
 set ::VEL_SHELL 0
 set ::SHELL_MODE mtp
-set ::MTP_SHELL 1
+set ::MTP_SHELL 0
 set ::ZMTP_SHELL 0
 set ::JCS_SHELL 0
 set ::ts_present 0
@@ -50,10 +51,19 @@ source /home/diag/diag/scripts/asic/asic_tests.tcl
 
 cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 
-if {($MTP_TYPE == "MTP_PANAREA")} {
-    set uut "UUT_$slot"
-    set card_type $::env($uut)
-    puts "card type: $card_type; UUT: $uut"
+if {($MTP_TYPE == "MTP_PANAREA") || ($MTP_TYPE == "MTP_PONZA")} {
+    if {$MTP_TYPE == "MTP_PANAREA"} {
+        set ::MTP_SHELL 1
+    } else {
+        set ::ZMTP_SHELL 1
+        puts "power on Vulcano"
+        catch "exec sucutil vul_power_on -i $slot " catch_error
+        puts "wait for 2 seconds"
+        after 2000
+    }
+    #set uut "UUT_$slot"
+    #set card_type $::env($uut)
+    #puts "card type: $card_type; UUT: $uut"
 
     set port $slot
     set slot $slot
@@ -102,7 +112,11 @@ if {$ASIC_TYPE == "VULCANO"} {
         }
     }
 
-    vul_j2c
+    if {($MTP_TYPE == "MTP_PONZA")} {
+        diag_open_zmtpj2c_if $::port $::slot
+    } else {
+        vul_j2c
+    }
 
     puts "_msrd"
     set rtn [eval _msrd]
@@ -125,7 +139,11 @@ if {$ASIC_TYPE == "VULCANO"} {
 
     set err_cn [eval $l1_cmd]
 
-    diag_close_j2c_if $port $slot
+    if {($MTP_TYPE == "MTP_PONZA")} {
+        diag_close_zmtpj2c_if $::port $::slot
+    } else {
+        diag_close_j2c_if $port $slot
+    }
 }
 
 set err_cnt_fnl [ plog_get_err_count ]
