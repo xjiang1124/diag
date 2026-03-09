@@ -719,16 +719,36 @@ func Suc_vul_sel_and_power_on(vul_index int, power_on bool) (err int) {
         cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x1a 4")
     }
 
+    err = suc_cmd_list(slot, cmd_list, false)
+    if err != errType.SUCCESS {
+        return err
+    }
+
     // Power on the selected Vulcano
     if power_on == true {
+        var power_off_cmd, power_on_cmd string
         if vul_on_fpga == 0 {
-            cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x2 0x80", "diag_sqi reg_wr 0 0x2 0x90")
+            power_off_cmd = "diag_sqi reg_wr 0 0x2 0x80"
+            power_on_cmd = "diag_sqi reg_wr 0 0x2 0x90"
         } else {
-            cmd_list = append(cmd_list, "diag_sqi reg_wr 1 0x2 0x80", "diag_sqi reg_wr 1 0x2 0x90")
+            power_off_cmd = "diag_sqi reg_wr 1 0x2 0x80"
+            power_on_cmd = "diag_sqi reg_wr 1 0x2 0x90"
+        }
+
+        err = suc_cmd_list(slot, []string{power_off_cmd}, false)
+        if err != errType.SUCCESS {
+            return err
+        }
+
+        // 1 second delay between power-on commands
+        time.Sleep(time.Duration(1) * time.Second)
+
+        err = suc_cmd_list(slot, []string{power_on_cmd}, false)
+        if err != errType.SUCCESS {
+            return err
         }
     }
 
-    err = suc_cmd_list(slot, cmd_list, false)
     /*if power_on == true {
         cli.Printf("i", "Selected and powered on Vulcano %d\n", vul_index)
     } else {
