@@ -3499,7 +3499,6 @@ class nic_ctrl():
 
         return True
 
-
     def salina_nic_erase_qspi(self):
         cmd = MFG_DIAG_CMDS().NIC_ERASE_QSPI_FMT.format(str(self._slot + 1))
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ERASE_QSPI_IMG_DELAY):
@@ -3512,6 +3511,14 @@ class nic_ctrl():
         cmd_buf = cmd_buf
         if "Erasing QSPI of slot" in cmd_buf:
             self.nic_set_err_msg(cmd_buf)
+            return False
+        return True
+
+    def vul_nic_erase_qspi(self):
+        qspi_erase_cmd = "cd /home/diag/diag/scripts/asic/; tclsh vul_qspi_erase.tcl -slot {:s}".format(str(self._slot + 1))
+        if not self.mtp_exec_cmd(qspi_erase_cmd, timeout=MTP_Const.NIC_ERASE_QSPI_IMG_DELAY):
+            return False
+        if "QSPI ERASE PASSED" not in self.nic_get_cmd_buf():
             return False
         return True
 

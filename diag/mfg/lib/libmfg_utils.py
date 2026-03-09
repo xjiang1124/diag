@@ -921,6 +921,13 @@ def rgx_extract_commit_date(buf):
     else:
         return None
 
+def rgx_extract_commit_hashtag(buf):
+    match = re.findall(r"commit +(\w+)", buf)
+    if match:
+        return match[0]
+    else:
+        return None
+
 def read_amd64_img_version(mtp_mgmt_ctrl, diag_img_tarball):
     cmd = "tar xfO {:s} diag/scripts/version.txt | head".format(diag_img_tarball)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
