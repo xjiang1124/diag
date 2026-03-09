@@ -100,6 +100,7 @@ class mtp_ctrl():
         self._diag_ver = None
         self._asic_ver = None
         self._asic_hashtag = None
+        self._cns_pmci_ver = None
         self._script_ver = ""
         self._swmtestmode = [Swm_Test_Mode.SWMALOM] * self._slots
         self._fst_ver = None
@@ -331,6 +332,9 @@ class mtp_ctrl():
 
         if self._asic_hashtag:
             self.cli_log_report_inf("MTP ASIC Hashtag: {:s}".format(self._asic_hashtag))
+
+        if self._cns_pmci_ver:
+            self.cli_log_report_inf("MTP CNS-PMCI Tool version: {:s}".format(self._cns_pmci_ver))
 
         if libmfg_utils.MFG_PKG_VERSION:
             self.cli_log_report_inf("MFG Script Version: {:s}".format(libmfg_utils.MFG_PKG_VERSION))
@@ -1575,19 +1579,28 @@ class mtp_ctrl():
         return True
 
     def mtp_update_cns_pmci_package(self, image):
-
+        # Remove the old tool
         cmd = "rm -rf /home/diag/cns-pmci"
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
-
             return False
 
+        # Extract the new tool package
         cmd = "tar zxf {:s} -C /home/diag/".format(image)
-        self.cli_log_inf(cmd, level=0)
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
             return False
 
+        # Get tool directory by removing suffix '.tar.gz'
+        tool_dir = image[:-7]
+
+        # Rename tool directory to common name 'cns-pmci'
+        cmd = "mv {:s} /home/diag/cns-pmci".format(tool_dir)
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_SYNC_DELAY):
+            self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
+            return False
+
+        # Do a sync to make sure all write done.
         cmd = "sync"
         if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_SYNC_DELAY):
             self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
@@ -2544,6 +2557,15 @@ class mtp_ctrl():
             # MTP FRU check and display, Serial Number is valid
             rc &= self.matera_mtp_fru_chk_test()
             rc = True
+
+            # Extract the cns-pmic version for Panarea, string starts with 'v'
+            cmd = "head -1 /home/diag/cns-pmci/VERSION"
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_SYNC_DELAY):
+                self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
+                return False
+            match = re.findall(r"(v[\w.]+)", self.mtp_get_cmd_buf())
+            if match:
+                self._cns_pmci_ver = match[0]
         else:
             rc &= self.mtp_cpld_test()
             # fan init

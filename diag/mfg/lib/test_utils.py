@@ -413,10 +413,19 @@ def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
 
 def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=None, scanned_sku=None, mtp_type=MTP_TYPE.MATERA):
     mtp_mgmt_ctrl._mtp_type = mtp_type
-    if mtp_type == MTP_TYPE.PANAREA:
-        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "VULCANO_CNS_PMCI_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
-    else:
-        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
+    # At this stage, we don't have mtp type yet.
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_dpn=scanned_dpn, scanned_sku=scanned_sku):
+        return False
+
+    # After diag init, mtp type will be set.
+    # For Panarea MTP, update CNS-PMCI tool
+    if mtp_mgmt_ctrl._mtp_type == MTP_TYPE.PANAREA:
+        test_list = ["VULCANO_CNS_PMCI_UPDATE"]
+        if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_dpn=scanned_dpn, scanned_sku=scanned_sku):
+            return False
+
+    test_list = ["MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_dpn=scanned_dpn, scanned_sku=scanned_sku):
         return False
     return True
@@ -448,10 +457,19 @@ def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
 
 def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[], prog_inter_diagsuc=False,mtp_type=MTP_TYPE.MATERA):
     mtp_mgmt_ctrl._mtp_type = mtp_type
-    if mtp_type == MTP_TYPE.PANAREA:
-        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "VULCANO_CNS_PMCI_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
-    else:
-        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
+    # At this stage, we don't have mtp type yet.
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg, prog_inter_diagsuc=prog_inter_diagsuc):
+        return False
+
+    # After diag init, mtp type will be set.
+    # For Panarea MTP, update CNS-PMCI tool
+    if mtp_mgmt_ctrl._mtp_type == MTP_TYPE.PANAREA:
+        test_list = ["VULCANO_CNS_PMCI_UPDATE"]
+        if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg, prog_inter_diagsuc=prog_inter_diagsuc):
+            return False
+
+    test_list = ["MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg, prog_inter_diagsuc=prog_inter_diagsuc):
         return False
     return True

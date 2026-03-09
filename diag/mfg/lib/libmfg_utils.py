@@ -1045,7 +1045,7 @@ def mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_python_site_package_file
     mtp_mgmt_ctrl.cli_log_inf("Updated Python3.6 site-packge to MTP\n", level=0)
     return True
 
-def mtp_vulcano_cns_pmci_update(mtp_mgmt_ctrl, cnc_pmci_package_file="release/"+MTP_IMAGES.vulcano_cns_pmci_img):
+def mtp_vulcano_cns_pmci_update(mtp_mgmt_ctrl, cns_pmci_package_file="release/"+MTP_IMAGES.vulcano_cns_pmci_img):
     """
     force update vulcano_cns_pmci even if it is exist, since this utility is keep updating
     """
@@ -1055,17 +1055,15 @@ def mtp_vulcano_cns_pmci_update(mtp_mgmt_ctrl, cnc_pmci_package_file="release/"+
     mtp_passwd = mtp_mgmt_cfg[2]
     remote_dir = "/home/diag/"
 
-    mtp_mgmt_ctrl.cli_log_inf("Copy Vulcano cns-pmi tar.gz to MTP: {:s}".format(cnc_pmci_package_file), level=0)
-    mtp_mgmt_ctrl.cli_log_inf("Force update even if it is exist, since this utility is keep updating", level=0)
-    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, cnc_pmci_package_file, remote_dir):
-        mtp_mgmt_ctrl.cli_log_err("Copy Vulcano cns-pmi tar.gz to MTP Failed... Abort", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Copy Vulcano cns-pmci {:s} to MTP".format(cns_pmci_package_file), level=0)
+    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, cns_pmci_package_file, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Copy Vulcano cns-pmci {:s} to MTP Failed... Abort".format(cns_pmci_package_file), level=0)
         return False
-    mtp_mgmt_ctrl.cli_log_inf("Copied Vulcano cns-pmi tar.gz to MTP: {:s}".format(os.path.basename(cnc_pmci_package_file)), level=0)
-    mtp_mgmt_ctrl.cli_log_inf("Updating Vulcano cns-pmi to MTP: {:s}".format(os.path.basename(cnc_pmci_package_file)), level=0)
-    if not mtp_mgmt_ctrl.mtp_update_cns_pmci_package(remote_dir + os.path.basename(cnc_pmci_package_file)):
-        mtp_mgmt_ctrl.cli_log_err("Update Vulcano cns-pmi to MTP... Abort", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Update Vulcano cns-pmci with {:s} on MTP".format(os.path.basename(cns_pmci_package_file)), level=0)
+    if not mtp_mgmt_ctrl.mtp_update_cns_pmci_package(remote_dir + os.path.basename(cns_pmci_package_file)):
+        mtp_mgmt_ctrl.cli_log_err("Update Vulcano cns-pmci with {:s} on MTP Failed... Abort".format(cns_pmci_package_file), level=0)
         return False
-    mtp_mgmt_ctrl.cli_log_inf("Updated Vulcano cns-pmi to MTP\n", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Updated Vulcano cns-pmci on MTP complete\n", level=0)
     return True
 
 def mtp_avt_tool_installation(mtp_mgmt_ctrl, avt_file="release/"+MTP_IMAGES.mtp_cpu_validation_tool_avt_img, avt_install_dir="AMD_tool_AVT"):
