@@ -6458,29 +6458,6 @@ class mtp_ctrl():
                     fail_nic_list.append(slot)
         return fail_nic_list
 
-    @parallelize.parallel_nic_using_ssh
-    def mtp_nic_bootdelay(self, slot, set_delay=True):
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
-            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
-            return False
-        if set_delay:
-            cmd = "nic_test_v2.py salina set_bootdelay -slot {:s}".format(str(slot+1))
-        else:
-            cmd = "nic_test_v2.py salina unset_bootdelay -slot {:s}".format(str(slot+1))
-        if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
-            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
-            return False
-        if "Done setting" not in self.mtp_get_nic_cmd_buf(slot):
-            self.cli_log_slot_err(slot, "Setting bootdelay failed")
-            self.mtp_set_nic_status_fail(slot)
-            return False
-
-        if set_delay:
-            self.cli_log_slot_inf(slot, "Increased autoboot bootdelay")
-        else:
-            self.cli_log_slot_inf(slot, "Reverted autoboot bootdelay to default")
-        return True
 
     def mtp_init_nic_type(self, stage=None, scanned_fru=None, scanned_dpn=None, scanned_sku=None, prog_inter_diagsuc=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
