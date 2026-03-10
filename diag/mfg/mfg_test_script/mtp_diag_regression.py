@@ -1433,9 +1433,6 @@ def main():
                     #prog special image
                     run_regression_test(salina_dpu_snake, "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE")
                     run_regression_test(salina_dpu_snake, "SALINA_SNAKE_QSPI_IMG_PROG")
-                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr", warm_reset=False)
-                    #set a35 to mainfwa, since this sname image not wort with a35 goldfw
-                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWA")
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux", warm_reset=False)
                 elif test_section == "STRESS":
                     ######################################################################
