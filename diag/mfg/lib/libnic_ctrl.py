@@ -6696,8 +6696,8 @@ class nic_ctrl():
         compare_pass = True
         for k, v in soc_fru_dict.items():
             v1 = eeutil_fru_dict.get(k,"")
-            if v != v1:
-                self.nic_set_err_msg("{:s} from soc is {:s}, not match the value {:s} from eeutil".format(k, v, v1))
+            if v.strip() != v1.strip():
+                self.nic_set_err_msg("{:s} from soc is '{:s}', not match the value '{:s}' from eeutil".format(k, v.strip(), v1.strip()))
                 compare_pass = False
         return compare_pass
 
@@ -6816,8 +6816,8 @@ class nic_ctrl():
         compare_pass = True
         for k, v in suc_fru_dict.items():
             v1 = eeutil_fru_dict.get(k,"")
-            if v != v1:
-                self.nic_set_err_msg("{:s} from suc is {:s}, not match the value {:s} from eeutil".format(k, v, v1))
+            if v.strip() != v1.strip():
+                self.nic_set_err_msg("{:s} from suc is '{:s}', not match the value '{:s}' from eeutil".format(k, v.strip(), v1.strip()))
                 compare_pass = False
         return compare_pass
 
