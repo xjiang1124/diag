@@ -325,9 +325,9 @@ func Suc_dev_status_ponza(vul_index int) () {
     var cmd_list []string
     // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
     slot := ((vul_index - 1) / 6) + 1
-    //fpga_index := ((vul_index - 1) % 6) / 2
-    //vul_on_fpga := (vul_index - 1) % 2
+    //vul_on_board := (vul_index - 1) % 6
     // TBD: build the cmd_list based on the vulcano index
+    //cmd1 = "voltage mp2861_sensor " + fmt.Sprintf("%d", vul_on_board)
     cmd_list = []string{"cmd1", "cmd2", "cmd3"}
     suc_cmd_list(slot, cmd_list, true)
 }
@@ -349,10 +349,14 @@ func Suc_dev_margin_ponza(vul_index int, voltage_name string, pct int) () {
     var cmd_vmarg string
     // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
     slot := ((vul_index - 1) / 6) + 1
-    //fpga_index := ((vul_index - 1) % 6) / 2
-    //vul_on_fpga := (vul_index - 1) % 2
+    vul_on_board := (vul_index - 1) % 6
     // TBD: build the cmd_vmarg based on the vulcano index
     cmd_vmarg = "cmd1"
+    if voltage_name != "VDDCR_0P65" {
+        cmd_vmarg = "voltage mp2861_margin " + fmt.Sprintf("%d", vul_on_board) + " " + voltage_name + " " + strconv.Itoa(pct)
+    } else {
+        cmd_vmarg = "voltage mp2861_margin " + fmt.Sprintf("%d", vul_on_board) + " " + strconv.Itoa(pct)
+    }
     cmd_list := []string{cmd_vmarg}
     suc_cmd_list(slot, cmd_list, true)
     time.Sleep(time.Duration(100) * time.Millisecond)
@@ -433,9 +437,44 @@ func Suc_dev_vset_ponza(vul_index int, voltage_name string, vboot int, vout int,
     var cmd_list []string
     // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
     slot := ((vul_index - 1) / 6) + 1
-    //fpga_index := ((vul_index - 1) % 6) / 2
-    //vul_on_fpga := (vul_index - 1) % 2
+    vul_on_board := (vul_index - 1) % 6
     // TBD: build the cmd_vset based on the vulcano index
+    if voltage_name == "VDDCR_0P65" {
+        if vboot != -1 {
+            cmd_vboot := "voltage mp2861_set " + fmt.Sprintf("%d", vul_on_board) + " vboot " + strconv.Itoa(vboot)
+            cmd_list = append(cmd_list, cmd_vboot)
+        }
+        if vout != -1 {
+            vddcr_0p65_output := suc_single_cmd(slot, "voltage mp2861_sensor " + fmt.Sprintf("%d", vul_on_board), false)
+            re := regexp.MustCompile(`VDDCR_0P65\s+\|\s+([\d.]+)`)
+            match := re.FindStringSubmatch(string(vddcr_0p65_output))
+            if len(match) > 1 {
+                vboot_str := match[1]
+                vboot_val, err := strconv.ParseFloat(vboot_str, 64)
+                if err != nil {
+                    cli.Println("e", "Error converting VBOOT to float:", err)
+                    return
+                }
+                vboot_mv := int(vboot_val * 1000)
+                pct := int(math.Round((float64(vout - vboot_mv) / float64(vboot_mv)) * 100))
+                cli.Printf("i", "vmarg pct is %d\n", pct)
+                cmd_vmarg := "voltage mp2861_margin " + fmt.Sprintf("%d", vul_on_board) + " " + strconv.Itoa(pct)
+                cmd_list = append(cmd_list, cmd_vmarg)
+            } else {
+                cli.Println("e", "VBOOT value not found")
+                return
+            }
+        }
+        if vmin != -1 {
+            cmd_vmin := "voltage mp2861_set " + fmt.Sprintf("%d", vul_on_board) + " vmin " + strconv.Itoa(vmin)
+            cmd_list = append(cmd_list, cmd_vmin)
+        }
+        if vmax != -1 {
+            cmd_vmax := "voltage mp2861_set " + fmt.Sprintf("%d", vul_on_board) + " vmax " + strconv.Itoa(vmax)
+            cmd_list = append(cmd_list, cmd_vmax)
+        }
+    } else {
+    }
     if cmd_list != nil {
         suc_cmd_list(slot, cmd_list, true)
         time.Sleep(time.Duration(100) * time.Millisecond)
@@ -450,8 +489,7 @@ func Suc_dev_margin_info(slot int) () {
 func Suc_dev_margin_info_ponza(vul_index int) () {
     // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
     slot := ((vul_index - 1) / 6) + 1
-    //fpga_index := ((vul_index - 1) % 6) / 2
-    //vul_on_fpga := (vul_index - 1) % 2
+    //vul_on_board := (vul_index - 1) % 6
     // TBD: build the cmd_vinfo based on the vulcano index
     cmd := "cmd1"
     cmd_list := []string{cmd}
@@ -715,8 +753,10 @@ func Suc_vul_sel_and_power_on(vul_index int, power_on bool) (err int) {
 
     if vul_on_fpga == 0 {
         cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x1a 2")
+        cmd_list = append(cmd_list, "diag_sqi reg_wr 1 0x1a 4")
     } else {
         cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x1a 4")
+        cmd_list = append(cmd_list, "diag_sqi reg_wr 1 0x1a 2")
     }
 
     err = suc_cmd_list(slot, cmd_list, false)
