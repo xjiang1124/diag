@@ -244,8 +244,8 @@ if { $test_type == "esam_pktgen_llc_sor" ||
      $test_type == "esam_pktgen_ddr_burst" } {
     #sal_pcc
     #sal_arm_reset
-    plog_msg "calling reset_to_proto_mode no_proto"
-    reset_to_proto_mode no_proto
+    plog_msg "calling reset_to_proto_mode cold"
+    reset_to_proto_mode cold
     # disable WDT
     set i2c_bus [expr $slot + 2]
     exec i2cset -y $i2c_bus 0x4f 1 0
