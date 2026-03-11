@@ -1,5 +1,12 @@
 chmod 775 $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so .
 
+# Check if directory exists before proceeding
+if [[ ! -d "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack" ]]
+then
+    echo "ERROR: Directory $ASIC_LIB_BUNDLE/depend_libs/mtp_hack does not exist"
+    exit 1
+fi
+
 cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack
 rm -f *
 ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack
