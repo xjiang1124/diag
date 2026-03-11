@@ -99,7 +99,7 @@ func open_suc_uart(slot int, baud int) (handle *SUCUARTHandle , err int) {
         cli.Printf("e", "failed to open %s for slot %d: %v", uut_uart, slot, err_o)
         return nil, errType.FAIL
     }
-    port.SetReadTimeout(1 * time.Second)
+    port.SetReadTimeout(2 * time.Second)
     return &SUCUARTHandle{slot, port, fileLock}, errType.SUCCESS
 }
 
@@ -206,7 +206,21 @@ func (u *SUCUARTHandle) close_suc_uart() {
         return
     }
     if u.port != nil {
-        u.port.Close()
+        // Close port with timeout to prevent hanging
+        done := make(chan bool, 1)
+        go func() {
+            u.port.Close()
+            done <- true
+        }()
+
+        select {
+        case <-done:
+            // Port closed successfully
+        case <-time.After(2 * time.Second):
+            // Timeout - port close is taking longer than 2 seconds (this can happen with ACM uart),
+            // but continue cleanup anyway
+            cli.Println("i", "Warning: Serial port close timed out after 2 seconds")
+        }
     }
     if u.lock != nil {
         u.lock.Unlock()
@@ -752,8 +766,8 @@ func Suc_vul_sel_and_power_on(vul_index int, power_on bool) (err int) {
     }
 
     if vul_on_fpga == 0 {
-        cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x1a 2")
         cmd_list = append(cmd_list, "diag_sqi reg_wr 1 0x1a 4")
+        cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x1a 2")
     } else {
         cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x1a 4")
         cmd_list = append(cmd_list, "diag_sqi reg_wr 1 0x1a 2")
