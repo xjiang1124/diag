@@ -6,7 +6,8 @@ import json
 import traceback
 import pexpect
 import threading
-
+import subprocess
+from collections import deque
 from datetime import datetime
 from libdefs import NIC_Type
 from libdefs import MTP_TYPE
@@ -6947,24 +6948,81 @@ class nic_ctrl():
                 cmd += " --override-fd-descriptors /home/diag/cns-pmci/board/gelso.json"
             else:
                 cmd += ""
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
-            self.nic_set_err_msg("Program uC image Command '{:s}' Failed".format(cmd))
-            return False
-        if "No such file or directory" in self.nic_get_cmd_buf() or "No suitable USB devices found" in  self.nic_get_cmd_buf():
-            self.nic_set_err_msg(self.nic_get_cmd_buf())
-            return False
 
-        cmd = "echo My_CMD_RC:$?"
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_RETRY):
-            self.nic_set_err_msg("Check Program uC image return code '{:s}' Failed".format(cmd))
-            return False
-        m = re.findall(r'My_CMD_RC:(\d+)', self.nic_get_cmd_buf())
-        if not m:
-                self.nic_set_err_msg("Get Program uC image return code failed")
-                return False
-        rc_code = m[0]
-        if str(rc_code) != '0':
-            self.nic_set_err_msg("Program uC image Command got non-zero return code:{}".format(rc_code))
+        # if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+        #     self.nic_set_err_msg("Program uC image Command '{:s}' Failed".format(cmd))
+        #     return False
+        # if "No such file or directory" in self.nic_get_cmd_buf() or "No suitable USB devices found" in  self.nic_get_cmd_buf():
+        #     self.nic_set_err_msg(self.nic_get_cmd_buf())
+        #     return False
+        #
+        # cmd = "echo My_CMD_RC:$?"
+        # if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_RETRY):
+        #     self.nic_set_err_msg("Check Program uC image return code '{:s}' Failed".format(cmd))
+        #     return False
+        # m = re.findall(r'My_CMD_RC:(\d+)', self.nic_get_cmd_buf())
+        # if not m:
+        #         self.nic_set_err_msg("Get Program uC image return code failed")
+        #         return False
+        # rc_code = m[0]
+        # if str(rc_code) != '0':
+        #     self.nic_set_err_msg("Program uC image Command got non-zero return code:{}".format(rc_code))
+        #     return False
+        #  return True
+
+        # cns-pmci tool print A LOT OF logs and make logfile too large to review (millions of lines)
+        # Use subprocess module to run and only save first 100 and last 100 lines to logfile
+        start_lines = []
+        end_lines = deque(maxlen=100)
+        total_lines = 0
+        proc = subprocess.Popen(cmd,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                universal_newlines=True,
+                                shell=True)
+        start = time.time()
+        while True:
+            if time.time() - start > MTP_Const.NIC_ESEC_PROG_DELAY:
+                proc.kill()
+                end_lines.append("\n--- PROCESS KILLED: TIMEOUT ---\n")
+                break
+            line = proc.stdout.readline()
+            if not line:
+                if proc.poll() is not None:
+                    break
+                time.sleep(1)
+                continue
+
+            if total_lines < 100:
+                start_lines.append(line)
+            else:
+                end_lines.append(line)
+            total_lines += 1
+
+        for line in proc.stdout:
+            if total_lines < 100:
+                start_lines.append(line)
+            else:
+                end_lines.append(line)
+            total_lines += 1
+
+        # Either timedout or program exit.
+        proc.wait()
+
+        # comment start and end lines to logfile
+        self.mtp_exec_cmd("# Start lines: {}".format(len(start_lines)))
+        self.mtp_exec_cmd("# End lines: {}".format(len(end_lines)))
+        self.mtp_exec_cmd("# Discard lines: {}".format(total_lines-len(start_lines)-len(end_lines)))
+        for line in start_lines:
+            self.mtp_exec_cmd("# {}".format(line.strip('\r\n')))
+        self.mtp_exec_cmd("#################################################################")
+        self.mtp_exec_cmd("#################### DISCARDED LOGGING INFO #####################")
+        self.mtp_exec_cmd("#################################################################")
+        for line in list(end_lines):
+            self.mtp_exec_cmd("# {}".format(line.strip('\r\n')))
+
+        if proc.returncode != 0:
+            self.nic_set_err_msg("Program uC image Command got non-zero return code:{}".format(proc.returncode))
             return False
         return True
 
