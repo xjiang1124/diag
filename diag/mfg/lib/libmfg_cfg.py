@@ -1358,15 +1358,15 @@ class NIC_IMAGES:
     suc_swimg_soc_ver["58-0013-01"] = "1.125.0-a-49"
 
     # SARACENO is AINIC
-    cpld_img["SARACENO"] = "saraceno_cpld_cfg0_rev0202.jed"
+    cpld_img["SARACENO"] = "saraceno_cpld_cfg0_rev0204_code_03111034.jed"
     cpld_ver["SARACENO"] = "0x2"
-    cpld_dat["SARACENO"] = "02-20-26_15:30" #mm-dd-YY_HH:MM
-    sec_cpld_img["SARACENO"] = "saraceno_cpld_cfg0_rev0202.jed"
+    cpld_dat["SARACENO"] = "03-11-26_10:34" #mm-dd-YY_HH:MM
+    sec_cpld_img["SARACENO"] = "saraceno_cpld_cfg0_rev0204_code_03111034.jed"
     sec_cpld_ver["SARACENO"] = "0x2"
-    sec_cpld_dat["SARACENO"] = "02-20-26_15:30" #mm-dd-YY_HH:MM
-    fail_cpld_img["SARACENO"] = "saraceno_cpld_cfg1_rev0202.jed"
+    sec_cpld_dat["SARACENO"] = "03-11-26_10:34" #mm-dd-YY_HH:MM
+    fail_cpld_img["SARACENO"] = "saraceno_cpld_cfg1_rev0204_code_03120616.jed"
     fail_cpld_ver["SARACENO"] = "0x2"
-    fail_cpld_dat["SARACENO"] = "02-20-26_15:30" #mm-dd-YY_HH:MM
+    fail_cpld_dat["SARACENO"] = "03-11-26_10:34" #mm-dd-YY_HH:MM
     fea_cpld_img["SARACENO"] = "saraceno.fea"
     suc_diag_img["SARACENO"] = "vulcano/saraceno/ainic_fw_vulcano_0303_2026.pldmfw"
     suc_diagimg_suc_date["SARACENO"] = "2026-03-03 09:36:44"   #YYYY-mm-dd HH:MM:SS
@@ -1376,15 +1376,15 @@ class NIC_IMAGES:
     suc_swimg_soc_date["SARACENO"] = "Feb 22 2026 23:37:52"
     suc_swimg_soc_ver["SARACENO"] = "1.125.1-a-8"
 
-    cpld_img["58-0014-01"] = "saraceno_cpld_cfg0_rev0202.jed"
+    cpld_img["58-0014-01"] = "saraceno_cpld_cfg0_rev0204_code_03111034.jed"
     cpld_ver["58-0014-01"] = "0x2"
-    cpld_dat["58-0014-01"] = "02-20-26_15:30" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0014-01"] = "saraceno_cpld_cfg0_rev0202.jed"
+    cpld_dat["58-0014-01"] = "03-11-26_10:34" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0014-01"] = "saraceno_cpld_cfg0_rev0204_code_03111034.jed"
     sec_cpld_ver["58-0014-01"] = "0x2"
-    sec_cpld_dat["58-0014-01"] = "02-20-26_15:30" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0014-01"] = "saraceno_cpld_cfg1_rev0202.jed"
+    sec_cpld_dat["58-0014-01"] = "03-11-26_10:34" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0014-01"] = "saraceno_cpld_cfg1_rev0204_code_03120616.jed"
     fail_cpld_ver["58-0014-01"] = "0x2"
-    fail_cpld_dat["58-0014-01"] = "02-20-26_15:30" #mm-dd-YY_HH:MM
+    fail_cpld_dat["58-0014-01"] = "03-11-26_10:34" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0014-01"] = "saraceno.fea"
     suc_diag_img["58-0014-01"] = "vulcano/saraceno/ainic_fw_vulcano_0303_2026.pldmfw"
     suc_diagimg_suc_date["58-0014-01"] = "2026-03-03 09:36:44"   #YYYY-mm-dd HH:MM:SS
@@ -1394,23 +1394,23 @@ class NIC_IMAGES:
     suc_swimg_soc_date["58-0014-01"] = "Feb 22 2026 23:37:52"
     suc_swimg_soc_ver["58-0014-01"] = "1.125.1-a-8"
 
-    cpld_img["100-700000003"] = "saraceno_cpld_cfg0_rev0202.jed"
+    cpld_img["100-700000003"] = "saraceno_cpld_cfg0_rev0204_code_03111034.jed"
     cpld_ver["100-700000003"] = "0x2"
-    cpld_dat["100-700000003"] = "02-20-26_15:30" #mm-dd-YY_HH:MM
-    sec_cpld_img["100-700000003"] = "saraceno_cpld_cfg0_rev0202.jed"
+    cpld_dat["100-700000003"] = "03-11-26_10:34" #mm-dd-YY_HH:MM
+    sec_cpld_img["100-700000003"] = "saraceno_cpld_cfg0_rev0204_code_03111034.jed"
     sec_cpld_ver["100-700000003"] = "0x2"
-    sec_cpld_dat["100-700000003"] = "02-20-26_15:30" #mm-dd-YY_HH:MM
-    fail_cpld_img["100-700000003"] = "saraceno_cpld_cfg1_rev0202.jed"
+    sec_cpld_dat["100-700000003"] = "03-11-26_10:34" #mm-dd-YY_HH:MM
+    fail_cpld_img["100-700000003"] = "saraceno_cpld_cfg1_rev0204_code_03120616.jed"
     fail_cpld_ver["100-700000003"] = "0x2"
-    fail_cpld_dat["100-700000003"] = "02-20-26_15:30" #mm-dd-YY_HH:MM
+    fail_cpld_dat["100-700000003"] = "03-11-26_10:34" #mm-dd-YY_HH:MM
     fea_cpld_img["100-700000003"] = "saraceno.fea"
     suc_diag_img["100-700000003"] = "vulcano/saraceno/ainic_fw_vulcano_0303_2026.pldmfw"
     suc_diagimg_suc_date["100-700000003"] = "2026-03-03 09:36:44"   #YYYY-mm-dd HH:MM:SS
     inter_suc_diag_img["100-700000003"] = "vulcano/saraceno/two_comp_saraceno_qspi_3_1.pldm"
     suc_sw_img["100-700000003"] = "vulcano/saraceno/ainic_bundle_1.125.1-a-8/firmware/ainic_fw_vulcano.pldmfw"
-    suc_swimg_suc_date["100-700000003"] = "2026-02-23 01:52:01"   #YYYY-mm-dd HH:MM:SS
-    suc_swimg_soc_date["100-700000003"] = "Feb 22 2026 23:37:52"
-    suc_swimg_soc_ver["100-700000003"] = "1.125.1-a-8"
+    suc_swimg_suc_date["100-700000003"] = "2026-03-06 17:47:59"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["100-700000003"] = "Mar  6 2026 22:24:29"
+    suc_swimg_soc_ver["100-700000003"] = "1.125.0-pi-144"
 
     # MORTARO is AINIC
     cpld_img["MORTARO"] = "mortaro_rev02_02_TS_26-02-24-14-58_cfg0.jed"
@@ -1512,15 +1512,15 @@ class MTP_IMAGES:
     # mtp_fpga_img["MATERA"] = "to_be_define.bin"
     mtp_fpga_ver["MATERA"] = "a012"
     mtp_fpga_date["MATERA"] = "12222024"    #mmddYYYY
-    mtp_fpga_ver["PANAREA"] = "a00a"
-    mtp_fpga_date["PANAREA"] = "11212025"    #mmddYYYY
+    mtp_fpga_ver["PANAREA"] = "a00b"
+    mtp_fpga_date["PANAREA"] = "12022025"    #mmddYYYY
 
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
     rotctrl_img = "rotctrl"
     nic_ctl_img = "nicctl"
     python_site_package4mtp_img = "python3.6_site_package.tar.gz"
-    vulcano_cns_pmci_img = "cns-pmci-1.1.1.tar.gz"
+    vulcano_cns_pmci_img = "cns-pmci-1.1.2.tar.gz"
     vulcano_usb_tool_img = "vulcano_usb_tool.tar.gz"
     mtp_cpu_validation_tool_avt_img = "AVT_Linux_NDA_2.8.24.tar"
 

@@ -68,6 +68,8 @@ case "$product" in
         sed -i 's|MTP_ARM64_IMAGE = ".*\.tar"|MTP_ARM64_IMAGE = "image_arm64_vulcano.tar"|' mfg/lib/libmfg_cfg.py
         # Set power on delay to 30 seconds for Saraceno/Mortaro
         sed -i 's|NIC_POWER_ON_DELAY = 80|NIC_POWER_ON_DELAY = 30|' mfg/lib/libdefs.py
+        # Set QSPI timeout to 5 min instead of 15 min
+        sed -i 's|NIC_ERASE_QSPI_IMG_DELAY = 900|NIC_ERASE_QSPI_IMG_DELAY = 300|' mfg/lib/libdefs.py
         # Copy other required release files defined in libmfg_cfg.py
         cp -r $REL_IMG_DIR/* $TARGET_DIR/mfg/release/
         ;;
