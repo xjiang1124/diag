@@ -2539,9 +2539,10 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
                 } else {
                     err = smbusNew.WriteByte(devName, uint64(i), Data[i])
                 }
-                if (i2cinfo.CardType == "MTP_PANAREA") && err == errType.SUCCESS {
+                if err == errType.SUCCESS {
                     break
-                } else {
+                }
+                if i2cinfo.CardType == "MTP_PANAREA" {
                     cli.Printf("d", "DEBUG / WARN: write to FRU device %s at offset %d failed\n", devName, i)
                 }
             }
@@ -2746,9 +2747,10 @@ func readOffset(devName string, bus uint32, devAddr byte, offset int) (data byte
             data, err = smbusNew.ReadByte(devName, uint64(offset))
         }
 
-        if (i2cinfo.CardType == "MTP_PANAREA") && err == errType.SUCCESS {
+        if err == errType.SUCCESS {
             break
-        } else {
+        }
+        if i2cinfo.CardType == "MTP_PANAREA" {
             cli.Printf("d", "DEBUG / WARN: read from FRU device %s at offset %d failed\n", devName, offset)
         }
     }
