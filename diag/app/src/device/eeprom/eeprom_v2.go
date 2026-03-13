@@ -2439,6 +2439,7 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
 //==============================================================================
 
 func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
+    var NumOfTries, j int = 1,0
     //var wrtoCPLD bool
     //Writes values in Data directly to FRU
     
@@ -2527,14 +2528,29 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
         
 
         for i:=0;i<len(Data);i++ {
-            misc.SleepInUSec(5000) //delay for writing
-            if I2cAddr16 == true {
-                err = smbusNew.I2C16WriteByte(devName, uint16(i), Data[i])
-            } else {
-                err = smbusNew.WriteByte(devName, uint64(i), Data[i])
+            if i2cinfo.CardType == "MTP_PANAREA" {
+                NumOfTries = 3
+                cli.DisableVerbose()
+            }
+            for j=0;j<NumOfTries;j++ {
+                misc.SleepInUSec(5000) //delay for writing
+                if I2cAddr16 == true {
+                    err = smbusNew.I2C16WriteByte(devName, uint16(i), Data[i])
+                } else {
+                    err = smbusNew.WriteByte(devName, uint64(i), Data[i])
+                }
+                if err == errType.SUCCESS {
+                    break
+                }
+                if i2cinfo.CardType == "MTP_PANAREA" {
+                    cli.Printf("d", "DEBUG / WARN: write to FRU device %s at offset %d failed\n", devName, i)
+                }
+            }
+            if i2cinfo.CardType == "MTP_PANAREA" {
+                cli.EnableVerbose()
             }
             if err != errType.SUCCESS {
-                cli.Printf("e", "ERROR: Failed to write to FRU at offset %d", i)
+                cli.Printf("e", "ERROR: Failed to write to FRU device %s at offset %d", devName, i)
                 smbusNew.Close()
                 if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" || os.Getenv("CARD_TYPE") == "MTP_PONZA" {
                     hwinfo.UnlockDev(lockName)
@@ -2702,7 +2718,6 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
         fruData, err = readOffset(devName, bus, devAddr, i)
         Data = append(Data, fruData)
         if err != errType.SUCCESS {
-            cli.Printf("e", "ERROR: Failed to read from FRU at offset %s", i)
             smbusNew.Close()
             if os.Getenv("CARD_TYPE") == "MTP_MATERA" || os.Getenv("CARD_TYPE") == "MTP_PANAREA" {
                 hwinfo.UnlockDev(lockName)
@@ -2718,14 +2733,33 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
 }
 
 func readOffset(devName string, bus uint32, devAddr byte, offset int) (data byte, err int) {
+    var NumOfTries, i int = 1,0
+
+    if i2cinfo.CardType == "MTP_PANAREA" {
+        NumOfTries = 3
+        cli.DisableVerbose()
+    }
     //Generic FRU reading function
-    if I2cAddr16 == true {
-        data, err = smbusNew.I2C16ReadByte(devName, uint16(offset))
-    } else {
-        data, err = smbusNew.ReadByte(devName, uint64(offset))
+    for i=0;i<NumOfTries;i++ {
+        if I2cAddr16 == true {
+            data, err = smbusNew.I2C16ReadByte(devName, uint16(offset))
+        } else {
+            data, err = smbusNew.ReadByte(devName, uint64(offset))
+        }
+
+        if err == errType.SUCCESS {
+            break
+        }
+        if i2cinfo.CardType == "MTP_PANAREA" {
+            cli.Printf("d", "DEBUG / WARN: read from FRU device %s at offset %d failed\n", devName, offset)
+        }
+    }
+
+    if i2cinfo.CardType == "MTP_PANAREA" {
+        cli.EnableVerbose()
     }
     if err != errType.SUCCESS {
-        cli.Printf("e", "ERROR: Failed to read from FRU at offset %d\n", offset)
+        cli.Printf("e", "ERROR: Failed to read from FRU device %s at offset %d\n", devName, offset)
     }
     return
 }
