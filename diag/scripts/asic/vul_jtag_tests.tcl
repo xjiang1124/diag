@@ -35,6 +35,8 @@ set env(ASIC_LIB) "$ASIC_LIB_BUNDLE/asic_lib"
 set env(ASIC_SRC) "$ASIC_LIB_BUNDLE/asic_src"
 set env(ASIC_GEN) "$ASIC_LIB_BUNDLE/asic_src"
 set env(LD_LIBRARY_PATH) "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:${::env(LD_LIBRARY_PATH)}"
+set ::WS "$ASIC_SRC/ip/cosim/tclsh"
+
 cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 source .tclrc.diag.vul
 

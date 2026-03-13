@@ -46,6 +46,7 @@ set ::ZMTP_SHELL 0
 set ::JCS_SHELL 0
 set ::ts_present 0
 set ::reset_cpu 0
+set ::WS "$ASIC_SRC/ip/cosim/tclsh"
 
 source /home/diag/diag/scripts/asic/asic_tests.tcl
 
