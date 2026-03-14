@@ -6508,7 +6508,7 @@ class nic_ctrl():
             return False
         match = re.findall(r'Image\s+CRC\s+=\s+0x([a-fA-F0-9]+)', sanitized_cmd_buf)
         if not match:
-            self.nic_set_err_msg("Faield to parse command buffer:")
+            self.nic_set_err_msg("Failed to parse command buffer:")
             self.nic_set_err_msg(cmd_buf)
             return False
         image_crc = match[0]
@@ -6530,31 +6530,55 @@ class nic_ctrl():
             self.nic_set_err_msg("CRC verify failed,  image crc:{} vs buffer crc:{}.".format(image_crc, crc_before_prog))
             return False
 
-        # program cpld partition
-        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_PROG_BUF.format(partition)
-        if not self.nic_exec_cmd_from_suc_console1(cmd):
-            self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
-            return False
-        cmd_buf = self.nic_get_cmd_buf()
-        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
-        if ("Writing CFG{:s}...".format(partition)).lower() not in sanitized_cmd_buf.lower() or "Done!".lower() not in sanitized_cmd_buf.lower():
-            self.nic_set_err_msg("Zephyr CPLD program {:s} Failed".format(partition))
+        # TODO: we saw intermittent cpld program and cpld crc command fail and return -EIO(-5), no root cause yet.
+        # From hw measurement, there is no SPI transaction on the bus when this error happens.
+        # Set retry to 3 in mfg test.
+
+        # 1. Program cpld partition
+        num_retries = 3
+        retries = 0
+        while retries < num_retries:
+            cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_PROG_BUF.format(partition)
+            if not self.nic_exec_cmd_from_suc_console1(cmd):
+                self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
+                return False
+            cmd_buf = self.nic_get_cmd_buf()
+            sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+            # if failed, delay 1 second and retry
+            if ("Writing CFG{:s}...".format(partition)).lower() not in sanitized_cmd_buf.lower() or "Done!".lower() not in sanitized_cmd_buf.lower():
+                retries += 1
+                time.sleep(1)
+            else:
+                break
+        if retries >= num_retries:
+            self.nic_set_err_msg("Zephyr CPLD program {:s} failed for {} times.".format(partition, num_retries))
             self.nic_set_err_msg(cmd_buf)
             return False
 
-        # calculate partition crc and verify
-        partition_number = partition.replace('cfg', '')
-        cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC.format(partition)
-        if not self.nic_exec_cmd_from_suc_console1(cmd):
-            self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
-            return False
-        cmd_buf = self.nic_get_cmd_buf()
-        sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
-        match = re.findall(r'CRC32\s+of\s+sector\s+' + partition_number + r'\s+=\s+0x([a-fA-F0-9]+)', sanitized_cmd_buf)
-        if not match:
-            self.nic_set_err_msg("Faield to parse command buffer:")
+        # 2. Calculate the programmed CRC
+        retries = 0
+        while retries < num_retries:
+            # calculate partition crc and verify
+            partition_number = partition.replace('cfg', '')
+            cmd = MFG_DIAG_CMDS().SUC_ZEPHYR_CPLD_CRC.format(partition)
+            if not self.nic_exec_cmd_from_suc_console1(cmd):
+                self.nic_set_err_msg("Zephyr CPLD Command '{:s}' Failed".format(cmd))
+                return False
+            cmd_buf = self.nic_get_cmd_buf()
+            sanitized_cmd_buf = self.zephyr_output_sanitize(cmd_buf)
+            match = re.findall(r'CRC32\s+of\s+sector\s+' + partition_number + r'\s+=\s+0x([a-fA-F0-9]+)', sanitized_cmd_buf)
+            # if failed, delay 1 second and retry
+            if not match:
+                retries += 1
+                time.sleep(1)
+            else:
+                break
+        if retries >= num_retries:
+            self.nic_set_err_msg("Zephyr CPLD verify {:s} failed for {} times.".format(partition, num_retries))
             self.nic_set_err_msg(cmd_buf)
             return False
+
+        # 3. Compare the calculated CRC with CRC in buffer
         crc_after_prog = match[0]
         if crc_before_prog != crc_before_prog:
             self.nic_set_err_msg("CRC verify failed, buffer crc:{} vs flash partion crc:{}.".format(crc_before_prog, crc_after_prog))
