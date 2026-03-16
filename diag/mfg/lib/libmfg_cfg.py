@@ -1371,10 +1371,10 @@ class NIC_IMAGES:
     suc_diag_img["SARACENO"] = "vulcano/saraceno/ainic_fw_vulcano_combined_03132026.pldmfw"
     suc_diagimg_suc_date["SARACENO"] = "2026-03-13 09:17:50"   #YYYY-mm-dd HH:MM:SS
     inter_suc_diag_img["SARACENO"] = "vulcano/saraceno/two_comp_saraceno_qspi_3_1.pldm"
-    suc_sw_img["SARACENO"] = "vulcano/saraceno/ainic_bundle_1.125.1-a-8/firmware/ainic_fw_vulcano.pldmfw"
-    suc_swimg_suc_date["SARACENO"] = "2026-02-23 01:52:01"   #YYYY-mm-dd HH:MM:SS
-    suc_swimg_soc_date["SARACENO"] = "Feb 22 2026 23:37:52"
-    suc_swimg_soc_ver["SARACENO"] = "1.125.1-a-8"
+    suc_sw_img["SARACENO"] = "vulcano/saraceno/ainic_bundle_1.125.1-a-10/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["SARACENO"] = "2026-03-13 17:20:13"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["SARACENO"] = "Mar 13 2026 15:34:53"
+    suc_swimg_soc_ver["SARACENO"] = "1.125.1-a-10"
 
     cpld_img["58-0014-01"] = "saraceno_cpld_cfg0_rev0204_code_03111034.jed"
     cpld_ver["58-0014-01"] = "0x2"
@@ -1389,10 +1389,10 @@ class NIC_IMAGES:
     suc_diag_img["58-0014-01"] = "vulcano/saraceno/ainic_fw_vulcano_combined_03132026.pldmfw"
     suc_diagimg_suc_date["58-0014-01"] = "2026-03-13 09:17:50"   #YYYY-mm-dd HH:MM:SS
     inter_suc_diag_img["58-0014-01"] = "vulcano/saraceno/two_comp_saraceno_qspi_3_1.pldm"
-    suc_sw_img["58-0014-01"] = "vulcano/saraceno/ainic_bundle_1.125.1-a-8/firmware/ainic_fw_vulcano.pldmfw"
-    suc_swimg_suc_date["58-0014-01"] = "2026-02-23 01:52:01"   #YYYY-mm-dd HH:MM:SS
-    suc_swimg_soc_date["58-0014-01"] = "Feb 22 2026 23:37:52"
-    suc_swimg_soc_ver["58-0014-01"] = "1.125.1-a-8"
+    suc_sw_img["58-0014-01"] = "vulcano/saraceno/ainic_bundle_1.125.1-a-10/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["58-0014-01"] = "2026-03-13 17:20:13"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["58-0014-01"] = "Mar 13 2026 15:34:53"
+    suc_swimg_soc_ver["58-0014-01"] = "1.125.1-a-10"
 
     cpld_img["100-700000003"] = "saraceno_cpld_cfg0_rev0204_code_03111034.jed"
     cpld_ver["100-700000003"] = "0x2"
@@ -1407,10 +1407,10 @@ class NIC_IMAGES:
     suc_diag_img["100-700000003"] = "vulcano/saraceno/ainic_fw_vulcano_combined_03132026.pldmfw"
     suc_diagimg_suc_date["100-700000003"] = "2026-03-13 09:17:50"   #YYYY-mm-dd HH:MM:SS
     inter_suc_diag_img["100-700000003"] = "vulcano/saraceno/two_comp_saraceno_qspi_3_1.pldm"
-    suc_sw_img["100-700000003"] = "vulcano/saraceno/ainic_bundle_1.125.1-a-8/firmware/ainic_fw_vulcano.pldmfw"
-    suc_swimg_suc_date["100-700000003"] = "2026-03-06 17:47:59"   #YYYY-mm-dd HH:MM:SS
-    suc_swimg_soc_date["100-700000003"] = "Mar  6 2026 22:24:29"
-    suc_swimg_soc_ver["100-700000003"] = "1.125.0-pi-144"
+    suc_sw_img["100-700000003"] = "vulcano/saraceno/ainic_bundle_1.125.1-a-10/firmware/ainic_fw_vulcano.pldmfw"
+    suc_swimg_suc_date["100-700000003"] = "2026-03-13 17:20:13"   #YYYY-mm-dd HH:MM:SS
+    suc_swimg_soc_date["100-700000003"] = "Mar 13 2026 15:34:53"
+    suc_swimg_soc_ver["100-700000003"] = "1.125.1-a-10"
 
     # MORTARO is AINIC
     cpld_img["MORTARO"] = "mortaro_rev02_02_TS_26-02-24-14-58_cfg0.jed"
