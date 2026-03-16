@@ -1290,23 +1290,25 @@ class nic_con:
             if ret != 0:
                 print("=== FAIL to wait for uplink ready! ===")
                 return ret
-        ret = self.ping_check_mtp(slot, session_bash)
-        print(("ret:", ret))
-
-        # if ping test fails, apply WA for Elba
-        mtpType = os.environ['MTP_TYPE']
-        if ret == -2 and mtpType == "MTP_ELBA" and first_pwr_on == True: 
-            self.fix_elba_bx(slot, session_uart)
+        for i in range(numRetry):
+            print("Ping Check Attempt #{}".format(i))
             ret = self.ping_check_mtp(slot, session_bash)
+            print(("ret:", ret))
 
-        # if ping test fails, retry the MTP port reset
-        asic_type = self.get_asic_type(slot)
-        if ret != 0 and asic_type == "ELBA_FPGA":
-            for i in range(numRetry):
-                self.mes_mtp_reset(slot, session_uart)
+            # if ping test fails, apply WA for Elba
+            mtpType = os.environ['MTP_TYPE']
+            if ret == -2 and mtpType == "MTP_ELBA" and first_pwr_on == True: 
+                self.fix_elba_bx(slot, session_uart)
                 ret = self.ping_check_mtp(slot, session_bash)
-                if ret == 0:
-                    break
+
+            # if ping test fails, retry the MTP port reset
+            asic_type = self.get_asic_type(slot)
+            if ret != 0 and asic_type == "ELBA_FPGA":
+                for i in range(numRetry):
+                    self.mes_mtp_reset(slot, session_uart)
+                    ret = self.ping_check_mtp(slot, session_bash)
+                    if ret == 0:
+                        break
 
         return ret
 
