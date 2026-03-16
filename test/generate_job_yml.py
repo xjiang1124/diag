@@ -39,13 +39,6 @@ else:
 
 NICS_BY_STAGE = dict()
 
-if job_set != "asic":
-    # always keep FST test even if ortano-ti-orc is skipped
-    # since infra tests depend on it
-    NICS_BY_STAGE["FST"] = {"ortano-ti-orc": ("elba", "elba", "ortano-ti")}
-
-
-
 def write_headers(fh):
     fh.write("---\n")
     fh.write("version: 2.0\n")
