@@ -5043,7 +5043,6 @@ class nic_ctrl():
                     self.nic_set_err_msg("For Vulcano cards, please Provide Board ID")
                     return False
                 cmd += " -boardid=" + boardid
-            print(cmd)
             cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
         else:
             if nic_type in SALINA_NIC_TYPE_LIST:

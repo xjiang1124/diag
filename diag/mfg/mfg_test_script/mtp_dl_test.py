@@ -776,9 +776,23 @@ def main():
             run_dl_test(pass_nic_list, "NIC_TYPE")
             run_dl_test(pass_nic_list, "NIC_INIT")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
+
             # Program diag image
+            saved_pass_nic_list = pass_nic_list[:]
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
+
+            # Retry as program may fail as of USB related issue
+            img_prog_fail_list = [slot for slot in saved_pass_nic_list if slot not in pass_nic_list]
+            if img_prog_fail_list:
+                run_dl_test(img_prog_fail_list, "NIC_PWRCYC")
+                run_dl_test(img_prog_fail_list, "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
+                for slot in img_prog_fail_list:
+                    if slot not in pass_nic_list:
+                        pass_nic_list.append(slot)
+                    if slot in fail_nic_list:
+                        fail_nic_list.remove(slot)
+
             # Program FRU and CPLD
             run_dl_test(pass_nic_list, "FRU_PROG")
             run_dl_test(pass_nic_list, "CPLD_PROG")
