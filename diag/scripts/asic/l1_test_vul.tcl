@@ -46,6 +46,8 @@ set ::ZMTP_SHELL 0
 set ::JCS_SHELL 0
 set ::ts_present 0
 set ::reset_cpu 0
+set ::powercycle 1
+set ::board_powercycle 0
 set ::WS "$ASIC_SRC/ip/cosim/tclsh"
 
 source /home/diag/diag/scripts/asic/asic_tests.tcl
@@ -76,7 +78,7 @@ if {($MTP_TYPE == "MTP_PANAREA") || ($MTP_TYPE == "MTP_PONZA")} {
     }
     puts $l1_cmd
     source .tclrc.diag.vul
-    #source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
+    source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
 } else {
    plog_err "INVALID PLATFORM/MTP TYPE: $MTP_TYPE\n"
    exit -1
@@ -116,23 +118,32 @@ if {$ASIC_TYPE == "VULCANO"} {
     if {($MTP_TYPE == "MTP_PONZA")} {
         diag_open_zmtpj2c_if $::port $::slot
     } else {
-        vul_j2c
+        diag_open_j2c_if $::port $::slot
     }
 
-    puts "_msrd"
-    set rtn [eval _msrd]
-    puts $rtn
+    plog_msg "J2C sanity check 1"
+    if {![mtp_shell_sanity_check $powercycle]} {
+        exit
+    }
 
     vulcano_setup 0
 
-    plog_msg "calling vul_card_rst 1 0"
-    vul_card_rst 1 0
-    after 2000
+    if {$reset_cpu} {
+        plog_msg "Running vul_card_rst 1 0"
+        vul_card_rst 1 0
+    }
 
-    plog_msg "calling vul_pll_fix"
+    plog_msg "Running vul_pll_fix"
     vul_pll_fix
+    plog_msg "Running vul_vt_init 0"
     vul_vt_init 0
-    after 1000
+
+    plog_msg "J2C sanity check 2"
+    if {![mtp_shell_sanity_check $powercycle]} {
+        exit
+    }
+
+    plog_msg "Setting the Serdes PN swap file for card:$::board_rev"
     vul_set_serdes_pn_swap_file
 
     vul_die_id_print
@@ -143,7 +154,7 @@ if {$ASIC_TYPE == "VULCANO"} {
     if {($MTP_TYPE == "MTP_PONZA")} {
         diag_close_zmtpj2c_if $::port $::slot
     } else {
-        diag_close_j2c_if $port $slot
+        diag_close_j2c_if $::port $::slot
     }
 }
 

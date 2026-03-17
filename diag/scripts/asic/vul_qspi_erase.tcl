@@ -14,11 +14,13 @@ parray arg
 ### initialize asic lib
 set ::VEL_SHELL 0
 set ::SHELL_MODE mtp
-set ::MTP_SHELL 1
+set ::MTP_SHELL 0
 set ::ZMTP_SHELL 0
 set ::JCS_SHELL 0
 set ::ts_present 0
 set ::reset_cpu 0
+set ::powercycle 1
+set ::board_powercycle 0
 
 if { $tcl_path != "" } {
     set ASIC_LIB_BUNDLE "$tcl_path"
@@ -37,6 +39,7 @@ set ::WS "$ASIC_SRC/ip/cosim/tclsh"
 
 cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 source .tclrc.diag.vul
+source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
 
 ### initialize card properties
 set slot $slot
@@ -72,14 +75,36 @@ if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
     }
 }
 
-vul_j2c
-plog_msg "_msrd"
-plog_msg [eval _msrd]
+diag_open_j2c_if $::port $::slot
+
+plog_msg "J2C sanity check 1"
+if {![mtp_shell_sanity_check $powercycle]} {
+    exit
+}
+
 vulcano_setup 0
-plog_msg "calling vul_pll_fix"
+
+if {$reset_cpu} {
+    plog_msg "Running vul_card_rst 1 0"
+    vul_card_rst 1 0
+}
+
+plog_msg "Running vul_pll_fix"
 vul_pll_fix
+plog_msg "Running vul_vt_init 0"
 vul_vt_init 0
-after 1000
+
+plog_msg "J2C sanity check 2"
+if {![mtp_shell_sanity_check $powercycle]} {
+    exit
+}
+
+plog_msg "Setting the Serdes PN swap file for card:$::board_rev"
+vul_set_serdes_pn_swap_file
+
+vul_die_id_print
+vul_get_git_rev
+
 set err_cnt_init [ plog_get_err_count ]
 vul_qspi_erase 0x70100000
 set err_cnt_fnl [ plog_get_err_count ]
@@ -89,5 +114,5 @@ if {$err_cnt != 0} {
 } else {
     plog_msg "QSPI ERASE PASSED"
 }
-diag_close_j2c_if $port $slot
+diag_close_j2c_if $::port $::slot
 exit
