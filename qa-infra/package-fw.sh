@@ -19,9 +19,36 @@ mkdir -p ${dest_folder}
 
 ## COPY NIC IMAGES
 image_files=$(grep -e "_img" -e "_dtb" ${mfg_script_dir}/lib/libmfg_cfg.py | grep \".*\" | grep -v "#" | grep -v "image_a" | cut -d"=" -f2 | cut -d'"' -f2 | sort | uniq)
-cd /vol/hw/diag/mfg_release/prog/
 for f in $image_files; do
-    rsync -aPtv --relative $f ${dest_folder}
+    cd /vol/hw/diag/mfg_release/prog/
+    if [[ -e $f ]]; then
+        rsync -aPtv --relative $f ${dest_folder}
+    else
+        # try finding it in vulcano release folder
+        cd /vol/hw/diag/mfg_release/
+        g=$(find . \
+        -path "*$f" \
+        -print \
+        -quit \
+        )
+        if [[ -z $g ]]; then
+           echo "========================================"
+           echo " Missing file $g"
+           echo "========================================"
+           continue
+        fi
+        # vulcano directory is organized as "CARD_TYPE/IMAGE".
+        # We dont need to copy the CARD_TYPE folder to MTP, so flatten it
+        g=$(echo $g | sed "s/^\.\///g") # sanitize `find` results starting the path with "./"
+        cd ${g%%/*}  					# go into the directory to keep --relative honest
+        g=$(echo $g | cut -d'/' -f2-)   # strip CARD_TYPE directory
+        rsync -aPtv --relative $g ${dest_folder}
+        if [[ $? != 0 ]]; then
+           echo "========================================"
+           echo " Missing file $g"
+           echo "========================================"
+        fi
+    fi
 done
 
 ## TAR THE FW IMAGES

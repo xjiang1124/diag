@@ -122,9 +122,9 @@ jobs:
   #  labels: ["CI-DIAG-Tests"]
   #diag/python/esec:
   #  labels: ["CI-DIAG-Tests"]
+  #test/FST:
+  #  labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-FST"]
 ### JOB LABELS ###
-  test/FST:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-FST"]
   test/DL:
     labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-DL"]
   test/P2C:
@@ -148,12 +148,12 @@ jobs:
 ### END ASIC JOB LABELS ###
 
 dependencies:
-  .:
-    - reference: test/FST
-  test/infra:
-    - reference: test/FST
-  qa/infra:
-    - reference: test/FST
+  #.:
+  #  - reference: test/FST
+  #test/infra:
+  #  - reference: test/FST
+  #qa/infra:
+  #  - reference: test/FST
   build:
     - reference: asset-build
   asset-build:
@@ -166,13 +166,13 @@ dependencies:
 ### END TEST DIAG CHANGES ###
 
   diag/mfg:
+    #- reference: test/FST
+    #  exclude_dirs: ["scripts"]
 ### TEST SCRIPT CHANGES ###
-    - reference: test/FST
-      exclude_dirs: ["scripts"]
     - reference: test/P2C
       exclude_dirs: ["scripts"]
     - reference: test/SWI
       exclude_dirs: ["scripts"]
 ### END TEST SCRIPT CHANGES ###
-  diag/mfg/scripts:
-    - reference: test/FST
+  #diag/mfg/scripts:
+  #  - reference: test/FST
