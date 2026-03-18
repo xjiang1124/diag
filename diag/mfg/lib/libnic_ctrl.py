@@ -730,7 +730,7 @@ class nic_ctrl():
         time.sleep(5)
         # send return
         if self._nic_type in VULCANO_NIC_TYPE_LIST:
-            self._nic_handle.send('\r\n')
+            self._nic_handle.send('\r')
         else:
             self._nic_handle.sendline("")
         # TODO: Forio need another enter to connect console
@@ -1757,14 +1757,15 @@ class nic_ctrl():
 
     @nic_console_test('1')
     def nic_exec_cmd_from_suc_console1(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
-        self._nic_handle.send('\r\n')
-        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_suc_prompt], self._nic_con_suc_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
-        if idx < 0:
-            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-            self.nic_set_cmd_buf(cmd_buf)
-            return False
+        # Send a '\r' and clear pending suc prompt(s)
+        self._nic_handle.send('\r')
+        while True:
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_suc_prompt], timeout=3)
+            if idx < 0:
+                break
 
-        self._nic_handle.sendline(cmd)
+        # Send command ending with '\r'
+        self._nic_handle.send(f"{cmd}\r")
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_suc_prompt], self._nic_con_suc_prompt, timeout=timeout)
         if idx < 0:
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -1777,14 +1778,15 @@ class nic_ctrl():
 
     @nic_console_test('2')
     def nic_exec_cmd_from_soc_console(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
-        self._nic_handle.sendline('\r\n')
-        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_vulcano_prompt], self._nic_con_vulcano_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
-        if idx < 0:
-            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-            self.nic_set_cmd_buf(cmd_buf)
-            return False
+        # Send a '\r' and clear pending soc prompt(s)
+        self._nic_handle.send('\r')
+        while True:
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_vulcano_prompt], timeout=3)
+            if idx < 0:
+                break
 
-        self._nic_handle.sendline(cmd)
+        # Send command ending with '\r'
+        self._nic_handle.send(f"{cmd}\r")
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_vulcano_prompt], self._nic_con_vulcano_prompt, timeout=timeout)
         if idx < 0:
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
