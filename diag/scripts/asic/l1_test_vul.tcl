@@ -98,6 +98,8 @@ if {$ASIC_TYPE == "VULCANO"} {
     }
 
     if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
+        plog_msg "config MTP mode register"
+        exec sucutil exec -s $::slot -c "cpld_reg write 0xd 0x40"
         plog_msg "config QSPI mux"
         set config_mux_fail 0
         if {[catch {set output [exec sucutil exec -s $::slot -c "gpio conf pb 0 o0"]}]} {

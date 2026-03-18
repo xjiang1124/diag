@@ -671,15 +671,54 @@ def main():
             run_swi_test(pass_nic_list, "NIC_INIT")
             run_swi_test(pass_nic_list, "FRU_PROG")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
+
+            # Program SuC image only.
+            saved_pass_nic_list = pass_nic_list[:]
             run_swi_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_SUC_IMG_PROG")
             run_swi_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_SUC_IMG_PROG")
+            # Retry as program may fail as of USB related issue
+            img_prog_fail_list = [slot for slot in saved_pass_nic_list if slot not in pass_nic_list]
+            if img_prog_fail_list:
+                run_swi_test(img_prog_fail_list, "NIC_PWRCYC")
+                run_swi_test(img_prog_fail_list, "uC_SUC_IMG_PROG")
+                for slot in img_prog_fail_list:
+                    if slot not in pass_nic_list:
+                        pass_nic_list.append(slot)
+                    if slot in fail_nic_list:
+                        fail_nic_list.remove(slot)
+
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
+
+            # Program Bundle image once.
+            saved_pass_nic_list = pass_nic_list[:]
             run_swi_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_SW_IMG_PROG")
             run_swi_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_SW_IMG_PROG")
-            time.sleep(10)
-            run_swi_test(pass_nic_list, "SUC_USB_RESCAN")
+            # Retry as program may fail as of USB related issue
+            img_prog_fail_list = [slot for slot in saved_pass_nic_list if slot not in pass_nic_list]
+            if img_prog_fail_list:
+                run_swi_test(img_prog_fail_list, "NIC_PWRCYC")
+                run_swi_test(img_prog_fail_list, "uC_SW_IMG_PROG")
+                for slot in img_prog_fail_list:
+                    if slot not in pass_nic_list:
+                        pass_nic_list.append(slot)
+                    if slot in fail_nic_list:
+                        fail_nic_list.remove(slot)
+
+            # Program Bundle image twice.
+            saved_pass_nic_list = pass_nic_list[:]
             run_swi_test([slot for slot in pass_nic_list if int(slot) % 2 == 0], "uC_SW_IMG_PROG")
             run_swi_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_SW_IMG_PROG")
+            # Retry as program may fail as of USB related issue
+            img_prog_fail_list = [slot for slot in saved_pass_nic_list if slot not in pass_nic_list]
+            if img_prog_fail_list:
+                run_swi_test(img_prog_fail_list, "NIC_PWRCYC")
+                run_swi_test(img_prog_fail_list, "uC_SW_IMG_PROG")
+                for slot in img_prog_fail_list:
+                    if slot not in pass_nic_list:
+                        pass_nic_list.append(slot)
+                    if slot in fail_nic_list:
+                        fail_nic_list.remove(slot)
+
             run_swi_test(pass_nic_list, "uC_BOOTING_CHK")
             run_swi_test(pass_nic_list, "VULCANO_BOOTING_CHK")
             run_swi_test(pass_nic_list, "uC_VERSION_CHK")
