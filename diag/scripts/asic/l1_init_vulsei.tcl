@@ -62,27 +62,6 @@ if {$::board_rev != "vulsei"} {
     exit -1
 }
 
-if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
-    plog_msg "config MTP mode register"
-    exec sucutil exec -s $::slot -c "cpld_reg write 0xd 0x40"
-    plog_msg "config QSPI mux"
-    set config_mux_fail 0
-    if {[catch {set output [exec sucutil exec -s $::slot -c "gpio conf pb 0 o0"]}]} {
-        set config_mux_fail 1
-    }
-    plog_msg $output
-    # Strip ANSI codes and check for content
-    set clean_output [regsub -all {\x1b\[[0-9;]*[a-zA-Z]} $output ""]
-    if { [regexp {\[INFO\]\s+\[.+\]\s+\S} $clean_output] } {
-        set config_mux_fail 1
-    }
-    if {$config_mux_fail == 1} {
-        plog_err "Failed to config QSPI mux, exit"
-        puts "L1 SANITY CHECK FAILED"
-        exit -1
-    }
-}
-
 diag_close_zmtpj2c_if $::port $::slot
 diag_open_zmtpj2c_if $::port $::slot
 
