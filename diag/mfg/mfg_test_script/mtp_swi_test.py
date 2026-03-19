@@ -317,6 +317,9 @@ def main():
         def get_slots_of_type(nic_type, except_type=[]):
             return mtp_mgmt_ctrl.get_slots_of_type(nic_type, pass_nic_list, except_type)
 
+        def get_slots_of_sku(sku):
+            return mtp_mgmt_ctrl.get_slots_of_sku(sku, pass_nic_list)
+
         def run_swi_test(nic_list_orig, test, *test_args, **test_kwargs):
             stage = FF_Stage.FF_SWI
             nic_list = nic_list_orig[:]

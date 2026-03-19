@@ -5403,6 +5403,21 @@ class mtp_ctrl():
                 return False
         return True
 
+    def mtp_nic_sku_init(self, slot, fpo=False):
+        # already initialized
+        if self._nic_ctrl_list[slot]._sku is not None and self._nic_ctrl_list[slot]._sku != "":
+            return True
+
+        # not initialized, but present in barcode scans
+        scanned_sku = self.get_scanned_sku(slot)
+        if scanned_sku is not None and scanned_sku != "":
+            self._nic_ctrl_list[slot]._sku = self.get_scanned_sku(slot)
+            return True
+
+        else:
+            # corner case, somehow it's not scanned, need to read the FRU:
+            return False
+
     def mtp_nic_cpld_init(self, slot, smb=False):
         self.cli_log_slot_inf_lock(slot, "Init NIC CPLD info")
         if not self._nic_ctrl_list[slot].nic_cpld_init(smb):
@@ -7037,6 +7052,18 @@ class mtp_ctrl():
             return [slot for slot in nic_list if self.mtp_get_nic_type(slot) in nic_type]
         else:
             return []
+
+    def get_slots_of_sku(self, sku="", nic_list=range(MTP_Const.MTP_SLOT_NUM)):
+        if not isinstance(sku, str):
+            return []
+        if not self._nic_ctrl_list:
+            return []
+        # initialize nic_ctrl sku property
+        for slot in nic_list[:]:
+            if self._nic_ctrl_list[slot]._sku is None:
+                if not self.mtp_nic_sku_init(slot):
+                    nic_list.remove(slot)
+        return [slot for slot in nic_list if self._nic_ctrl_list[slot]._sku == sku]
 
     def mtp_nic_pn_valid(self, slot):
         if self._nic_ctrl_list[slot] is None:
