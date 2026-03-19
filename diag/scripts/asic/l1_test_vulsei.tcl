@@ -2,6 +2,7 @@
 puts "argv: $argv"
 
 set sn       [lindex $argv 0]
+# reuse slot as vulcano_index for Vulsei
 set slot     [lindex $argv 1]
 set int_lpbk [lindex $argv 2]
 set vmarg    [lindex $argv 3]
@@ -53,10 +54,7 @@ source /home/diag/diag/scripts/asic/asic_tests.tcl
 
 cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 
-set ::MTP_SHELL 1
-#set uut "UUT_$slot"
-#set card_type $::env($uut)
-#puts "card type: $card_type; UUT: $uut"
+set ::ZMTP_SHELL 1
 
 set port $slot
 set slot $slot
@@ -70,85 +68,29 @@ puts $l1_cmd
 source .tclrc.diag.vul
 source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
 
-set err_cnt_init [ plog_get_err_count ]
+#set err_cnt_init [ plog_get_err_count ]
 
-puts "Vulcano L1"
+puts "Vulcano L1 Test Execution"
 set ::slot $slot
 set ::port $port
 
 set ::board_rev [vul_get_board_rev]
-if {${::board_rev} eq "board-other"} {
-    plog_err "Failed to get board_rev, exit"
+if {$::board_rev != "vulsei"} {
+    plog_err "\$::board_rev   = $::board_rev"
     exit -1
 }
 
-if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
-    plog_msg "config MTP mode register"
-    exec sucutil exec -s $::slot -c "cpld_reg write 0xd 0x40"
-    plog_msg "config QSPI mux"
-    set config_mux_fail 0
-    if {[catch {set output [exec sucutil exec -s $::slot -c "gpio conf pb 0 o0"]}]} {
-        set config_mux_fail 1
-    }
-    plog_msg $output
-    # Strip ANSI codes and check for content
-    set clean_output [regsub -all {\x1b\[[0-9;]*[a-zA-Z]} $output ""]
-    if { [regexp {\[INFO\]\s+\[.+\]\s+\S} $clean_output] } {
-        set config_mux_fail 1
-    }
-    if {$config_mux_fail == 1} {
-        plog_err "Failed to config QSPI mux, exit"
-        exit -1
-    }
-}
-
-diag_open_j2c_if $::port $::slot
-
-plog_msg "J2C sanity check 1"
-if {![mtp_shell_sanity_check $powercycle]} {
-    diag_close_j2c_if $::port $::slot
-    exit -1
-}
-
-vulcano_setup 0
-
-if {$reset_cpu} {
-    plog_msg "Running vul_card_rst 1 0"
-    vul_card_rst 1 0
-}
-
-plog_msg "Running vul_pll_fix"
-vul_pll_fix
-plog_msg "Running vul_vt_init 0"
-vul_vt_init 0
-
-plog_msg "J2C sanity check 2"
-if {![mtp_shell_sanity_check $powercycle]} {
-    diag_close_j2c_if $::port $::slot
-    exit -1
-}
-
-plog_msg "Setting the Serdes PN swap file for card:$::board_rev"
-vul_set_serdes_pn_swap_file
+# Re-open the zmtpj2c interface for test execution
+diag_open_zmtpj2c_if $::port $::slot
 
 vul_die_id_print
 vul_get_git_rev
 
 set err_cn [eval $l1_cmd]
 
-diag_close_j2c_if $::port $::slot
+diag_close_zmtpj2c_if $::port $::slot
 
-set err_cnt_fnl [ plog_get_err_count ]
+#set err_cnt_fnl [ plog_get_err_count ]
 
-# Print twice for DSP to capture signature
-#if { $err_cnt_init != $err_cnt_fnl || $err_cn != 0 } {
-#    puts "L1 TEST FAILED"
-#    puts "L1 TEST FAILED"
-#    exit -1
-#} else {
-#    puts "L1 TEST PASSED"
-#    puts "L1 TEST PASSED"
-#    exit 0
-#}
 puts "L1 TEST DONE"
 exit 0

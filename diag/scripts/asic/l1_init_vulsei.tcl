@@ -1,27 +1,12 @@
 #! /usr/bin/tclsh
 puts "argv: $argv"
 
-set sn       [lindex $argv 0]
-set slot     [lindex $argv 1]
-set int_lpbk [lindex $argv 2]
-set vmarg    [lindex $argv 3]
-set esecEn   [lindex $argv 4]
-set logEn    [lindex $argv 5]
-set pct      [lindex $argv 6]
-set skip_l1_report_mode   [lindex $argv 7]
-set skip_serdes_tests     [lindex $argv 8]
-set tcl_path [lindex $argv 9]
-set test_list [lindex $argv 10]
+# reuse slot as vulcano_index for Vulsei
+set slot     [lindex $argv 0]
+set tcl_path [lindex $argv 1]
 set port 10
 
-if {$logEn == ""} {
-    set logEn 1
-}
-
-puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; esecEn: $esecEn; logEn: $logEn; \
-      skip_l1_report_mode: $skip_l1_report_mode; skip_serdes_tests: $skip_serdes_tests; \
-      tcl_path: $tcl_path; test_list: $test_list"
-set err_cnt 0
+puts "slot: $slot; tcl_path: $tcl_path"
 if { $tcl_path != "" } {
     set ASIC_LIB_BUNDLE "$tcl_path"
 } elseif { $::env(ASIC_LIB_BUNDLE) != "" } {
@@ -53,32 +38,27 @@ source /home/diag/diag/scripts/asic/asic_tests.tcl
 
 cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 
-set ::MTP_SHELL 1
-#set uut "UUT_$slot"
-#set card_type $::env($uut)
-#puts "card type: $card_type; UUT: $uut"
+set ::ZMTP_SHELL 1
+puts "power on Vulcano"
+catch "exec sucutil vul_power_on -i $slot " catch_error
+puts "wait for 2 seconds"
+after 2000
 
 set port $slot
 set slot $slot
 
-if { $test_list != ""} {
-    set l1_cmd "vul_l1_screen_diag $sn 0 1 1 $int_lpbk $vmarg $esecEn $logEn $skip_l1_report_mode $skip_serdes_tests \"$test_list\""
-} else {
-    set l1_cmd "vul_l1_screen_diag $sn 0 1 1 $int_lpbk $vmarg $esecEn $logEn $skip_l1_report_mode $skip_serdes_tests"
-}
-puts $l1_cmd
 source .tclrc.diag.vul
 source /home/diag/diag/scripts/asic/vul_diag_utils.tcl
 
 set err_cnt_init [ plog_get_err_count ]
 
-puts "Vulcano L1"
 set ::slot $slot
 set ::port $port
 
 set ::board_rev [vul_get_board_rev]
-if {${::board_rev} eq "board-other"} {
-    plog_err "Failed to get board_rev, exit"
+if {$::board_rev != "vulsei"} {
+    plog_err "\$::board_rev   = $::board_rev"
+    puts "L1 SANITY CHECK FAILED"
     exit -1
 }
 
@@ -98,15 +78,23 @@ if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
     }
     if {$config_mux_fail == 1} {
         plog_err "Failed to config QSPI mux, exit"
+        puts "L1 SANITY CHECK FAILED"
         exit -1
     }
 }
 
-diag_open_j2c_if $::port $::slot
+diag_close_zmtpj2c_if $::port $::slot
+diag_open_zmtpj2c_if $::port $::slot
 
+if {[vul_test_card_is_up] != 1} {
+    puts "L1 SANITY CHECK FAILED"
+    diag_close_zmtpj2c_if $::port $::slot
+    exit -1
+}
 plog_msg "J2C sanity check 1"
 if {![mtp_shell_sanity_check $powercycle]} {
-    diag_close_j2c_if $::port $::slot
+    puts "L1 SANITY CHECK FAILED"
+    diag_close_zmtpj2c_if $::port $::slot
     exit -1
 }
 
@@ -124,31 +112,16 @@ vul_vt_init 0
 
 plog_msg "J2C sanity check 2"
 if {![mtp_shell_sanity_check $powercycle]} {
-    diag_close_j2c_if $::port $::slot
+    puts "L1 SANITY CHECK FAILED"
+    diag_close_zmtpj2c_if $::port $::slot
     exit -1
 }
 
 plog_msg "Setting the Serdes PN swap file for card:$::board_rev"
 vul_set_serdes_pn_swap_file
 
-vul_die_id_print
-vul_get_git_rev
+diag_close_zmtpj2c_if $::port $::slot
 
-set err_cn [eval $l1_cmd]
+puts "L1 SANITY CHECK PASSED"
 
-diag_close_j2c_if $::port $::slot
-
-set err_cnt_fnl [ plog_get_err_count ]
-
-# Print twice for DSP to capture signature
-#if { $err_cnt_init != $err_cnt_fnl || $err_cn != 0 } {
-#    puts "L1 TEST FAILED"
-#    puts "L1 TEST FAILED"
-#    exit -1
-#} else {
-#    puts "L1 TEST PASSED"
-#    puts "L1 TEST PASSED"
-#    exit 0
-#}
-puts "L1 TEST DONE"
 exit 0
