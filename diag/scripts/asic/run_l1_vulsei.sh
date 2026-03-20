@@ -13,9 +13,9 @@ TEST_LIST=""
 
 usage () {
     echo "=========================="
-    echo "./run_l1.sh -sn <> -slot <> -i <> -v <> -e <> -t <> -r <> -k <> -l <> -ite <>"
+    echo "./run_l1_vulsei.sh -sn <> -slot <> -i <> -v <> -e <> -t <> -r <> -k <> -l <> -ite <>"
     echo "sn:   SN"
-    echo "slot: Slot number"
+    echo "slot: Slot number (Vulcano index)"
     echo "i:    0: external loopback; 1 internal loopback; default: 0"
     echo "v:    Voltage margin: nom/low/high; default: nom"
     echo "e:    0: esecure test disabled; 1: esecure test enabled; default: 1"
@@ -114,8 +114,8 @@ then
 fi
 #echo "vmarg: $VMARG; pct: $PCT"
 
-# This script is for MTP_PANAREA only
-# For MTP_PONZA (Vulsei), use run_l1_vulsei.sh instead
+# For MTP_PONZA (Vulsei), append _VUL$SLOT to SN
+SN="${SN}_VUL${SLOT}"
 
 TCL_PATH="\"$TCL_PATH\""
 TEST_LIST="\"$TEST_LIST\""
@@ -130,8 +130,8 @@ do
     echo "jtag_accpcie_vulcano clr $SLOT"
     jtag_accpcie_vulcano clr $SLOT
 
-    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $SKIP_SERDES $TCL_PATH $TEST_LIST"
-    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vul.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $SKIP_SERDES $TCL_PATH $TEST_LIST"
+    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test_vulsei.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $SKIP_SERDES $TCL_PATH $TEST_LIST"
+    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test_vulsei.tcl $SN $SLOT $INT_LPBK $VMARG $ESEC_EN 1 $PCT $REPORT_MODE $SKIP_SERDES $TCL_PATH $TEST_LIST"
     ret=$?
     sync
     num_pass=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1_SCREEN PASSED" | wc | awk -F " " '{print $1}')
