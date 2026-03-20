@@ -1316,8 +1316,6 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname="", stage=""):
 
         if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in SALINA_NIC_TYPE_LIST + VULCANO_NIC_TYPE_LIST:
             mtp_mgmt_ctrl.mtp_nic_dump_reg(slot)
-            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in VULCANO_NIC_TYPE_LIST:
-                mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(slot)
             mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
         
         mtp_mgmt_ctrl.mtp_nic_console_lock()

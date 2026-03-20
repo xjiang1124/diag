@@ -7,6 +7,7 @@ import re
 import ntpath
 import time
 import traceback
+from datetime import datetime
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -317,6 +318,9 @@ def main():
         def get_slots_of_type(nic_type, except_type=[]):
             return mtp_mgmt_ctrl.get_slots_of_type(nic_type, pass_nic_list, except_type)
 
+        def get_slots_of_sku(sku):
+            return mtp_mgmt_ctrl.get_slots_of_sku(sku, pass_nic_list)
+
         def run_swi_test(nic_list_orig, test, *test_args, **test_kwargs):
             stage = FF_Stage.FF_SWI
             nic_list = nic_list_orig[:]
@@ -417,8 +421,6 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_version_read_check(nic_list, stage=FF_Stage.FF_SWI)
             elif test == "VULCANO_FRU_DUMP_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_fru_dump_check(nic_list)
-            elif test == "VULCANO_FPGA_UART_STATS_DUMP":
-                rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
             elif test == "CPLD_PROG":
                 rlist = swi_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "FSAFE_CPLD_PROG":
@@ -644,17 +646,25 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "GOLDFW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "LOADED_FW_VERSION_CHECK")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_EXTOSA")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFWA")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_A_BOOT")
+            ### for oracle leni, ship with mainfw
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64R64E64P-O"), "SET_EXTOSA")
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64R64E64P-O"), "SET_MAINFWA")
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64R64E64P-O"), "NIC_PWRCYC")
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64R64E64P-O"), "SW_A_BOOT")
+            ### for generic leni, ship with goldfw
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64S64E64P"), "SET_GOLDFW")
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64S64E64P"), "NIC_PWRCYC")
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64S64E64P"), "GOLDFW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_CLEANUP")
             cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_swi_test(cpld_list, "UMF1_CFG0_CPLD_PROG")
             fsafe_cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
             run_swi_test(fsafe_cpld_type_list, "FSAFE_CPLD_PROG")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_BOOT")
+            ### for oracle leni, ship with mainfw
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64R64E64P-O"), "SW_BOOT")
+            ### for generic leni, ship with goldfw
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64S64E64P"), "GOLDFW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWB")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
@@ -666,6 +676,9 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_ERASE_PCIEAWD_ENV")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "I2C_DUMP")
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+            # Save the start timestamp
+            start_test_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
             run_swi_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_swi_test(pass_nic_list, "NIC_TYPE")
             run_swi_test(pass_nic_list, "NIC_INIT")
@@ -725,8 +738,13 @@ def main():
             run_swi_test(pass_nic_list, "uC_FRU_DUMP_CHK")
             run_swi_test(pass_nic_list, "VULCANO_VERSION_CHK")
             run_swi_test(pass_nic_list, "VULCANO_FRU_DUMP_CHK")
-            run_swi_test(pass_nic_list, "VULCANO_FPGA_UART_STATS_DUMP")
 
+            # After test, collect statistics for debug purpose
+            # usb event since test start.
+            for slot in pass_nic_list + fail_nic_list:
+                mtp_mgmt_ctrl.mtp_vulcano_usb_event_dump(slot, start_test_timestamp)
+            # fpga uart statistics dump
+            mtp_mgmt_ctrl.mtp_fpga_uart_stats_dump()
         else:
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)

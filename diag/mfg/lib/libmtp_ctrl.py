@@ -4197,13 +4197,12 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_ssh
-    def mtp_vulcano_fpga_uart_stats_dump(self, slot):
-        nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in VULCANO_NIC_TYPE_LIST:
-            return True
-        if not self._nic_ctrl_list[slot].nic_vulcano_fpga_uart_stats_dump():
-            self.cli_log_slot_err(slot, "dump fpga uart stats failed")
-            self.mtp_get_nic_err_msg(slot)
+    def mtp_vulcano_usb_event_dump(self, slot, ts):
+        self._nic_ctrl_list[slot].nic_vulcano_usb_event_dump(ts)
+
+    def mtp_fpga_uart_stats_dump(self):
+        cmd = MFG_DIAG_CMDS().PANAREA_MTP_FPGA_UART_STATS_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
             return False
         return True
 
@@ -5187,8 +5186,6 @@ class mtp_ctrl():
             self.mtp_single_j2c_lock()
             self.mtp_nic_console_lock()
             self.mtp_nic_dump_reg(slot)
-            if self.mtp_get_nic_type(slot) in VULCANO_NIC_TYPE_LIST:
-                self.mtp_vulcano_fpga_uart_stats_dump(slot)
             self.mtp_get_nic_sts(slot, skip_vrm_check, test)
             self.mtp_sal_check_j2c(slot, test)
             self.mtp_nic_console_unlock()
@@ -5402,6 +5399,21 @@ class mtp_ctrl():
             if not self._nic_ctrl_list[slot].nic_smb_dpn_fru_init(self._factory_location, fpo=fpo):
                 return False
         return True
+
+    def mtp_nic_sku_init(self, slot, fpo=False):
+        # already initialized
+        if self._nic_ctrl_list[slot]._sku is not None and self._nic_ctrl_list[slot]._sku != "":
+            return True
+
+        # not initialized, but present in barcode scans
+        scanned_sku = self.get_scanned_sku(slot)
+        if scanned_sku is not None and scanned_sku != "":
+            self._nic_ctrl_list[slot]._sku = self.get_scanned_sku(slot)
+            return True
+
+        else:
+            # corner case, somehow it's not scanned, need to read the FRU:
+            return False
 
     def mtp_nic_cpld_init(self, slot, smb=False):
         self.cli_log_slot_inf_lock(slot, "Init NIC CPLD info")
@@ -6162,18 +6174,6 @@ class mtp_ctrl():
     def mtp_nic_salina_jtag_mbist(self, slot, vmarg="normal", test_type="warm"):
 
         if not self._nic_ctrl_list[slot].nic_salina_jtag_mbist(vmarg, test_type):
-            self.cli_log_slot_err(slot, "NIC JTAG MBIST FAILED")
-            self.mtp_get_nic_err_msg(slot)
-            return False
-        else:
-            self.cli_log_slot_inf(slot, "NIC JTAG MBIST PASS")
-
-        return True
-
-    @parallelize.parallel_nic_using_ssh
-    def mtp_nic_vulcano_jtag_mbist(self, slot, vmarg="normal", test_type="warm"):
-
-        if not self._nic_ctrl_list[slot].nic_vulcano_jtag_mbist(vmarg, test_type):
             self.cli_log_slot_err(slot, "NIC JTAG MBIST FAILED")
             self.mtp_get_nic_err_msg(slot)
             return False
@@ -7037,6 +7037,18 @@ class mtp_ctrl():
             return [slot for slot in nic_list if self.mtp_get_nic_type(slot) in nic_type]
         else:
             return []
+
+    def get_slots_of_sku(self, sku="", nic_list=range(MTP_Const.MTP_SLOT_NUM)):
+        if not isinstance(sku, str):
+            return []
+        if not self._nic_ctrl_list:
+            return []
+        # initialize nic_ctrl sku property
+        for slot in nic_list[:]:
+            if self._nic_ctrl_list[slot]._sku is None:
+                if not self.mtp_nic_sku_init(slot):
+                    nic_list.remove(slot)
+        return [slot for slot in nic_list if self._nic_ctrl_list[slot]._sku == sku]
 
     def mtp_nic_pn_valid(self, slot):
         if self._nic_ctrl_list[slot] is None:

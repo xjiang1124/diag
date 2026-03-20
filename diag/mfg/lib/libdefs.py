@@ -697,7 +697,6 @@ class MFG_DIAG_CMDS:
     NIC_TEST_VULCANO_CMD         = "nic_test_vul.py"
 
     #PANAREA MTP
-    PANAREA_MTP_VULCANO_NIC_JTAG_MBIST = "tclsh vul_jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s}"
     PANAREA_MTP_FPGA_UART_STATS_FMT = "cat /proc/fpga_uart_stats"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"

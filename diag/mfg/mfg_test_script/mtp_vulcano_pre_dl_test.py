@@ -322,8 +322,6 @@ def main():
                 rlist = dl_uc_img_program(mtp_mgmt_ctrl, nic_list, override_fd_descriptors=True)
             elif test == "uC_VERSION_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_suc_version_read_check(nic_list)
-            elif test == "VULCANO_FPGA_UART_STATS_DUMP":
-                rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
                 rlist = nic_list
@@ -386,7 +384,6 @@ def main():
             run_dl_test([slot for slot in pass_nic_list if int(slot) % 2 == 1], "uC_DIAG_IMG_PROG_OVERRIDE_FD_DESCRIPTORS")
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
             run_dl_test(pass_nic_list, "uC_VERSION_CHK")
-            run_dl_test(pass_nic_list, "VULCANO_FPGA_UART_STATS_DUMP")
         else:
             mtp_mgmt_ctrl.cli_log_err("The Pre DL test only for Vulcano based cards!", level=0)
 
