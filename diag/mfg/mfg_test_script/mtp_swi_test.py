@@ -7,6 +7,7 @@ import re
 import ntpath
 import time
 import traceback
+from datetime import datetime
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
@@ -417,8 +418,6 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_version_read_check(nic_list, stage=FF_Stage.FF_SWI)
             elif test == "VULCANO_FRU_DUMP_CHK":
                 rlist = mtp_mgmt_ctrl.mtp_nic_vulcano_fru_dump_check(nic_list)
-            elif test == "VULCANO_FPGA_UART_STATS_DUMP":
-                rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
             elif test == "CPLD_PROG":
                 rlist = swi_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "FSAFE_CPLD_PROG":
@@ -666,6 +665,9 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_ERASE_PCIEAWD_ENV")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "I2C_DUMP")
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.PANAREA:
+            # Save the start timestamp
+            start_test_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
             run_swi_test(pass_nic_list, "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_swi_test(pass_nic_list, "NIC_TYPE")
             run_swi_test(pass_nic_list, "NIC_INIT")
@@ -725,8 +727,13 @@ def main():
             run_swi_test(pass_nic_list, "uC_FRU_DUMP_CHK")
             run_swi_test(pass_nic_list, "VULCANO_VERSION_CHK")
             run_swi_test(pass_nic_list, "VULCANO_FRU_DUMP_CHK")
-            run_swi_test(pass_nic_list, "VULCANO_FPGA_UART_STATS_DUMP")
 
+            # After test, collect statistics for debug purpose
+            # usb event since test start.
+            for slot in pass_nic_list + fail_nic_list:
+                mtp_mgmt_ctrl.mtp_vulcano_usb_event_dump(slot, start_test_timestamp)
+            # fpga uart statistics dump
+            mtp_mgmt_ctrl.mtp_fpga_uart_stats_dump()
         else:
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
