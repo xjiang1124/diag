@@ -6170,18 +6170,6 @@ class mtp_ctrl():
 
         return True
 
-    @parallelize.parallel_nic_using_ssh
-    def mtp_nic_vulcano_jtag_mbist(self, slot, vmarg="normal", test_type="warm"):
-
-        if not self._nic_ctrl_list[slot].nic_vulcano_jtag_mbist(vmarg, test_type):
-            self.cli_log_slot_err(slot, "NIC JTAG MBIST FAILED")
-            self.mtp_get_nic_err_msg(slot)
-            return False
-        else:
-            self.cli_log_slot_inf(slot, "NIC JTAG MBIST PASS")
-
-        return True
-
     def mtp_l1_pre_setup(self, slot):
 
         failed_slot_list = []

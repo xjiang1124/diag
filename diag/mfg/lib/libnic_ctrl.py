@@ -932,25 +932,6 @@ class nic_ctrl():
 
         return True
 
-    def nic_vulcano_jtag_mbist(self, vmarg="normal", test_type="warm"):
-        '''
-        run pcie prbs, vulcano cards only
-        '''
-
-        if not self.nic_power_cycle(delay=10):
-            return False
-
-        # goto the asic dir
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-
-        cmd = MFG_DIAG_CMDS().PANAREA_MTP_VULCANO_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg)
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
-            return False
-
-        return True
-
     def nic_snake_mtp_salina(self, snake_type='esam_pktgen_max_power_sor', vmarg="normal", dura=120, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
         '''
             run salina snake from mtp without mgmt
