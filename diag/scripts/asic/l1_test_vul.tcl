@@ -75,6 +75,9 @@ set err_cnt_init [ plog_get_err_count ]
 puts "Vulcano L1"
 set ::slot $slot
 set ::port $port
+set ::cpld_rev_major [vul_cpld_rd 0x0]
+set ::cpld_rev_minor [vul_cpld_rd 0x1]
+set ::cpld_rev_code [vul_get_cpld_rev_code $::cpld_rev_major $::cpld_rev_minor]
 
 set ::board_rev [vul_get_board_rev]
 if {${::board_rev} eq "board-other"} {
@@ -102,7 +105,14 @@ if {${::board_rev} eq "mortaro" || ${::board_rev} eq "saraceno"} {
     }
 }
 
+diag_close_j2c_if $::port $::slot
 diag_open_j2c_if $::port $::slot
+
+if {[vul_test_card_is_up] != 1} {
+    plog_err "vul_test_card_is_up check failed, exit"
+    diag_close_j2c_if $::port $::slot
+    exit -1
+}
 
 plog_msg "J2C sanity check 1"
 if {![mtp_shell_sanity_check $powercycle]} {

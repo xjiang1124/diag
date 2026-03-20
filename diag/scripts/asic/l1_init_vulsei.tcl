@@ -55,6 +55,10 @@ set err_cnt_init [ plog_get_err_count ]
 set ::slot $slot
 set ::port $port
 
+set ::cpld_rev_major [vul_cpld_rd 0x0]
+set ::cpld_rev_minor [vul_cpld_rd 0x1]
+set ::cpld_rev_code [vul_get_cpld_rev_code $::cpld_rev_major $::cpld_rev_minor]
+
 set ::board_rev [vul_get_board_rev]
 if {$::board_rev != "vulsei"} {
     plog_err "\$::board_rev   = $::board_rev"

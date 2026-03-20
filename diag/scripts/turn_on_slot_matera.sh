@@ -288,6 +288,7 @@ control_slot_panarea() {
                 fi
             fi
         done
+        sleep 3
     fi
 }
 
