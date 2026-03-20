@@ -368,6 +368,7 @@ control_slot_ponza() {
                 fi
             fi
         done
+        sleep 3
     fi
 }
 
