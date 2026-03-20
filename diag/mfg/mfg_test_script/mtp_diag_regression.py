@@ -793,8 +793,6 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_nic_vul_suc_i2c_device_test(nic_list)
                 elif test == "OSFP_SN_READ_TEST":
                     rlist = volcano_suc_osfp_sn_read(mtp_mgmt_ctrl, nic_list)
-                elif test == "VULCANO_FPGA_UART_STATS_DUMP":
-                    rlist = mtp_mgmt_ctrl.mtp_vulcano_fpga_uart_stats_dump(nic_list)
                 elif test == "OCP_FRU_SN":
                     rlist = salina_parse_ocp_sn(mtp_mgmt_ctrl, nic_list)
                 elif test == "OCP_RMII":
@@ -1573,9 +1571,6 @@ def main():
             run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
             run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_ZEPHYR_GOLDFW")
             run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux", warm_reset=False)
-
-            # dump fpga uart stats for vulcalno cards
-            run_regression_test(get_slots_of_type(VULCANO_NIC_TYPE_LIST), "VULCANO_FPGA_UART_STATS_DUMP")
 
             # log the diag test history
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()

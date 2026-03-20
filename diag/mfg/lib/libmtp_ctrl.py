@@ -4197,13 +4197,12 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_ssh
-    def mtp_vulcano_fpga_uart_stats_dump(self, slot):
-        nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in VULCANO_NIC_TYPE_LIST:
-            return True
-        if not self._nic_ctrl_list[slot].nic_vulcano_fpga_uart_stats_dump():
-            self.cli_log_slot_err(slot, "dump fpga uart stats failed")
-            self.mtp_get_nic_err_msg(slot)
+    def mtp_vulcano_usb_event_dump(self, slot, ts):
+        self._nic_ctrl_list[slot].nic_vulcano_usb_event_dump(ts)
+
+    def mtp_fpga_uart_stats_dump(self):
+        cmd = MFG_DIAG_CMDS().PANAREA_MTP_FPGA_UART_STATS_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
             return False
         return True
 
@@ -5187,8 +5186,6 @@ class mtp_ctrl():
             self.mtp_single_j2c_lock()
             self.mtp_nic_console_lock()
             self.mtp_nic_dump_reg(slot)
-            if self.mtp_get_nic_type(slot) in VULCANO_NIC_TYPE_LIST:
-                self.mtp_vulcano_fpga_uart_stats_dump(slot)
             self.mtp_get_nic_sts(slot, skip_vrm_check, test)
             self.mtp_sal_check_j2c(slot, test)
             self.mtp_nic_console_unlock()

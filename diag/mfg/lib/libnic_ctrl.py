@@ -2637,11 +2637,14 @@ class nic_ctrl():
 
         return True
 
-    def nic_vulcano_fpga_uart_stats_dump(self):
-        cmd = MFG_DIAG_CMDS().PANAREA_MTP_FPGA_UART_STATS_FMT
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
-            return False
-        return True
+    def nic_vulcano_usb_event_dump(self, ts):
+        slot_2_usb = [
+            "3-1", "3-2", "3-3" , "3-4", "3-5", "3-6",
+            "1-1", "1-2", "1-3", "1-4"
+        ]
+        bus = slot_2_usb[self._slot]
+        cmd = f"journalctl --since '{ts}' | grep {bus}"
+        self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
 
     def set_nic_diagfw_boot(self):
         nic_cmd_list = list()
