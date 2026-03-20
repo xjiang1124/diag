@@ -557,10 +557,9 @@ func Suc_cpld_write(slot int, offset byte, value byte) (err int) {
 }
 
 func Suc_cpld_read_ponza(vul_index int, offset byte) (data byte, err int) {
-    // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
     slot := ((vul_index - 1) / 6) + 1
-    fpga_index := ((vul_index - 1) % 6) / 2
-    vul_on_fpga := (vul_index - 1) % 2
+    // Calculate vul_on_board (0-5)
+    vul_on_board := (vul_index - 1) % 6
 
     //cli.Printf("i", "Selecting Vulcano %d: Slot %d (1-based), FPGA %d (0-based), Vul %d (0-based)\n",
     //    vul_index, slot, fpga_index, vul_on_fpga)
@@ -571,69 +570,31 @@ func Suc_cpld_read_ponza(vul_index int, offset byte) (data byte, err int) {
     }
     defer u.close_suc_uart()
 
-    cmd := "diag_sqi init"
-    _, err = u.send_cmd_suc_uart(cmd + "\r\n")
-    if err != errType.SUCCESS {
-        return 0, err
-    }
-
-    var cmd1 string
-    var cmd2 string
-    switch fpga_index {
-    case 0: // FPGA 0
-        cmd1 = "gpio conf pb 6 o0"
-        cmd2 = "gpio conf pb 7 o0"
-    case 1: // FPGA 1
-        cmd1 = "gpio conf pb 6 o1"
-        cmd2 = "gpio conf pb 7 o0"
-    case 2: // FPGA 2
-        cmd1 = "gpio conf pb 6 o0"
-        cmd2 = "gpio conf pb 7 o1"
-    }
-    _, err = u.send_cmd_suc_uart(cmd1 + "\r\n")
-    if err != errType.SUCCESS {
-        return 0, err
-    }
-    _, err = u.send_cmd_suc_uart(cmd2 + "\r\n")
-    if err != errType.SUCCESS {
-        return 0, err
-    }
-
-    if vul_on_fpga == 0 {
-        cmd = "diag_sqi reg_rd 0 " + fmt.Sprintf("0x%02x", offset)
-    } else {
-        cmd = "diag_sqi reg_rd 1 " + fmt.Sprintf("0x%02x", offset)
-    }
-
+    cmd := "cpld_reg read_inst " + fmt.Sprintf("%d ", vul_on_board) + fmt.Sprintf("0x%02x ", offset)
     buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
     if err != errType.SUCCESS {
         return 0, err
     }
-
-    // buf is now in the format of a one-byte hex value, e.g., "0x72"
-    hexValue := strings.TrimSpace(string(buf))
-
-    // Check if buf is in "0x<hex>" format
-    if !strings.HasPrefix(hexValue, "0x") {
-        cli.Println("e", "Error: buf is not in 0x<hex> format. Got: %s", hexValue)
-        return 0, errType.FAIL
+    //cli.Println("%s", string(buf))
+    parts := strings.Split(string(buf), "= ") // Split on "= "
+    if len(parts) > 1 {
+        hexValue := strings.TrimSpace(parts[1])
+        if strings.HasPrefix(hexValue, "0x") {
+            value, err_p := strconv.ParseUint(hexValue[2:], 16, 8) // Remove "0x", parse as base 16
+            if err_p != nil {
+                cli.Println("e", "Error converting hex to integer:", err_p)
+                return 0, errType.FAIL
+            }
+            return byte(value), errType.SUCCESS
+        }
     }
-
-    // Remove "0x" prefix and parse as base-16
-    value, err_p := strconv.ParseUint(hexValue[2:], 16, 8)
-    if err_p != nil {
-        cli.Println("e", "Error converting hex to integer:", err_p)
-        return 0, errType.FAIL
-    }
-
-    return byte(value), errType.SUCCESS
+    return 0, errType.FAIL
 }
 
 func Suc_cpld_write_ponza(vul_index int, offset byte, value byte) (err int) {
-    // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
     slot := ((vul_index - 1) / 6) + 1
-    fpga_index := ((vul_index - 1) % 6) / 2
-    vul_on_fpga := (vul_index - 1) % 2
+    // Calculate vul_on_board (0-5)
+    vul_on_board := (vul_index - 1) % 6
 
     //cli.Printf("i", "Selecting Vulcano %d: Slot %d (1-based), FPGA %d (0-based), Vul %d (0-based)\n",
     //    vul_index, slot, fpga_index, vul_on_fpga)
@@ -644,41 +605,18 @@ func Suc_cpld_write_ponza(vul_index int, offset byte, value byte) (err int) {
     }
     defer u.close_suc_uart()
 
-    cmd := "diag_sqi init"
-    _, err = u.send_cmd_suc_uart(cmd + "\r\n")
+    cmd := "cpld_reg write_inst " + fmt.Sprintf("%d %d ", vul_on_board, offset) +
+           fmt.Sprintf("0x%02x", value)
+    buf, err := u.send_cmd_suc_uart(cmd + "\r\n")
     if err != errType.SUCCESS {
         return err
     }
-
-    var cmd1 string
-    var cmd2 string
-    switch fpga_index {
-    case 0: // FPGA 0
-        cmd1 = "gpio conf pb 6 o0"
-        cmd2 = "gpio conf pb 7 o0"
-    case 1: // FPGA 1
-        cmd1 = "gpio conf pb 6 o1"
-        cmd2 = "gpio conf pb 7 o0"
-    case 2: // FPGA 2
-        cmd1 = "gpio conf pb 6 o0"
-        cmd2 = "gpio conf pb 7 o1"
+    //cli.Println("%s", string(buf))
+    // New format: CPLD[0x02] <= 0x80
+    if strings.Contains(string(buf), "<=") {
+        return errType.SUCCESS
     }
-    _, err = u.send_cmd_suc_uart(cmd1 + "\r\n")
-    if err != errType.SUCCESS {
-        return err
-    }
-    _, err = u.send_cmd_suc_uart(cmd2 + "\r\n")
-    if err != errType.SUCCESS {
-        return err
-    }
-
-    if vul_on_fpga == 0 {
-        cmd = "diag_sqi reg_wr 0 " + fmt.Sprintf("0x%02x", offset) + fmt.Sprintf(" 0x%02x", value)
-    } else {
-        cmd = "diag_sqi reg_wr 1 " + fmt.Sprintf("0x%02x", offset) + fmt.Sprintf(" 0x%02x", value)
-    }
-    _, err = u.send_cmd_suc_uart(cmd + "\r\n")
-    return err
+    return errType.FAIL
 }
 
 /**************************************************************
@@ -746,63 +684,37 @@ func Suc_vul_sel_and_power_on(vul_index int, power_on bool) (err int) {
 
     // Calculate slot (1-6), fpga_index (0-2), and vul_on_fpga (0-1)
     slot := ((vul_index - 1) / 6) + 1
-    fpga_index := ((vul_index - 1) % 6) / 2
-    vul_on_fpga := (vul_index - 1) % 2
+    //fpga_index := ((vul_index - 1) % 6) / 2
+    //vul_on_fpga := (vul_index - 1) % 2
+    // Calculate vul_on_board (0-5)
+    vul_on_board := (vul_index - 1) % 6
 
     //cli.Printf("i", "Selecting Vulcano %d: Slot %d (1-based), FPGA %d (0-based), Vul %d (0-based)\n",
     //    vul_index, slot, fpga_index, vul_on_fpga)
 
     var cmd_list []string
 
-    cmd_list = append(cmd_list, "diag_sqi init")
+    // Calculate the other Vulcano in the pair
+    // Pairs: (0,1), (2,3), (4,5) - use XOR to toggle between pair members
+    other_vul_on_board := vul_on_board ^ 1
 
-    switch fpga_index {
-    case 0: // FPGA 0
-        cmd_list = append(cmd_list, "gpio conf pb 6 o0", "gpio conf pb 7 o0")
-    case 1: // FPGA 1
-        cmd_list = append(cmd_list, "gpio conf pb 6 o1", "gpio conf pb 7 o0")
-    case 2: // FPGA 2
-        cmd_list = append(cmd_list, "gpio conf pb 6 o0", "gpio conf pb 7 o1")
-    }
+    // Write 4 to the other Vulcano in the pair
+    cmd1 := "cpld_reg write_inst " + fmt.Sprintf("%d ", other_vul_on_board) + "0x1a 4"
+    cmd_list = append(cmd_list, cmd1)
+    // Write 2 to the selected Vulcano
+    cmd2 := "cpld_reg write_inst " + fmt.Sprintf("%d ", vul_on_board) + "0x1a 2"
+    cmd_list = append(cmd_list, cmd2)
 
-    if vul_on_fpga == 0 {
-        cmd_list = append(cmd_list, "diag_sqi reg_wr 1 0x1a 4")
-        cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x1a 2")
-    } else {
-        cmd_list = append(cmd_list, "diag_sqi reg_wr 0 0x1a 4")
-        cmd_list = append(cmd_list, "diag_sqi reg_wr 1 0x1a 2")
+    // Power on the selected Vulcano
+    if power_on == true {
+        power_on_cmd := "cpld_reg write_inst " + fmt.Sprintf("%d ", vul_on_board) + "0x2 0x80"
+        cmd_list = append(cmd_list, power_on_cmd)
     }
 
     err = suc_cmd_list(slot, cmd_list, false)
     if err != errType.SUCCESS {
         return err
     }
-
-    // Power on the selected Vulcano
-    if power_on == true {
-        var power_off_cmd, power_on_cmd string
-        if vul_on_fpga == 0 {
-            power_off_cmd = "diag_sqi reg_wr 0 0x2 0x80"
-            power_on_cmd = "diag_sqi reg_wr 0 0x2 0x90"
-        } else {
-            power_off_cmd = "diag_sqi reg_wr 1 0x2 0x80"
-            power_on_cmd = "diag_sqi reg_wr 1 0x2 0x90"
-        }
-
-        err = suc_cmd_list(slot, []string{power_off_cmd}, false)
-        if err != errType.SUCCESS {
-            return err
-        }
-
-        // 1 second delay between power-on commands
-        time.Sleep(time.Duration(1) * time.Second)
-
-        err = suc_cmd_list(slot, []string{power_on_cmd}, false)
-        if err != errType.SUCCESS {
-            return err
-        }
-    }
-
     /*if power_on == true {
         cli.Printf("i", "Selected and powered on Vulcano %d\n", vul_index)
     } else {
