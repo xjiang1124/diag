@@ -318,6 +318,9 @@ def main():
         def get_slots_of_type(nic_type, except_type=[]):
             return mtp_mgmt_ctrl.get_slots_of_type(nic_type, pass_nic_list, except_type)
 
+        def get_slots_of_sku(sku):
+            return mtp_mgmt_ctrl.get_slots_of_sku(sku, pass_nic_list)
+
         def run_swi_test(nic_list_orig, test, *test_args, **test_kwargs):
             stage = FF_Stage.FF_SWI
             nic_list = nic_list_orig[:]
@@ -643,17 +646,25 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "GOLDFW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "LOADED_FW_VERSION_CHECK")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_EXTOSA")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFWA")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_A_BOOT")
+            ### for oracle leni, ship with mainfw
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64R64E64P-O"), "SET_EXTOSA")
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64R64E64P-O"), "SET_MAINFWA")
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64R64E64P-O"), "NIC_PWRCYC")
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64R64E64P-O"), "SW_A_BOOT")
+            ### for generic leni, ship with goldfw
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64S64E64P"), "SET_GOLDFW")
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64S64E64P"), "NIC_PWRCYC")
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64S64E64P"), "GOLDFW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_CLEANUP")
             cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_swi_test(cpld_list, "UMF1_CFG0_CPLD_PROG")
             fsafe_cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
             run_swi_test(fsafe_cpld_type_list, "FSAFE_CPLD_PROG")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_BOOT")
+            ### for oracle leni, ship with mainfw
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64R64E64P-O"), "SW_BOOT")
+            ### for generic leni, ship with goldfw
+            run_swi_test(get_slots_of_sku("DSC3-2Q400-64S64E64P"), "GOLDFW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWB")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
